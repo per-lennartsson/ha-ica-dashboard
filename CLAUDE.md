@@ -74,6 +74,8 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 * Configuration lives in version control (the repo), not pushed ad hoc through the HA API.
 * Tests against a real ICA account must use throwaway lists and clean them up afterwards. Default tests use mocks.
 * Do not add or swap dependencies without asking.
+* **Never install anything** (pip/npm packages, tools, system software, virtual environments) without explicit permission from the maintainer. Ask first and say what and why.
+* Node/npm is not installed on the host. Run all Node tooling (frontend build, Vitest, ESLint) inside a Docker container, never directly on the host. Document the exact `docker run` commands in `docs/dev.md`.
 * Do not change service names, event names or entity IDs once released. It breaks existing dashboards and automations.
 * Never commit directly to main. Work in feature branches.
 * Do not start implementing a phase without the maintainer's approval of the plan.
@@ -107,32 +109,35 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 
 ## Setup
 
+Python runs locally, with libraries kept in `.venv` (git-ignored). Ask the maintainer before installing anything.
+
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements_dev.txt   # TODO: create
-cd frontend && npm install
-cp .env.example .env
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements_dev.txt
+cp .env.example .env   # only needed for manual checks against a real HA
 # Never put long-lived tokens in files that are committed
 ```
 
-Requires `ha-ica-todo` installed and configured in Home Assistant (HACS custom repository `per-lennartsson/ha-ica-todo`).
+Node is not installed on the host. Frontend tooling runs in Docker (TODO: commands in `docs/dev.md`, step 1.7).
+
+Requires `ha-ica-todo` installed and configured in Home Assistant (HACS custom repository `per-lennartsson/ha-ica-todo`) for manual checks.
 
 ## Run
 
-```bash
-# Development needs no running Home Assistant: tests use an in-process HA core and mocks.
-# Manual checks run on the maintainer's own HA (install branch via HACS). TODO: see docs/dev.md once written
-# TODO: mock-data dev page command for the card (e.g. npm run dev)
-cd frontend && npm run build   # TODO: confirm script name
-```
+Development needs no running Home Assistant: tests use an in-process HA core and mocks.
+Manual checks run on the maintainer's own HA (install a branch via HACS). TODO: see `docs/dev.md` once written.
+TODO: mock-data dev page command for the card (in Docker).
 
 ## Test
 
 ```bash
+source .venv/bin/activate
+ruff check . && ruff format --check .
+mypy custom_components
 pytest tests/ -v
-cd frontend && npm test        # TODO: confirm
-ruff check . && mypy custom_components
 ```
+
+Frontend tests run in Docker (TODO: step 1.7).
 
 ## Plan and open questions
 

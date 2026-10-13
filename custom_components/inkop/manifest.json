@@ -1,0 +1,13 @@
+{
+  "domain": "inkop",
+  "name": "Inköp",
+  "codeowners": ["@per-lennartsson"],
+  "config_flow": false,
+  "after_dependencies": ["ica"],
+  "documentation": "https://github.com/per-lennartsson/ha-ica-dashboard",
+  "integration_type": "service",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/per-lennartsson/ha-ica-dashboard/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

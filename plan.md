@@ -17,9 +17,9 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 - **Verify:** the contract doc matches the repo; every ICA call planned later appears in it.
 
 ### 0.2 Repo skeleton and tooling (M)
-- [ ] `custom_components/inkop/` with `manifest.json` (declares `ha-ica-todo`), `__init__.py`, `const.py`; `hacs.json`; `.env.example`; `requirements_dev.txt`.
-- [ ] Ruff, mypy, pytest (`pytest-homeassistant-custom-component`) configured, with shared fixtures: fake ICA `todo` entities and mocked `ica.*` services, and a mocked `ai_task` entity.
-- [ ] Update CLAUDE.md `Setup`/`Test` TODOs with real commands.
+- [x] `custom_components/inkop/` with `manifest.json` (declares `ha-ica-todo`), `__init__.py`, `const.py`; `hacs.json`; `.env.example`; `requirements_dev.txt`.
+- [x] Ruff, mypy, pytest (`pytest-homeassistant-custom-component`) configured, with shared fixtures: fake ICA `todo` entities and mocked `ica.*` services.
+- [x] Update CLAUDE.md `Setup`/`Test` TODOs with real commands.
 - **Verify:** `ruff check . && mypy custom_components && pytest tests/ -v` run green (with one smoke test).
 
 ### 0.3 CI (S)
@@ -98,6 +98,7 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 ## Phase 2: Optional AI module
 
 ### 2.1 Enable switch and provider selection (M)
+- [ ] Add a mocked `ai_task` entity fixture to `tests/conftest.py` (needs HA >= 2025.8 in the dev environment).
 - [ ] Options flow: AI off by default; when on, choose an `ai_task` entity; validate it exists.
 - [ ] Expose AI-enabled state so the card can hide all AI UI when off.
 - **Verify:** tests for off (no services registered, no UI) and on; Manual (real HA): toggle in the options flow.
@@ -141,4 +142,5 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 ## Progress log
 | Date | Step | Result |
 |------|------|--------|
+| 2026-10-13 | 0.2 | Skeleton + tooling done. ruff, mypy and 2 smoke tests green. Dev env: Python 3.13.1 resolves HA 2025.4.4 (not 2026.9); `ai_task` (2025.8+) cannot be tested until Python/HA is upgraded. Node only via Docker. |
 | 2026-10-13 | 0.1 | Contract written from ha-ica-todo `main` @ `6c45aa7` (v0.9.0). Brief confirmed except: `create_shopping_list` needs `integration`; no item-change event; create/delete return before reload completes. Possible ha-ica-todo changes identified, none blocking. |
