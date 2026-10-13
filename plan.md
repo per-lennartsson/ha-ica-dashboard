@@ -23,7 +23,7 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 - **Verify:** `ruff check . && mypy custom_components && pytest tests/ -v` run green (with one smoke test).
 
 ### 0.3 CI (S)
-- [ ] GitHub Actions: lint, mypy, pytest, hassfest, HACS validation.
+- [x] GitHub Actions (`.github/workflows/ci.yaml`): lint, mypy, pytest, hassfest, HACS validation. Workflow written and YAML-checked locally; **a green run on a PR is still to be confirmed** (see Verify).
 - **Verify:** workflow is green on a PR; a deliberately broken lint fails it.
 
 ### 0.4 Manual test setup on the maintainer's own HA (S)
