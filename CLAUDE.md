@@ -31,7 +31,7 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 
 ## Tech stack
 
-* Home Assistant custom integration `inkop` (Python), declaring `ha-ica-todo` as a dependency
+* Home Assistant custom integration `inkop` (Python 3.14, developed against Home Assistant 2026.10), declaring `ha-ica-todo` as a dependency
 * Frontend: custom card in TypeScript with Lit, Swedish UI with i18n (sv, en)
 * AI: HA's provider-neutral `ai_task` platform; the user picks any configured AI Task entity (Anthropic or another). Claude/Anthropic is **not** assumed installed
 * Tests: `pytest` with `pytest-homeassistant-custom-component` (mocked ICA and AI services); frontend tests with Vitest (TODO: confirm)
@@ -112,7 +112,7 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 Python runs locally, with libraries kept in `.venv` (git-ignored). Ask the maintainer before installing anything.
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
+python3.14 -m venv .venv && source .venv/bin/activate
 pip install -r requirements_dev.txt
 cp .env.example .env   # only needed for manual checks against a real HA
 # Never put long-lived tokens in files that are committed
