@@ -41,14 +41,14 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 - **Verify:** unit tests pass with no HA dependency; coverage of `domain/` ≥ 90%.
 
 ### 1.2 Config flow and dependency check (M)
-- [ ] Config flow: single instance; aborts with clear Swedish/English message if `ha-ica-todo` is missing, not loaded, or below the minimum version.
+- [ ] Config flow: single instance; aborts with clear Swedish/English message if `ha-ica-todo` is missing, not loaded, or below the minimum version (`v0.10.0`, see `docs/ica-contract.md`).
 - [ ] Setup re-checks the dependency and raises a repair issue if it disappears.
 - **Verify:** flow tests for missing, too old, and OK; Manual (real HA): add the integration with ha-ica-todo present, and (if practical) with it disabled.
 
 ### 1.3 Coordinator and list management services (L)
 - [ ] Coordinator reading ICA `todo` entities.
 - [ ] Services: `inkop.set_active_list`, `inkop.create_list` (prefilled name, wraps `ica.create_shopping_list`), `inkop.delete_list` (wraps `ica.delete_shopping_list`).
-- [ ] Handle the 4–5 s integration reload: busy state, retry/wait on entity availability (use events/coordinator, not templates).
+- [ ] Handle the 4–5 s integration reload: busy state until the `ica_lists_changed` event (v0.10.0), with a timeout as a safety net. A missing entity in the event means failure. Use the `offline_id` entity attribute, not registry parsing. Use events/coordinator, not templates.
 - [ ] Entities: active-list select, item-count sensor, busy/status sensor.
 - **Verify:** tests with mocked ICA services; Manual (real HA, the main risk check): create and delete a throwaway list and see the busy state clear. Throwaway lists cleaned up.
 
@@ -64,6 +64,7 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 ### 1.6 Notifications (M)
 - [ ] Options flow: choose users/notify targets.
 - [ ] Use HA service call context (user ID) to know who added items; notify the others only. No heuristics.
+- [ ] Optionally also react to `ica_list_items_changed` for changes made outside HA (e.g. in the ICA app), without notifying twice for changes `inkop` made itself. The event carries no user.
 - [ ] Fire an `inkop_item_added` event with the user ID.
 - **Verify:** tests with mocked context for own vs. others' additions; Manual (real HA): two HA users.
 
@@ -135,13 +136,14 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 
 ## Risks and open questions
 - ICA API or ha-ica-todo changes may break services: pin a minimum version, test against mocks, keep `docs/ica-contract.md` current.
-- Integration reload after create/delete may race with follow-up calls: needs a robust busy/wait design (1.3).
+- Integration reload after create/delete may race with follow-up calls: mitigated by the `ica_lists_changed` event (v0.10.0), but still needs a busy state and timeout (1.3). New ha-ica-todo code (events, attributes) has only helper-level tests so far; first real check is 1.3 on the own HA.
 - Quantity/unit edge cases around renaming (ICA ignores a null unit): document as limitation.
 - Open: confirm Vitest as frontend test tool; decide whether to commit `frontend/dist` for HACS or attach it to releases; final usage-statistics source (own counts only, or also ICA history).
 
 ## Progress log
 | Date | Step | Result |
 |------|------|--------|
+| 2026-10-13 | 0.1 (update) | ha-ica-todo changes made on branch `list-events-and-metadata` (`c2fe1f1`, v0.10.0): `ica_lists_changed`, `ica_list_items_changed`, list entity attributes, fork metadata. Contract and plan updated; minimum version now `>= v0.10.0`. Review notes: event fires also on reload failure; item-change event has no user; removed fields not reported. |
 | 2026-10-13 | env | Upgraded dev env to Python 3.14.8 (Homebrew) and HA 2026.10.1 / pytest-homeassistant-custom-component 0.13.372. Checks green. `ai_task` is now testable. |
 | 2026-10-13 | 0.2 | Skeleton + tooling done. ruff, mypy and 2 smoke tests green. Dev env: Python 3.13.1 resolves HA 2025.4.4 (not 2026.9); `ai_task` (2025.8+) cannot be tested until Python/HA is upgraded. Node only via Docker. |
 | 2026-10-13 | 0.1 | Contract written from ha-ica-todo `main` @ `6c45aa7` (v0.9.0). Brief confirmed except: `create_shopping_list` needs `integration`; no item-change event; create/delete return before reload completes. Possible ha-ica-todo changes identified, none blocking. |
