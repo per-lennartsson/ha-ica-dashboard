@@ -1,4 +1,4 @@
-# Pinned to the versions the project was set up with (Python 3.13.1).
-pytest-homeassistant-custom-component==0.13.236
+# Pinned to the versions the project was set up with (Python 3.14.8, Home Assistant 2026.10.1).
+pytest-homeassistant-custom-component==0.13.372
 ruff==0.17.0
 mypy==2.4.0
