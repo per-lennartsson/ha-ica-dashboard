@@ -120,7 +120,9 @@ Requires `ha-ica-todo` installed and configured in Home Assistant (HACS custom r
 ## Run
 
 ```bash
-# TODO: add dev instance command (e.g. HA in Docker with custom_components mounted)
+# Development needs no running Home Assistant: tests use an in-process HA core and mocks.
+# Manual checks run on the maintainer's own HA (install branch via HACS). TODO: see docs/dev.md once written
+# TODO: mock-data dev page command for the card (e.g. npm run dev)
 cd frontend && npm run build   # TODO: confirm script name
 ```
 
