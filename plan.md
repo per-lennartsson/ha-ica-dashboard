@@ -11,9 +11,9 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 ## Phase 0: Foundation
 
 ### 0.1 Confirm the ha-ica-todo contract (S)
-- [ ] Read the `per-lennartsson/ha-ica-todo` repo: current version, `manifest.json`, services (fields and responses), entity naming, events, install via HACS.
-- [ ] Write findings to `docs/ica-contract.md` (versions, service signatures, entity ID patterns, known limits).
-- [ ] List any needed changes to ha-ica-todo as ready-to-use prompts in `docs/ica-change-requests.md` (maintainer implements them; we never patch that repo).
+- [x] Read the `per-lennartsson/ha-ica-todo` repo: current version, `manifest.json`, services (fields and responses), entity naming, events, install via HACS.
+- [x] Write findings to `docs/ica-contract.md` (versions, service signatures, entity ID patterns, known limits).
+- [x] List any needed changes to ha-ica-todo as ready-to-use prompts for the maintainer to implement (we never patch that repo).
 - **Verify:** the contract doc matches the repo; every ICA call planned later appears in it.
 
 ### 0.2 Repo skeleton and tooling (M)
@@ -141,4 +141,4 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 ## Progress log
 | Date | Step | Result |
 |------|------|--------|
-| | | |
+| 2026-10-13 | 0.1 | Contract written from ha-ica-todo `main` @ `6c45aa7` (v0.9.0). Brief confirmed except: `create_shopping_list` needs `integration`; no item-change event; create/delete return before reload completes. Possible ha-ica-todo changes identified, none blocking. |
