@@ -1,0 +1,38 @@
+# Secrets
+.env
+secrets.yaml
+*.pem
+*.key
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+
+# Frontend
+node_modules/
+frontend/dist/
+coverage/
+*.tsbuildinfo
+
+# Home Assistant dev instance
+config/.storage/
+config/*.log*
+config/home-assistant_v2.db*
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Claude Code local settings
+.claude/settings.local.json
