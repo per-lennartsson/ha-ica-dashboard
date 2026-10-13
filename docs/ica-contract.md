@@ -6,7 +6,7 @@ What `inkop` may rely on from [ha-ica-todo](https://github.com/per-lennartsson/h
 - Domain: `ica`, `iot_class: cloud_polling`, `config_flow: true`, no HA `dependencies`
 - Version: `manifest.json` has `"version": "v0.9.0"` (note the leading `v`; strip it before comparing versions). The release workflow writes the real version into `manifest.json` and attaches `ica.zip`.
 - Install: HACS custom repository, type *Integration*, `hacs.json` has `zip_release: true`, `filename: ica.zip`. Config via UI (personal ID, PIN, number of random recipes, JSON-in-description toggle). Polling default 5 min.
-- Mismatch to fix in the repo: README, `manifest.json` (`codeowners`, `documentation`, `issue_tracker`) and the blueprint still point to `lazytarget/ha-ica-todo`, not the fork. See `docs/ica-change-requests.md`.
+- Mismatch to fix in the repo: README, `manifest.json` (`codeowners`, `documentation`, `issue_tracker`) and the blueprint still point to `lazytarget/ha-ica-todo`, not the fork.
 
 ## Entities
 
@@ -60,8 +60,8 @@ Confirmed against `services.yaml` / `services.py`. Differences from the project 
 2. List IDs are upper case from ICA: compare case-insensitively.
 3. A tracked list deleted in the ICA app is silently untracked on next load; the entity disappears.
 4. Entity availability may flicker during reload and token refresh (auth refresh on expiry or HTTP 401).
-5. The fork's behaviour is only guaranteed from the minimum version we declare. Set it after the change requests below are released.
+5. The fork's behaviour is only guaranteed from the minimum version we declare. Set it after any needed ha-ica-todo changes are released.
 
 ## Minimum version
 
-Proposed: `>= v0.9.0` (first version with create/delete and the parsing fixes). Raise it if a change request is released and needed.
+Proposed: `>= v0.9.0` (first version with create/delete and the parsing fixes). Raise it if a later ha-ica-todo change is released and needed.
