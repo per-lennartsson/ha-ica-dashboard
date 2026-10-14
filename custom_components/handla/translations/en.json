@@ -56,6 +56,14 @@
       },
       "lists": {
         "name": "Lists"
+      },
+      "ai": {
+        "name": "AI",
+        "state": {
+          "off": "Off",
+          "ready": "Ready",
+          "unavailable": "Provider unavailable"
+        }
       }
     }
   },
@@ -221,6 +229,13 @@
   "options": {
     "step": {
       "init": {
+        "title": "Handla settings",
+        "menu_options": {
+          "notifications": "Notifications",
+          "ai": "AI (optional)"
+        }
+      },
+      "notifications": {
         "title": "Notifications",
         "description": "Choose who is told when someone else adds items. Nobody is told about their own additions.",
         "data": {
@@ -236,11 +251,27 @@
         "data": {
           "service": "Notify service"
         }
+      },
+      "ai": {
+        "title": "AI (optional)",
+        "description": "Let AI turn pasted text, such as a recipe, into shopping items. Off by default; nothing AI-related is shown or run while it is off. Needs an AI Task entity from an AI provider set up in Home Assistant.",
+        "data": {
+          "ai_enabled": "Use AI",
+          "ai_entity": "AI Task entity"
+        },
+        "data_description": {
+          "ai_enabled": "Turn off to hide all AI features.",
+          "ai_entity": "The provider that reads the pasted text. Required when AI is on."
+        }
       }
     },
     "abort": {
       "no_users": "There are no Home Assistant users to choose from.",
       "no_notify_services": "No notify services were found. Set up the Home Assistant companion app on a phone first."
+    },
+    "error": {
+      "ai_entity_required": "Choose an AI Task entity, or turn AI off.",
+      "ai_entity_unknown": "That AI Task entity was not found. Check that the AI provider is set up in Home Assistant."
     }
   }
 }

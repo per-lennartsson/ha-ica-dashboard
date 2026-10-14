@@ -40,8 +40,16 @@ async def _entry(
     return await setup_handla(hass, options)
 
 
-async def _init(hass: HomeAssistant, entry: MockConfigEntry) -> FlowResult:
+async def _menu(hass: HomeAssistant, entry: MockConfigEntry) -> FlowResult:
     return await hass.config_entries.options.async_init(entry.entry_id)
+
+
+async def _init(hass: HomeAssistant, entry: MockConfigEntry) -> FlowResult:
+    """Open the options and go to the notifications step."""
+    menu = await _menu(hass, entry)
+    return await hass.config_entries.options.async_configure(
+        menu["flow_id"], {"next_step_id": "notifications"}
+    )
 
 
 def _user_choices(result: FlowResult) -> list[str]:
@@ -61,7 +69,7 @@ async def test_choose_users_and_a_service_for_each(
 
     result = await _init(hass, entry)
     assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "init"
+    assert result["step_id"] == "notifications"
     assert _user_choices(result) == ["Embla", "Per"]
 
     result = await hass.config_entries.options.async_configure(

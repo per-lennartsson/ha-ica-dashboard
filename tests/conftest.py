@@ -336,3 +336,29 @@ class FakeTodo:
 def fake_todo(hass: HomeAssistant) -> FakeTodo:
     """Fake todo.* services (the real todo integration is not set up in tests)."""
     return FakeTodo(hass)
+
+
+AI_ENTITY = "ai_task.fake_provider"
+
+
+class FakeAiProvider:
+    """A stand-in `ai_task` entity: only its state exists, which is all 2.1 reads."""
+
+    def __init__(self, hass: HomeAssistant, entity_id: str = AI_ENTITY) -> None:
+        self.hass = hass
+        self.entity_id = entity_id
+        self.set_state("2026-10-14T12:00:00+00:00")
+
+    def set_state(self, state: str) -> None:
+        """ai_task entities report the time of their last use, or `unavailable`."""
+        self.hass.states.async_set(self.entity_id, state, {"friendly_name": "Fake AI"})
+
+    def remove(self) -> None:
+        """The entity disappears (integration removed)."""
+        self.hass.states.async_remove(self.entity_id)
+
+
+@pytest.fixture
+def fake_ai(hass: HomeAssistant) -> FakeAiProvider:
+    """A working mocked ai_task entity."""
+    return FakeAiProvider(hass)

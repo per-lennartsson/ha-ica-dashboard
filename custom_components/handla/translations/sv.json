@@ -56,6 +56,14 @@
       },
       "lists": {
         "name": "Listor"
+      },
+      "ai": {
+        "name": "AI",
+        "state": {
+          "off": "Av",
+          "ready": "Redo",
+          "unavailable": "Leverantör ej tillgänglig"
+        }
       }
     }
   },
@@ -221,6 +229,13 @@
   "options": {
     "step": {
       "init": {
+        "title": "Handla-inställningar",
+        "menu_options": {
+          "notifications": "Aviseringar",
+          "ai": "AI (valfritt)"
+        }
+      },
+      "notifications": {
         "title": "Aviseringar",
         "description": "Välj vilka som får veta när någon annan lägger till varor. Ingen får avisering om sina egna tillägg.",
         "data": {
@@ -236,11 +251,27 @@
         "data": {
           "service": "Aviseringstjänst"
         }
+      },
+      "ai": {
+        "title": "AI (valfritt)",
+        "description": "Låt AI göra om inklistrad text, till exempel ett recept, till varor. Av som standard; inget som rör AI visas eller körs medan det är av. Kräver en AI Task-entitet från en AI-leverantör som är konfigurerad i Home Assistant.",
+        "data": {
+          "ai_enabled": "Använd AI",
+          "ai_entity": "AI Task-entitet"
+        },
+        "data_description": {
+          "ai_enabled": "Stäng av för att dölja alla AI-funktioner.",
+          "ai_entity": "Leverantören som läser den inklistrade texten. Krävs när AI är på."
+        }
       }
     },
     "abort": {
       "no_users": "Det finns inga Home Assistant-användare att välja bland.",
       "no_notify_services": "Inga aviseringstjänster hittades. Konfigurera Home Assistant-appen på en telefon först."
+    },
+    "error": {
+      "ai_entity_required": "Välj en AI Task-entitet, eller stäng av AI.",
+      "ai_entity_unknown": "AI Task-entiteten hittades inte. Kontrollera att AI-leverantören är konfigurerad i Home Assistant."
     }
   }
 }
