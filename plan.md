@@ -27,9 +27,10 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 - **Verify:** workflow is green on a PR; a deliberately broken lint fails it.
 
 ### 0.4 Manual test setup on the maintainer's own HA (S)
-- [ ] `docs/dev.md`: how to install a branch/release of `inkop` via HACS custom repository on the own HA OS, ha-ica-todo already installed, rules for throwaway ICA lists and cleanup. (Optional: Docker HA instance, not required.)
-- [ ] Update CLAUDE.md `Run` section.
-- **Verify:** `inkop` installs from a branch via HACS on the real HA, appears as an integration, and no errors show in the log.
+- [x] `docs/dev.md`: how to install a branch/release of `inkop` via HACS custom repository on the own HA OS, ha-ica-todo already installed, rules for throwaway ICA lists and cleanup. (Optional: Docker HA instance, not required.)
+- [x] Update CLAUDE.md `Run` section.
+- [x] Minimal config flow (single instance, creates the entry; `strings.json`, sv/en translations, tests) so `inkop` can be added from the UI without editing YAML. Dependency checks stay in step 1.2.
+- **Verify:** (needs the maintainer) `inkop` installs on the real HA (HACS or folder copy), is added via *Add integration → Inköp*, shows as loaded, and shows no errors in the log. Not ticked until done.
 
 ---
 
