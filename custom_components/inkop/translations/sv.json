@@ -50,6 +50,9 @@
           "deleting": "Tar bort lista",
           "error": "Fel"
         }
+      },
+      "frequent_items": {
+        "name": "Vanliga varor"
       }
     }
   },
@@ -149,6 +152,16 @@
         "entity_id": {
           "name": "Lista",
           "description": "ICA-listan. Standard är den aktiva listan."
+        }
+      }
+    },
+    "get_top_items": {
+      "name": "Hämta vanliga varor",
+      "description": "Returnera de varor som oftast lagts till, med ikoner, för snabbknappar.",
+      "fields": {
+        "limit": {
+          "name": "Antal",
+          "description": "Hur många varor som ska returneras."
         }
       }
     }

@@ -10,6 +10,7 @@ from homeassistant.components.sensor import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .const import QUICK_ADD_LIMIT
 from .coordinator import InkopConfigEntry, InkopCoordinator, Status
 from .entity import InkopEntity
 
@@ -21,7 +22,13 @@ async def async_setup_entry(
 ) -> None:
     """Set up the item count and status sensors."""
     coordinator = entry.runtime_data
-    async_add_entities([ItemCountSensor(coordinator), StatusSensor(coordinator)])
+    async_add_entities(
+        [
+            ItemCountSensor(coordinator),
+            StatusSensor(coordinator),
+            FrequentItemsSensor(coordinator),
+        ]
+    )
 
 
 class ItemCountSensor(SensorEntity, InkopEntity):
@@ -70,3 +77,22 @@ class StatusSensor(SensorEntity, InkopEntity):
         """Error details, if any."""
         detail = self.coordinator.status_detail
         return {"detail": detail} if detail else {}
+
+
+class FrequentItemsSensor(SensorEntity, InkopEntity):
+    """The most often added items, for quick-add buttons in the card."""
+
+    _unrecorded_attributes = frozenset({"items"})
+
+    def __init__(self, coordinator: InkopCoordinator) -> None:
+        super().__init__(coordinator, "frequent_items")
+
+    @property
+    def native_value(self) -> int:
+        """Number of different items counted so far."""
+        return len(self.coordinator.usage.entries)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """The top items, most added first: name, count and icon."""
+        return {"items": self.coordinator.usage.top(QUICK_ADD_LIMIT)}

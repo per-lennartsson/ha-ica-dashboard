@@ -108,3 +108,14 @@ clear_ticked:
             domain: todo
           exclude_entities:
             - todo.ica_favorite_articles
+
+get_top_items:
+  fields:
+    limit:
+      required: false
+      default: 12
+      selector:
+        number:
+          min: 1
+          max: 50
+          mode: box

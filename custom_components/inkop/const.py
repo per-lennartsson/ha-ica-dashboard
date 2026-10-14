@@ -14,3 +14,7 @@ ICA_LISTS_CHANGED: Final = "ica_lists_changed"
 LISTS_CHANGED_TIMEOUT: Final = 30.0
 
 STORAGE_VERSION: Final = 1
+
+# Frequent items shown as quick-add buttons
+QUICK_ADD_LIMIT: Final = 12
+USAGE_SAVE_DELAY: Final = 10.0

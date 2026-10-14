@@ -67,6 +67,13 @@ Use a throwaway list that is the active list (see the list check above). Run the
 
 Record anything surprising (especially how ICA treats the text) in `plan.md`.
 
+## Manual check: frequent items (plan step 1.5)
+
+1. Add a few items with `inkop.add_item` (for example `mjölk` three times with `confirm_duplicate: true`, `ägg` once). Run `inkop.get_top_items`: `mjölk` first with count 3 and a milk icon, then `ägg`. Items added directly in the ICA app are **not** counted (known limit).
+2. In *Developer tools → States* check `sensor.inkop_frequent_items`: the state is the number of different items, and the attribute `items` lists name, count and icon.
+3. Restart Home Assistant. The counts are still there.
+4. Look at the icons for your most common groceries. Tell me which look wrong or are missing (the mapping is a small keyword list in `domain/icons.py`). The names are unverified against the Material Design Icons set until the card shows them (step 1.9).
+
 ## Rules for testing against the real ICA account
 
 - Automated tests never use a real ICA account. Mocks only.
