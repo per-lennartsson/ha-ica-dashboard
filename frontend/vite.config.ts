@@ -3,15 +3,15 @@ import { defineConfig } from "vitest/config";
 // The card is one ES module that the integration serves to Home Assistant.
 export default defineConfig({
   define: {
-    __INKOP_VERSION__: JSON.stringify(process.env.npm_package_version ?? "dev"),
+    __HANDLA_VERSION__: JSON.stringify(process.env.npm_package_version ?? "dev"),
   },
   build: {
     lib: {
       entry: "src/index.ts",
       formats: ["es"],
-      fileName: () => "inkop-card.js",
+      fileName: () => "handla-card.js",
     },
-    outDir: "../custom_components/inkop/www",
+    outDir: "../custom_components/handla/www",
     emptyOutDir: true,
     target: "es2022",
   },

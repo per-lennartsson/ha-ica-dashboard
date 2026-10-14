@@ -23,16 +23,16 @@ def tree(tmp_path: Path) -> Path:
     """A minimal repository layout with a built card for version 0.9.9."""
     (tmp_path / "scripts").mkdir()
     shutil.copy(SCRIPT, tmp_path / "scripts" / "package-release.sh")
-    src = tmp_path / "custom_components" / "inkop"
+    src = tmp_path / "custom_components" / "handla"
     (src / "www").mkdir(parents=True)
     (src / "translations").mkdir()
     (src / "__pycache__").mkdir()
     (src / "manifest.json").write_text(
-        json.dumps({"domain": "inkop", "name": "Inköp", "version": "0.1.0"})
+        json.dumps({"domain": "handla", "name": "Handla", "version": "0.1.0"})
     )
     (src / "__init__.py").write_text("")
     (src / "translations" / "en.json").write_text("{}")
-    (src / "www" / "inkop-card.js").write_text('console.info("v0.9.9");')
+    (src / "www" / "handla-card.js").write_text('console.info("v0.9.9");')
     (src / "__pycache__" / "x.pyc").write_bytes(b"compiled")
     return tmp_path
 
@@ -51,24 +51,24 @@ def test_builds_a_zip_with_the_integration_at_its_root(tree: Path) -> None:
     result = package(tree, "v0.9.9")
 
     assert result.returncode == 0, result.stderr
-    names = zipfile.ZipFile(tree / "dist" / "inkop.zip").namelist()
+    names = zipfile.ZipFile(tree / "dist" / "handla.zip").namelist()
     assert (
         "manifest.json" in names
-    )  # HACS unpacks the zip into custom_components/inkop/
+    )  # HACS unpacks the zip into custom_components/handla/
     assert "__init__.py" in names
     assert "translations/en.json" in names
-    assert "www/inkop-card.js" in names
+    assert "www/handla-card.js" in names
 
 
 @needs_zip
 def test_stamps_the_release_version_into_the_packaged_manifest_only(tree: Path) -> None:
     package(tree, "v0.9.9")
 
-    archive = zipfile.ZipFile(tree / "dist" / "inkop.zip")
+    archive = zipfile.ZipFile(tree / "dist" / "handla.zip")
     packaged = json.loads(archive.read("manifest.json"))
-    assert packaged == {"domain": "inkop", "name": "Inköp", "version": "0.9.9"}
+    assert packaged == {"domain": "handla", "name": "Handla", "version": "0.9.9"}
     source = json.loads(
-        (tree / "custom_components" / "inkop" / "manifest.json").read_text()
+        (tree / "custom_components" / "handla" / "manifest.json").read_text()
     )
     assert source["version"] == "0.1.0"  # the repository copy is left alone
 
@@ -77,7 +77,7 @@ def test_stamps_the_release_version_into_the_packaged_manifest_only(tree: Path) 
 def test_leaves_out_python_caches(tree: Path) -> None:
     package(tree, "v0.9.9")
 
-    names = zipfile.ZipFile(tree / "dist" / "inkop.zip").namelist()
+    names = zipfile.ZipFile(tree / "dist" / "handla.zip").namelist()
     assert not [
         name for name in names if "__pycache__" in name or name.endswith(".pyc")
     ]
@@ -95,7 +95,7 @@ def test_a_second_run_replaces_the_first(tree: Path) -> None:
 
 @needs_zip
 def test_accepts_a_pre_release_suffix(tree: Path) -> None:
-    (tree / "custom_components" / "inkop" / "www" / "inkop-card.js").write_text(
+    (tree / "custom_components" / "handla" / "www" / "handla-card.js").write_text(
         "0.9.9-beta1"
     )
 
@@ -124,7 +124,7 @@ def test_needs_a_tag(tree: Path) -> None:
 
 
 def test_refuses_to_package_without_a_built_card(tree: Path) -> None:
-    (tree / "custom_components" / "inkop" / "www" / "inkop-card.js").unlink()
+    (tree / "custom_components" / "handla" / "www" / "handla-card.js").unlink()
 
     result = package(tree, "v0.9.9")
 
@@ -154,11 +154,11 @@ def test_hacs_installs_the_zip_that_the_release_workflow_attaches() -> None:
     script = SCRIPT.read_text()
 
     assert hacs["zip_release"] is True
-    assert hacs["filename"] == "inkop.zip"
+    assert hacs["filename"] == "handla.zip"
     assert hacs["render_readme"] is True
     assert hacs["homeassistant"]
-    assert "dist/inkop.zip" in workflow
-    assert "inkop.zip" in script
+    assert "dist/handla.zip" in workflow
+    assert "handla.zip" in script
 
 
 def test_release_workflow_runs_when_a_release_is_published() -> None:
@@ -198,7 +198,7 @@ def test_ci_builds_the_release_package_on_every_change() -> None:
 
 def test_the_integration_and_the_card_start_from_the_same_version() -> None:
     manifest = json.loads(
-        (ROOT / "custom_components" / "inkop" / "manifest.json").read_text()
+        (ROOT / "custom_components" / "handla" / "manifest.json").read_text()
     )
     package_json = json.loads((ROOT / "frontend" / "package.json").read_text())
 

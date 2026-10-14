@@ -5,8 +5,8 @@
  * second list operation during that time is refused.
  */
 import "../src/index";
-import type { InkopCard } from "../src/inkop-card";
-import type { InkopShortcut } from "../src/inkop-shortcut";
+import type { HandlaCard } from "../src/handla-card";
+import type { HandlaShortcut } from "../src/handla-shortcut";
 import type { HomeAssistant } from "../src/types";
 
 interface MockItem {
@@ -131,7 +131,7 @@ function push(): void {
 function makeHass(): HomeAssistant {
   const states: HomeAssistant["states"] = {};
   if (state.running) {
-    states["sensor.inkop_lists"] = {
+    states["sensor.handla_lists"] = {
       state: String(state.lists.length),
       attributes: {
         lists: state.lists.map((item) => ({
@@ -143,7 +143,7 @@ function makeHass(): HomeAssistant {
         active_offline_id: state.active,
       },
     };
-    states["sensor.inkop_status"] = {
+    states["sensor.handla_status"] = {
       state: state.status,
       attributes: state.detail ? { detail: state.detail } : {},
     };
@@ -153,7 +153,7 @@ function makeHass(): HomeAssistant {
       if (shown.length >= 8) break;
       if (!shown.some((s) => s.name.toLowerCase() === name)) shown.push({ name, count: 0, icon });
     }
-    states["sensor.inkop_frequent_items"] = {
+    states["sensor.handla_frequent_items"] = {
       state: String(state.usage.size),
       attributes: { items: shown },
     };
@@ -293,8 +293,8 @@ function fail(message: string): never {
 }
 
 // The phone shortcut: a tap navigates (here the preview just reports where it would go)
-const shortcut = document.createElement("inkop-shortcut") as InkopShortcut;
-shortcut.setConfig({ type: "custom:inkop-shortcut", navigation_path: "/lovelace/inkop" });
+const shortcut = document.createElement("handla-shortcut") as HandlaShortcut;
+shortcut.setConfig({ type: "custom:handla-shortcut", navigation_path: "/lovelace/handla" });
 const where = document.createElement("p");
 where.id = "where";
 where.style.cssText = "margin: 4px 0 16px; font-size: 0.85rem; color: #555";
@@ -304,8 +304,8 @@ window.addEventListener("location-changed", () => {
 });
 document.getElementById("host")?.append(shortcut, where);
 
-const card = document.createElement("inkop-card") as InkopCard;
-card.setConfig({ type: "custom:inkop-card" });
+const card = document.createElement("handla-card") as HandlaCard;
+card.setConfig({ type: "custom:handla-card" });
 document.getElementById("host")?.appendChild(card);
 
 function refresh(): void {
@@ -326,7 +326,7 @@ function addControl(label: string, onClick: () => void): void {
 
 addControl("Svenska", () => (state.language = "sv"));
 addControl("English", () => (state.language = "en"));
-addControl("Inköp körs inte", () => (state.running = !state.running));
+addControl("Handla körs inte", () => (state.running = !state.running));
 addControl("Nästa åtgärd misslyckas", () => (state.failNext = true));
 addControl("Listan otillgänglig", () => (state.unavailableItems = !state.unavailableItems));
 addControl("Återställ", () => {

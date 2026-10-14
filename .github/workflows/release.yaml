@@ -1,7 +1,7 @@
 name: Release
 
 # Publishing a GitHub release (tag vMAJOR.MINOR.PATCH) builds the card, stamps the
-# version into the integration and attaches inkop.zip, which HACS installs.
+# version into the integration and attaches handla.zip, which HACS installs.
 on:
   release:
     types: [published]
@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   asset:
-    name: Build and attach inkop.zip
+    name: Build and attach handla.zip
     runs-on: ubuntu-latest
     env:
       TAG: ${{ github.event.release.tag_name }}
@@ -38,7 +38,7 @@ jobs:
           npm run build
       - name: Package the integration
         run: ./scripts/package-release.sh "$TAG"
-      - name: Attach inkop.zip to the release
+      - name: Attach handla.zip to the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "$TAG" dist/inkop.zip --clobber
+        run: gh release upload "$TAG" dist/handla.zip --clobber

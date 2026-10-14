@@ -2,7 +2,7 @@
 
 import type { HomeAssistant } from "./types";
 
-export const FREQUENT_ENTITY = "sensor.inkop_frequent_items";
+export const FREQUENT_ENTITY = "sensor.handla_frequent_items";
 
 export interface TodoItem {
   uid: string;

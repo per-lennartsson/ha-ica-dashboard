@@ -37,7 +37,7 @@ from .usage import UsageTracker
 
 _LOGGER = logging.getLogger(__name__)
 
-type InkopConfigEntry = ConfigEntry[InkopCoordinator]
+type HandlaConfigEntry = ConfigEntry[HandlaCoordinator]
 
 
 class Status(StrEnum):
@@ -50,7 +50,7 @@ class Status(StrEnum):
 
 
 @dataclass(frozen=True)
-class InkopData:
+class HandlaData:
     """Snapshot of the ICA lists and which one is active."""
 
     lists: tuple[ListInfo, ...]
@@ -69,15 +69,15 @@ class InkopData:
         )
 
 
-class InkopCoordinator(DataUpdateCoordinator[InkopData]):
+class HandlaCoordinator(DataUpdateCoordinator[HandlaData]):
     """Derives ICA lists from Home Assistant state and runs list operations.
 
     Push-based: no polling. It recomputes when ICA todo entities change.
     """
 
-    config_entry: InkopConfigEntry
+    config_entry: HandlaConfigEntry
 
-    def __init__(self, hass: HomeAssistant, entry: InkopConfigEntry) -> None:
+    def __init__(self, hass: HomeAssistant, entry: HandlaConfigEntry) -> None:
         super().__init__(
             hass, _LOGGER, config_entry=entry, name=DOMAIN, update_interval=None
         )
@@ -111,17 +111,17 @@ class InkopCoordinator(DataUpdateCoordinator[InkopData]):
             self.hass.bus.async_listen(ICA_LISTS_CHANGED, self._on_lists_changed)
         )
 
-    async def _async_update_data(self) -> InkopData:
+    async def _async_update_data(self) -> HandlaData:
         return self._compute()
 
     # --- deriving data -------------------------------------------------------
 
-    def _compute(self) -> InkopData:
+    def _compute(self) -> HandlaData:
         lists = self._read_lists()
         active = pick_active(
             lists, self._preferred, self.data.active_offline_id if self.data else None
         )
-        return InkopData(tuple(lists), active)
+        return HandlaData(tuple(lists), active)
 
     def _read_lists(self) -> list[ListInfo]:
         registry = er.async_get(self.hass)
@@ -181,7 +181,7 @@ class InkopCoordinator(DataUpdateCoordinator[InkopData]):
     async def async_item_added(
         self, result: dict[str, str], user_id: str | None, context: Context
     ) -> None:
-        """An item was added through Inköp: count it, announce it, notify others."""
+        """An item was added through Handla: count it, announce it, notify others."""
         item = result["item"]
         self.usage.record(parse_item_text(item).name)
         self.async_update_listeners()

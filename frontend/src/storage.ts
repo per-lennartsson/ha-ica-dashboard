@@ -3,7 +3,7 @@
  * are shared by every user and device).
  */
 
-const SELECTED_LIST_KEY = "inkop:selected-list";
+const SELECTED_LIST_KEY = "handla:selected-list";
 
 /** The list this user last picked on this device (ICA offline id), if any. */
 export function loadSelectedList(): string | null {

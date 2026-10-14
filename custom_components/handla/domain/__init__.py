@@ -1,4 +1,4 @@
-"""Pure domain logic for Inköp. Must not import Home Assistant."""
+"""Pure domain logic for Handla. Must not import Home Assistant."""
 
 from .duplicates import find_duplicates, normalize_name
 from .icons import DEFAULT_ICON, icon_for

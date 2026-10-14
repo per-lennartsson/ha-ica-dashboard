@@ -18,12 +18,12 @@ describe("pickLanguage", () => {
 
 describe("localize", () => {
   it("returns Swedish and English text", () => {
-    expect(localize("sv", "card.title")).toBe("Inköp");
+    expect(localize("sv", "card.title")).toBe("Handla");
     expect(localize("en", "card.title")).toBe("Shopping");
   });
 
   it("defaults to Swedish when no language is known", () => {
-    expect(localize(undefined, "card.title")).toBe("Inköp");
+    expect(localize(undefined, "card.title")).toBe("Handla");
   });
 
   it("fills in parameters", () => {

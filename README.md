@@ -1,11 +1,11 @@
-# Inköp
+# Handla
 
 Shared shopping lists for Home Assistant, on top of your ICA lists. Everyone in the household sees the same list, adds items in a second, and gets a notification when someone else adds something.
 
 [Svenska](README.sv.md)
 
 <p>
-  <img src="docs/images/overview.png" alt="The Inköp card: list picker, add field, quick-add buttons, items and ticked items" width="300">
+  <img src="docs/images/overview.png" alt="The Handla card: list picker, add field, quick-add buttons, items and ticked items" width="300">
   <img src="docs/images/duplicate.png" alt="Asking before adding an item that is already on the list" width="300">
 </p>
 
@@ -25,29 +25,29 @@ Shared shopping lists for Home Assistant, on top of your ICA lists. Everyone in 
 ## Requirements
 
 - Home Assistant 2026.9 or newer, with [HACS](https://hacs.xyz/).
-- An ICA account, connected through [ha-ica-todo](https://github.com/per-lennartsson/ha-ica-todo) **v0.10.0 or newer** (a maintained fork of the ICA integration). Inköp checks this and tells you if it is missing.
+- An ICA account, connected through [ha-ica-todo](https://github.com/per-lennartsson/ha-ica-todo) **v0.10.0 or newer** (a maintained fork of the ICA integration). Handla checks this and tells you if it is missing.
 
 ## Installation
 
 1. **Install ha-ica-todo** and set it up with your ICA account:
    HACS → ⋮ → *Custom repositories* → add `https://github.com/per-lennartsson/ha-ica-todo` as type *Integration* → download → restart Home Assistant → *Settings → Devices & services → Add integration → ICA*.
-2. **Install Inköp** the same way: add `https://github.com/per-lennartsson/ha-ica-dashboard` as a custom repository (type *Integration*), download the latest release and restart Home Assistant.
-3. *Settings → Devices & services → Add integration → **Inköp**.* That is all; no dashboard resource has to be added by hand.
-4. *(Optional)* **Notifications:** *Devices & services → Inköp → Configure*. Choose who is told, and which `mobile_app_...` service reaches their phone.
+2. **Install Handla** the same way: add `https://github.com/per-lennartsson/ha-ica-dashboard` as a custom repository (type *Integration*), download the latest release and restart Home Assistant.
+3. *Settings → Devices & services → Add integration → **Handla**.* That is all; no dashboard resource has to be added by hand.
+4. *(Optional)* **Notifications:** *Devices & services → Handla → Configure*. Choose who is told, and which `mobile_app_...` service reaches their phone.
 
 ## Dashboard
 
-Add the card to a dashboard (for example a view with the path `inkop`):
+Add the card to a dashboard (for example a view with the path `handla`):
 
 ```yaml
-type: custom:inkop-card
+type: custom:handla-card
 ```
 
 For the phone dashboard, a small shortcut that shows how many items are left and opens that view when tapped:
 
 ```yaml
-type: custom:inkop-shortcut
-navigation_path: /lovelace/inkop
+type: custom:handla-shortcut
+navigation_path: /lovelace/handla
 ```
 
 Everything about the cards, the badge option, entities, services and events is in [docs/usage.md](docs/usage.md).
@@ -55,14 +55,14 @@ Everything about the cards, the badge option, entities, services and events is i
 ## Good to know
 
 - Creating or deleting a list makes the ICA integration reload, which takes a few seconds. The card shows progress and locks itself meanwhile, so nobody taps twice.
-- The quick-add buttons are based on items added **through Inköp**. Items added directly in the ICA app are not counted (they do show up in the list).
-- Notifications are sent for items added through Inköp, not for items added in the ICA app, and tapping a notification does not open the card yet.
+- The quick-add buttons are based on items added **through Handla**. Items added directly in the ICA app are not counted (they do show up in the list).
+- Notifications are sent for items added through Handla, not for items added in the ICA app, and tapping a notification does not open the card yet.
 - ICA ignores an empty unit, so renaming an item cannot remove its unit.
 - Icons are Material Design Icons picked by a small list of Swedish grocery words; unknown items get a cart.
 
 ## Troubleshooting
 
-- **The card says "Inköp körs inte":** check that ha-ica-todo (v0.10.0+) is installed and loaded, and look under *Settings → System → Repairs*.
+- **The card says "Handla körs inte":** check that ha-ica-todo (v0.10.0+) is installed and loaded, and look under *Settings → System → Repairs*.
 - **The card does not show up:** restart Home Assistant after installing, then reload the page (in the phone app: *Settings → Companion app → Troubleshooting → Reset frontend cache*).
 - **Something looks wrong after an update:** hard-refresh the browser. The card file is versioned, but browsers can be stubborn.
 

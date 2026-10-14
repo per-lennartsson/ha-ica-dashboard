@@ -2,7 +2,7 @@
 
 import pytest
 
-from custom_components.inkop.domain import (
+from custom_components.handla.domain import (
     MAX_LISTED,
     build_message,
     choose_notify_services,
@@ -58,7 +58,7 @@ def test_message_language_and_adder(
     language: str, name: str | None, expected: str
 ) -> None:
     title, message = build_message(language, name, "Veckan", ["mjölk", "ägg"])
-    assert title == "Inköp"
+    assert title == "Handla"
     assert message == expected
 
 

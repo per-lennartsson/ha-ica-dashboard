@@ -9,8 +9,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.inkop.const import DOMAIN
-from custom_components.inkop.dependency import ISSUE_ID
+from custom_components.handla.const import DOMAIN
+from custom_components.handla.dependency import ISSUE_ID
 from tests.conftest import ICA_DOMAIN, IcaConfigure
 
 
@@ -70,7 +70,7 @@ async def test_issue_is_cleared_when_ica_recovers(hass: HomeAssistant) -> None:
     ica_entry = MockConfigEntry(domain=ICA_DOMAIN, state=ConfigEntryState.LOADED)
     ica_entry.add_to_hass(hass)
     found = AsyncMock(return_value=SimpleNamespace(manifest={"version": "v0.10.0"}))
-    with patch("custom_components.inkop.dependency.async_get_integration", found):
+    with patch("custom_components.handla.dependency.async_get_integration", found):
         await hass.config_entries.async_reload(entry.entry_id)
 
     assert entry.state is ConfigEntryState.LOADED

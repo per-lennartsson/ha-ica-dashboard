@@ -8,8 +8,8 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.data_entry_flow import FlowResult, FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.inkop.const import CONF_RECIPIENTS
-from tests.conftest import FakeIca, IcaConfigure, setup_inkop
+from custom_components.handla.const import CONF_RECIPIENTS
+from tests.conftest import FakeIca, IcaConfigure, setup_handla
 
 
 def _register_phones(hass: HomeAssistant, *names: str) -> None:
@@ -37,7 +37,7 @@ async def _entry(
     options: dict[str, Any] | None = None,
 ) -> MockConfigEntry:
     ica_dependency()
-    return await setup_inkop(hass, options)
+    return await setup_handla(hass, options)
 
 
 async def _init(hass: HomeAssistant, entry: MockConfigEntry) -> FlowResult:

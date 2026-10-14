@@ -1,6 +1,6 @@
 """Tests for duplicate detection and item lookup on a list."""
 
-from custom_components.inkop.domain import TodoItem, duplicate_items, resolve_items
+from custom_components.handla.domain import TodoItem, duplicate_items, resolve_items
 
 
 def _items(*specs: tuple[str, str, bool]) -> list[TodoItem]:

@@ -1,4 +1,4 @@
-"""Config and options flow for Inköp.
+"""Config and options flow for Handla.
 
 Setup refuses to start without a usable ha-ica-todo. The options choose which users
 are told when someone adds items, and through which notify service.
@@ -26,16 +26,16 @@ from .notify import get_recipients
 from .schema import vol
 
 
-class InkopConfigFlow(ConfigFlow, domain=DOMAIN):
+class HandlaConfigFlow(ConfigFlow, domain=DOMAIN):
     """Single-step flow that creates the one allowed config entry."""
 
     VERSION = 1
 
     @staticmethod
     @callback
-    def async_get_options_flow(config_entry: ConfigEntry) -> InkopOptionsFlow:
+    def async_get_options_flow(config_entry: ConfigEntry) -> HandlaOptionsFlow:
         """Options: who gets notified."""
-        return InkopOptionsFlow()
+        return HandlaOptionsFlow()
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -48,11 +48,11 @@ class InkopConfigFlow(ConfigFlow, domain=DOMAIN):
                 description_placeholders=status.placeholders,
             )
         if user_input is not None:
-            return self.async_create_entry(title="Inköp", data={})
+            return self.async_create_entry(title="Handla", data={})
         return self.async_show_form(step_id="user")
 
 
-class InkopOptionsFlow(OptionsFlow):
+class HandlaOptionsFlow(OptionsFlow):
     """Pick the users to notify, then a notify service for each of them."""
 
     def __init__(self) -> None:

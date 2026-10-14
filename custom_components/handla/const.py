@@ -1,8 +1,8 @@
-"""Constants for the Inköp integration."""
+"""Constants for the Handla integration."""
 
 from typing import Final
 
-DOMAIN: Final = "inkop"
+DOMAIN: Final = "handla"
 
 # The required ICA integration (https://github.com/per-lennartsson/ha-ica-todo)
 ICA_DOMAIN: Final = "ica"
@@ -21,5 +21,5 @@ USAGE_SAVE_DELAY: Final = 10.0
 
 # Notifications when someone adds items
 CONF_RECIPIENTS: Final = "recipients"  # {user_id: notify service name}
-EVENT_ITEM_ADDED: Final = "inkop_item_added"
+EVENT_ITEM_ADDED: Final = "handla_item_added"
 NOTIFY_DELAY: Final = 20.0  # seconds: adds within this window become one message

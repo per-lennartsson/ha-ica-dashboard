@@ -1,9 +1,9 @@
 {
-  "name": "inkop-card",
+  "name": "handla-card",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Lovelace card for Inköp (shopping lists on top of ICA)",
+  "description": "Lovelace card for Handla (shopping lists on top of ICA)",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc --noEmit && vite build",

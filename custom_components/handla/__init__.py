@@ -1,4 +1,4 @@
-"""The Inköp integration: shopping lists on top of ha-ica-todo."""
+"""The Handla integration: shopping lists on top of ha-ica-todo."""
 
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
@@ -9,7 +9,7 @@ from homeassistant.loader import async_get_integration
 
 from .card import async_register_card
 from .const import DOMAIN
-from .coordinator import InkopConfigEntry, InkopCoordinator
+from .coordinator import HandlaConfigEntry, HandlaCoordinator
 from .dependency import (
     async_check_ica,
     create_dependency_issue,
@@ -27,8 +27,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     return True
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: InkopConfigEntry) -> bool:
-    """Set up Inköp, or retry later (with a repair issue) if ICA is not usable.
+async def async_setup_entry(hass: HomeAssistant, entry: HandlaConfigEntry) -> bool:
+    """Set up Handla, or retry later (with a repair issue) if ICA is not usable.
 
     The dependency is only checked here, not while running: ha-ica-todo reloads
     whenever a list is created or deleted, which must not be reported as a problem.
@@ -44,18 +44,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: InkopConfigEntry) -> boo
     integration = await async_get_integration(hass, DOMAIN)
     await async_register_card(hass, str(integration.version))
 
-    coordinator = InkopCoordinator(hass, entry)
+    coordinator = HandlaCoordinator(hass, entry)
     await coordinator.async_start()
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: InkopConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: HandlaConfigEntry) -> bool:
     """Unload the platforms."""
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
-async def async_remove_entry(hass: HomeAssistant, entry: InkopConfigEntry) -> None:
+async def async_remove_entry(hass: HomeAssistant, entry: HandlaConfigEntry) -> None:
     """Clean up the repair issue when the integration is removed."""
     delete_dependency_issue(hass)

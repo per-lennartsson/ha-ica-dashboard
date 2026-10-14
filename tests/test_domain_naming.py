@@ -4,7 +4,7 @@ from datetime import date
 
 import pytest
 
-from custom_components.inkop.domain import SWEDISH_MONTHS, default_list_name
+from custom_components.handla.domain import SWEDISH_MONTHS, default_list_name
 
 
 def test_all_twelve_months() -> None:

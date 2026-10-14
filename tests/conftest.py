@@ -213,7 +213,7 @@ def ica_dependency(hass: HomeAssistant) -> Iterator[IcaConfigure]:
             else:
                 find = AsyncMock(side_effect=IntegrationNotFound("ica"))
             stack.enter_context(
-                patch("custom_components.inkop.dependency.async_get_integration", find)
+                patch("custom_components.handla.dependency.async_get_integration", find)
             )
             if entry_state is None:
                 return None
@@ -232,11 +232,11 @@ def mock_storage(hass_storage: dict[str, Any]) -> dict[str, Any]:
     return hass_storage
 
 
-async def setup_inkop(
+async def setup_handla(
     hass: HomeAssistant, options: dict[str, Any] | None = None
 ) -> MockConfigEntry:
-    """Add and set up an Inköp config entry (ICA must be faked first)."""
-    entry = MockConfigEntry(domain="inkop", options=options or {})
+    """Add and set up an Handla config entry (ICA must be faked first)."""
+    entry = MockConfigEntry(domain="handla", options=options or {})
     entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()

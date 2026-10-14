@@ -1,4 +1,4 @@
-"""Sensors: open items on the active list, and what Inköp is doing."""
+"""Sensors: open items on the active list, and what Handla is doing."""
 
 from typing import Any
 
@@ -11,14 +11,14 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import QUICK_ADD_LIMIT
-from .coordinator import InkopConfigEntry, InkopCoordinator, Status
+from .coordinator import HandlaConfigEntry, HandlaCoordinator, Status
 from .domain import lists_payload, quick_add_payload
-from .entity import InkopEntity
+from .entity import HandlaEntity
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: InkopConfigEntry,
+    entry: HandlaConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the item count and status sensors."""
@@ -33,13 +33,13 @@ async def async_setup_entry(
     )
 
 
-class ItemCountSensor(SensorEntity, InkopEntity):
+class ItemCountSensor(SensorEntity, HandlaEntity):
     """Number of items still to buy on the active list."""
 
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_icon = "mdi:cart-outline"  # also used when shown as a dashboard badge
 
-    def __init__(self, coordinator: InkopCoordinator) -> None:
+    def __init__(self, coordinator: HandlaCoordinator) -> None:
         super().__init__(coordinator, "items")
 
     @property
@@ -61,13 +61,13 @@ class ItemCountSensor(SensorEntity, InkopEntity):
         }
 
 
-class StatusSensor(SensorEntity, InkopEntity):
+class StatusSensor(SensorEntity, HandlaEntity):
     """idle / creating / deleting / error, so the UI can show progress."""
 
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = [status.value for status in Status]
 
-    def __init__(self, coordinator: InkopCoordinator) -> None:
+    def __init__(self, coordinator: HandlaCoordinator) -> None:
         super().__init__(coordinator, "status")
 
     @property
@@ -82,12 +82,12 @@ class StatusSensor(SensorEntity, InkopEntity):
         return {"detail": detail} if detail else {}
 
 
-class FrequentItemsSensor(SensorEntity, InkopEntity):
+class FrequentItemsSensor(SensorEntity, HandlaEntity):
     """The most often added items, for quick-add buttons in the card."""
 
     _unrecorded_attributes = frozenset({"items"})
 
-    def __init__(self, coordinator: InkopCoordinator) -> None:
+    def __init__(self, coordinator: HandlaCoordinator) -> None:
         super().__init__(coordinator, "frequent_items")
 
     @property
@@ -102,12 +102,12 @@ class FrequentItemsSensor(SensorEntity, InkopEntity):
         return {"items": quick_add_payload(entries, QUICK_ADD_LIMIT)}
 
 
-class ListsSensor(SensorEntity, InkopEntity):
+class ListsSensor(SensorEntity, HandlaEntity):
     """All ICA lists with item counts, for the card's list picker."""
 
     _unrecorded_attributes = frozenset({"lists", "active_offline_id"})
 
-    def __init__(self, coordinator: InkopCoordinator) -> None:
+    def __init__(self, coordinator: HandlaCoordinator) -> None:
         super().__init__(coordinator, "lists")
 
     @property

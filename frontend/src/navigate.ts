@@ -1,6 +1,6 @@
 /** Navigation inside Home Assistant's frontend without a page reload. */
 
-/** True for dashboard paths such as /lovelace/inkop or /dashboard-inkop/start. */
+/** True for dashboard paths such as /lovelace/handla or /dashboard-handla/start. */
 export function isDashboardPath(path: unknown): path is string {
   return typeof path === "string" && path.startsWith("/") && !path.startsWith("//");
 }

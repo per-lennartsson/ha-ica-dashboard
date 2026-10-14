@@ -8,7 +8,7 @@ from homeassistant.helpers import config_validation as cv
 
 from . import shopping
 from .const import DOMAIN, QUICK_ADD_LIMIT
-from .coordinator import InkopCoordinator
+from .coordinator import HandlaCoordinator
 from .schema import vol
 
 SET_ACTIVE_LIST_SCHEMA = vol.Schema({vol.Required("entity_id"): cv.entity_id})
@@ -47,18 +47,18 @@ GET_TOP_ITEMS_SCHEMA = vol.Schema(
 )
 
 
-def _coordinator(hass: HomeAssistant) -> InkopCoordinator:
+def _coordinator(hass: HomeAssistant) -> HandlaCoordinator:
     entries = hass.config_entries.async_loaded_entries(DOMAIN)
     if not entries:
         raise ServiceValidationError(
             translation_domain=DOMAIN, translation_key="not_set_up"
         )
-    coordinator: InkopCoordinator = entries[0].runtime_data
+    coordinator: HandlaCoordinator = entries[0].runtime_data
     return coordinator
 
 
 def async_register_services(hass: HomeAssistant) -> None:
-    """Register the Inköp services (available once an entry is loaded)."""
+    """Register the Handla services (available once an entry is loaded)."""
 
     async def set_active_list(call: ServiceCall) -> None:
         await _coordinator(hass).async_set_active(call.data["entity_id"])

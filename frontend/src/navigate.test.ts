@@ -7,16 +7,21 @@ afterEach(() => {
 });
 
 describe("isDashboardPath", () => {
-  it.each(["/lovelace/inkop", "/dashboard-inkop/start", "/"])("accepts %s", (path) => {
+  it.each(["/lovelace/handla", "/dashboard-handla/start", "/"])("accepts %s", (path) => {
     expect(isDashboardPath(path)).toBe(true);
   });
 
-  it.each(["lovelace/inkop", "", "//evil.example/path", "https://example.com", undefined, null, 5])(
-    "rejects %j",
-    (path) => {
-      expect(isDashboardPath(path)).toBe(false);
-    },
-  );
+  it.each([
+    "lovelace/handla",
+    "",
+    "//evil.example/path",
+    "https://example.com",
+    undefined,
+    null,
+    5,
+  ])("rejects %j", (path) => {
+    expect(isDashboardPath(path)).toBe(false);
+  });
 });
 
 describe("navigate", () => {
@@ -26,9 +31,9 @@ describe("navigate", () => {
       once: true,
     });
 
-    navigate("/lovelace/inkop");
+    navigate("/lovelace/handla");
 
-    expect(window.location.pathname).toBe("/lovelace/inkop");
+    expect(window.location.pathname).toBe("/lovelace/handla");
     expect(events).toHaveLength(1);
     expect(events[0]?.detail).toEqual({ replace: false });
   });

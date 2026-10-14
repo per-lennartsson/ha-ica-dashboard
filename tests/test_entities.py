@@ -7,8 +7,8 @@ from homeassistant.core import HomeAssistant, State
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
 
-from custom_components.inkop.const import DOMAIN
-from tests.conftest import FakeIca, IcaConfigure, setup_inkop
+from custom_components.handla.const import DOMAIN
+from tests.conftest import FakeIca, IcaConfigure, setup_handla
 
 
 def _state(hass: HomeAssistant, platform: str, key: str, entry_id: str) -> State:
@@ -27,7 +27,7 @@ async def test_select_lists_titles_and_current(
     ica_dependency()
     fake_ica.add_list("Mjölk", "M-1")
     fake_ica.add_list("Bröd", "B-2")
-    entry = await setup_inkop(hass)
+    entry = await setup_handla(hass)
 
     state = _state(hass, "select", "active_list", entry.entry_id)
     assert state.attributes["options"] == ["Bröd", "Mjölk"]
@@ -40,7 +40,7 @@ async def test_select_option_changes_the_active_list(
     ica_dependency()
     fake_ica.add_list("Mjölk", "M-1")
     fake_ica.add_list("Bröd", "B-2")
-    entry = await setup_inkop(hass)
+    entry = await setup_handla(hass)
     entity_id = _state(hass, "select", "active_list", entry.entry_id).entity_id
 
     await hass.services.async_call(
@@ -60,7 +60,7 @@ async def test_select_numbers_repeated_titles(
     ica_dependency()
     fake_ica.add_list("Mat", "A-1")
     fake_ica.add_list("Mat", "B-2")
-    entry = await setup_inkop(hass)
+    entry = await setup_handla(hass)
     state = _state(hass, "select", "active_list", entry.entry_id)
 
     assert state.attributes["options"] == ["Mat", "Mat (2)"]
@@ -79,7 +79,7 @@ async def test_select_without_lists(
     hass: HomeAssistant, ica_dependency: IcaConfigure
 ) -> None:
     ica_dependency()
-    entry = await setup_inkop(hass)
+    entry = await setup_handla(hass)
 
     state = _state(hass, "select", "active_list", entry.entry_id)
     assert state.attributes["options"] == []
@@ -91,7 +91,7 @@ async def test_items_sensor_follows_the_active_list(
 ) -> None:
     ica_dependency()
     milk = fake_ica.add_list("Mjölk", "M-1", items=3)
-    entry = await setup_inkop(hass)
+    entry = await setup_handla(hass)
 
     state = _state(hass, "sensor", "items", entry.entry_id)
     assert state.state == "3"
@@ -108,7 +108,7 @@ async def test_items_sensor_is_unknown_without_an_active_list(
     hass: HomeAssistant, ica_dependency: IcaConfigure
 ) -> None:
     ica_dependency()
-    entry = await setup_inkop(hass)
+    entry = await setup_handla(hass)
 
     state = _state(hass, "sensor", "items", entry.entry_id)
     assert state.state == "unknown"
@@ -119,7 +119,7 @@ async def test_status_sensor_shows_progress_and_errors(
     hass: HomeAssistant, ica_dependency: IcaConfigure, fake_ica: FakeIca
 ) -> None:
     ica_dependency()
-    entry = await setup_inkop(hass)
+    entry = await setup_handla(hass)
     status = _state(hass, "sensor", "status", entry.entry_id)
     assert status.state == "idle"
     assert status.attributes["options"] == ["idle", "creating", "deleting", "error"]
@@ -144,7 +144,7 @@ async def test_status_sensor_exposes_error_detail(
     hass: HomeAssistant, ica_dependency: IcaConfigure, fake_ica: FakeIca
 ) -> None:
     ica_dependency()
-    entry = await setup_inkop(hass)
+    entry = await setup_handla(hass)
     status = _state(hass, "sensor", "status", entry.entry_id)
     fake_ica.responses["create_shopping_list"] = {"success": True}  # no id returned
 
@@ -165,7 +165,7 @@ async def test_unload_and_reload_keep_entities(
 ) -> None:
     ica_dependency()
     fake_ica.add_list("Mjölk", "M-1", items=2)
-    entry = await setup_inkop(hass)
+    entry = await setup_handla(hass)
 
     assert await hass.config_entries.async_unload(entry.entry_id)
     assert await hass.config_entries.async_setup(entry.entry_id)
@@ -180,7 +180,7 @@ async def test_lists_sensor_shows_every_list_and_the_active_one(
     ica_dependency()
     bread = fake_ica.add_list("Bröd", "B-2", items=2)
     milk = fake_ica.add_list("Mjölk", "M-1", items=0)
-    entry = await setup_inkop(hass)
+    entry = await setup_handla(hass)
 
     state = _state(hass, "sensor", "lists", entry.entry_id)
     assert state.state == "2"
@@ -196,7 +196,7 @@ async def test_lists_sensor_follows_counts_and_new_lists(
 ) -> None:
     ica_dependency()
     milk = fake_ica.add_list("Mjölk", "M-1", items=1)
-    entry = await setup_inkop(hass)
+    entry = await setup_handla(hass)
 
     hass.states.async_set(milk, "4", hass.states.get(milk).attributes)  # type: ignore[union-attr]
     fake_ica.add_list("Ägg", "E-3")
@@ -212,7 +212,7 @@ async def test_lists_sensor_without_lists(
     hass: HomeAssistant, ica_dependency: IcaConfigure
 ) -> None:
     ica_dependency()
-    entry = await setup_inkop(hass)
+    entry = await setup_handla(hass)
 
     state = _state(hass, "sensor", "lists", entry.entry_id)
     assert state.state == "0"
@@ -225,7 +225,7 @@ async def test_items_sensor_has_a_cart_icon_for_badges(
 ) -> None:
     ica_dependency()
     fake_ica.add_list("Mjölk", "M-1", items=3)
-    entry = await setup_inkop(hass)
+    entry = await setup_handla(hass)
 
     state = _state(hass, "sensor", "items", entry.entry_id)
     assert state.attributes["icon"] == "mdi:cart-outline"

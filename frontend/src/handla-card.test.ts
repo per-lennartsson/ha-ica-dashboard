@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { InkopCard } from "./inkop-card";
-import type { InkopItems } from "./inkop-items";
+import { HandlaCard } from "./handla-card";
+import type { HandlaItems } from "./handla-items";
 import { LISTS_ENTITY, STATUS_ENTITY } from "./lists";
 import type { HomeAssistant } from "./types";
 
 interface Scenario {
   language?: string;
-  /** Omit to simulate Inköp not running (no sensors at all). */
+  /** Omit to simulate Handla not running (no sensors at all). */
   lists?: Array<{ id: string; title: string; count?: number | null }>;
   active?: string | null;
   status?: string;
@@ -53,13 +53,13 @@ function makeHass(scenario: Scenario = {}, callService: CallService = defaultCal
   return { hass, callService };
 }
 
-async function settle(card: InkopCard): Promise<void> {
+async function settle(card: HandlaCard): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 0));
   await card.updateComplete;
 }
 
-async function mount(hass?: HomeAssistant, config: object = { type: "custom:inkop-card" }) {
-  const card = document.createElement("inkop-card") as InkopCard;
+async function mount(hass?: HomeAssistant, config: object = { type: "custom:handla-card" }) {
+  const card = document.createElement("handla-card") as HandlaCard;
   card.setConfig(config as never);
   if (hass) card.hass = hass;
   document.body.appendChild(card);
@@ -67,28 +67,28 @@ async function mount(hass?: HomeAssistant, config: object = { type: "custom:inko
   return card;
 }
 
-const root = (card: InkopCard) => card.shadowRoot as ShadowRoot;
-const text = (card: InkopCard) => root(card).querySelector(".card")?.textContent ?? "";
-const button = (card: InkopCard, action: string) =>
+const root = (card: HandlaCard) => card.shadowRoot as ShadowRoot;
+const text = (card: HandlaCard) => root(card).querySelector(".card")?.textContent ?? "";
+const button = (card: HandlaCard, action: string) =>
   root(card).querySelector<HTMLButtonElement>(`[data-action="${action}"]`);
-const select = (card: InkopCard) => root(card).querySelector<HTMLSelectElement>("select");
-const input = (card: InkopCard) => root(card).querySelector<HTMLInputElement>("input[type=text]");
-const optionLabels = (card: InkopCard) =>
+const select = (card: HandlaCard) => root(card).querySelector<HTMLSelectElement>("select");
+const input = (card: HandlaCard) => root(card).querySelector<HTMLInputElement>("input[type=text]");
+const optionLabels = (card: HandlaCard) =>
   [...root(card).querySelectorAll("option")].map((option) => option.textContent?.trim());
 
-async function click(card: InkopCard, action: string): Promise<void> {
+async function click(card: HandlaCard, action: string): Promise<void> {
   button(card, action)?.click();
   await settle(card);
 }
 
-async function typeName(card: InkopCard, value: string): Promise<void> {
+async function typeName(card: HandlaCard, value: string): Promise<void> {
   const field = input(card) as HTMLInputElement;
   field.value = value;
   field.dispatchEvent(new Event("input"));
   await card.updateComplete;
 }
 
-async function submit(card: InkopCard): Promise<void> {
+async function submit(card: HandlaCard): Promise<void> {
   root(card)
     .querySelector("form")
     ?.dispatchEvent(new Event("submit", { cancelable: true }));
@@ -113,31 +113,31 @@ afterEach(() => {
 
 describe("basics", () => {
   it("is registered as a custom element and listed for the card picker", () => {
-    expect(customElements.get("inkop-card")).toBe(InkopCard);
-    expect(window.customCards?.filter((c) => c.type === "inkop-card")).toHaveLength(1);
+    expect(customElements.get("handla-card")).toBe(HandlaCard);
+    expect(window.customCards?.filter((c) => c.type === "handla-card")).toHaveLength(1);
   });
 
   it("renders nothing until it has a configuration", async () => {
-    const card = document.createElement("inkop-card") as InkopCard;
+    const card = document.createElement("handla-card") as HandlaCard;
     document.body.appendChild(card);
     await card.updateComplete;
     expect(root(card).querySelector(".card")).toBeNull();
   });
 
   it("rejects an invalid configuration", () => {
-    const card = document.createElement("inkop-card") as InkopCard;
+    const card = document.createElement("handla-card") as HandlaCard;
     expect(() => card.setConfig(null as never)).toThrow("Ogiltig kortkonfiguration.");
   });
 
   it("reports a card size and a stub configuration", () => {
-    const card = document.createElement("inkop-card") as InkopCard;
+    const card = document.createElement("handla-card") as HandlaCard;
     expect(card.getCardSize()).toBe(2);
-    expect(InkopCard.getStubConfig()).toEqual({});
+    expect(HandlaCard.getStubConfig()).toEqual({});
   });
 
   it("uses a configured title", async () => {
     const card = await mount(makeHass({ lists: [BREAD] }).hass, {
-      type: "custom:inkop-card",
+      type: "custom:handla-card",
       title: "Mat",
     });
     expect(root(card).querySelector("h2")?.textContent).toBe("Mat");
@@ -150,7 +150,7 @@ describe("basics", () => {
   });
 });
 
-describe("when Inköp is not running", () => {
+describe("when Handla is not running", () => {
   it("explains what to check, including ha-ica-todo", async () => {
     const card = await mount(makeHass().hass);
     expect(text(card)).toContain("ha-ica-todo");
@@ -178,13 +178,13 @@ describe("list picker", () => {
   });
 
   it("prefers this user's saved choice over the household's active list", async () => {
-    window.localStorage.setItem("inkop:selected-list", "A-1");
+    window.localStorage.setItem("handla:selected-list", "A-1");
     const card = await mount(makeHass({ lists: [BREAD, MILK], active: "B-2" }).hass);
     expect(select(card)?.value).toBe("A-1");
   });
 
   it("ignores a saved choice for a list that no longer exists", async () => {
-    window.localStorage.setItem("inkop:selected-list", "GONE");
+    window.localStorage.setItem("handla:selected-list", "GONE");
     const card = await mount(makeHass({ lists: [BREAD, MILK], active: "B-2" }).hass);
     expect(select(card)?.value).toBe("B-2");
   });
@@ -198,7 +198,7 @@ describe("list picker", () => {
     picker.dispatchEvent(new Event("change"));
     await card.updateComplete;
 
-    expect(window.localStorage.getItem("inkop:selected-list")).toBe("A-1");
+    expect(window.localStorage.getItem("handla:selected-list")).toBe("A-1");
     expect(select(card)?.value).toBe("A-1");
     expect(callService).not.toHaveBeenCalled();
   });
@@ -244,7 +244,7 @@ describe("creating a list", () => {
     expect(input(card)?.value).toBe("Att handla 14 oktober");
     expect(root(card).activeElement).toBe(input(card));
     expect(callService).toHaveBeenCalledWith(
-      "inkop",
+      "handla",
       "suggest_list_name",
       {},
       undefined,
@@ -287,14 +287,14 @@ describe("creating a list", () => {
     await submit(card);
 
     expect(callService).toHaveBeenCalledWith(
-      "inkop",
+      "handla",
       "create_list",
       { title: "Fredagsmat", set_active: true },
       undefined,
       false,
       true,
     );
-    expect(window.localStorage.getItem("inkop:selected-list")).toBe("NEW-1");
+    expect(window.localStorage.getItem("handla:selected-list")).toBe("NEW-1");
     expect(input(card)).toBeNull();
     expect(root(card).querySelector('[data-testid="error"]')).toBeNull();
   });
@@ -387,7 +387,7 @@ describe("deleting a list", () => {
   });
 
   it("deletes the list after confirmation and forgets it if it was this user's choice", async () => {
-    window.localStorage.setItem("inkop:selected-list", "B-2");
+    window.localStorage.setItem("handla:selected-list", "B-2");
     const { hass, callService } = makeHass({ lists: [BREAD, MILK], active: "A-1" });
     const card = await mount(hass);
     await click(card, "delete-list");
@@ -395,20 +395,20 @@ describe("deleting a list", () => {
     await click(card, "confirm-delete");
 
     expect(callService).toHaveBeenCalledWith(
-      "inkop",
+      "handla",
       "delete_list",
       { entity_id: "todo.ica_b-2" },
       undefined,
       false,
       false,
     );
-    expect(window.localStorage.getItem("inkop:selected-list")).toBeNull();
+    expect(window.localStorage.getItem("handla:selected-list")).toBeNull();
     expect(root(card).querySelector('[data-testid="confirm"]')).toBeNull();
     expect(select(card)).not.toBeNull();
   });
 
   it("deletes the fallback list when the saved choice no longer exists, leaving storage alone", async () => {
-    window.localStorage.setItem("inkop:selected-list", "GONE");
+    window.localStorage.setItem("handla:selected-list", "GONE");
     const { hass, callService } = makeHass({ lists: [BREAD, MILK], active: "B-2" });
     const card = await mount(hass);
     expect(select(card)?.value).toBe("B-2");
@@ -417,14 +417,14 @@ describe("deleting a list", () => {
     await click(card, "confirm-delete");
 
     expect(callService).toHaveBeenCalledWith(
-      "inkop",
+      "handla",
       "delete_list",
       { entity_id: "todo.ica_b-2" },
       undefined,
       false,
       false,
     );
-    expect(window.localStorage.getItem("inkop:selected-list")).toBe("GONE");
+    expect(window.localStorage.getItem("handla:selected-list")).toBe("GONE");
   });
 
   it("does nothing when cancelled", async () => {
@@ -541,8 +541,8 @@ describe("progress and errors from the integration", () => {
 });
 
 describe("items view inside the card", () => {
-  const itemsView = (card: InkopCard) =>
-    root(card).querySelector("inkop-items") as InkopItems | null;
+  const itemsView = (card: HandlaCard) =>
+    root(card).querySelector("handla-items") as HandlaItems | null;
 
   it("shows the items of the selected list under the picker", async () => {
     const card = await mount(makeHass({ lists: [BREAD, MILK], active: "B-2" }).hass);
@@ -562,7 +562,7 @@ describe("items view inside the card", () => {
     expect(itemsView(card)?.list?.offlineId).toBe("A-1");
   });
 
-  it("is not shown when there are no lists or Inköp is not running", async () => {
+  it("is not shown when there are no lists or Handla is not running", async () => {
     expect(itemsView(await mount(makeHass({ lists: [] }).hass))).toBeNull();
     expect(itemsView(await mount(makeHass().hass))).toBeNull();
   });

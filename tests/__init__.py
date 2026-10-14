@@ -1,1 +1,1 @@
-"""Tests for the Inköp integration."""
+"""Tests for the Handla integration."""

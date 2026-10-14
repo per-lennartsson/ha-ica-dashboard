@@ -1,8 +1,8 @@
-/** Calls to the Inköp services. Errors are thrown as Error with a readable message. */
+/** Calls to the Handla services. Errors are thrown as Error with a readable message. */
 
 import type { HomeAssistant } from "./types";
 
-const DOMAIN = "inkop";
+const DOMAIN = "handla";
 
 /** `hass.callService(..., returnResponse)` resolves to { context, response }. */
 export function responseOf(result: unknown): Record<string, unknown> {

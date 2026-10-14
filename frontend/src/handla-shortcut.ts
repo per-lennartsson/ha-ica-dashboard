@@ -3,13 +3,13 @@ import { localize, type TranslationKey } from "./i18n";
 import { readLists, resolveSelected } from "./lists";
 import { isDashboardPath, navigate } from "./navigate";
 import { loadSelectedList } from "./storage";
-import type { HomeAssistant, InkopShortcutConfig } from "./types";
+import type { HomeAssistant, HandlaShortcutConfig } from "./types";
 
 /**
  * A small card for the phone dashboard: how many items are left to buy, and (if a
  * navigation_path is configured) a tap opens the shopping view.
  */
-export class InkopShortcut extends LitElement {
+export class HandlaShortcut extends LitElement {
   static override properties = {
     hass: { attribute: false },
     _config: { state: true },
@@ -68,13 +68,13 @@ export class InkopShortcut extends LitElement {
   `;
 
   declare hass?: HomeAssistant;
-  declare _config?: InkopShortcutConfig;
+  declare _config?: HandlaShortcutConfig;
 
-  static getStubConfig(): Partial<InkopShortcutConfig> {
+  static getStubConfig(): Partial<HandlaShortcutConfig> {
     return {};
   }
 
-  setConfig(config: InkopShortcutConfig): void {
+  setConfig(config: HandlaShortcutConfig): void {
     if (typeof config !== "object" || config === null) {
       throw new Error(localize(this.hass?.language, "card.invalid_config"));
     }
@@ -151,15 +151,15 @@ export class InkopShortcut extends LitElement {
   }
 }
 
-if (!customElements.get("inkop-shortcut")) {
-  customElements.define("inkop-shortcut", InkopShortcut);
+if (!customElements.get("handla-shortcut")) {
+  customElements.define("handla-shortcut", HandlaShortcut);
 }
 
 window.customCards = window.customCards ?? [];
-if (!window.customCards.some((card) => card.type === "inkop-shortcut")) {
+if (!window.customCards.some((card) => card.type === "handla-shortcut")) {
   window.customCards.push({
-    type: "inkop-shortcut",
-    name: "Inköp: genväg",
+    type: "handla-shortcut",
+    name: "Handla: genväg",
     description: "Items left to buy, with a tap to open the shopping view",
   });
 }

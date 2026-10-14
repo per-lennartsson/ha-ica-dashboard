@@ -15,7 +15,7 @@ interface QueuedAdd {
  * The items of one list: add (Enter adds and the field keeps focus), quick-add buttons,
  * tick, remove and clear ticked. Added items are queued, so fast typing never loses one.
  */
-export class InkopItems extends LitElement {
+export class HandlaItems extends LitElement {
   static override properties = {
     hass: { attribute: false },
     list: { attribute: false },
@@ -619,6 +619,6 @@ export class InkopItems extends LitElement {
   }
 }
 
-if (!customElements.get("inkop-items")) {
-  customElements.define("inkop-items", InkopItems);
+if (!customElements.get("handla-items")) {
+  customElements.define("handla-items", HandlaItems);
 }

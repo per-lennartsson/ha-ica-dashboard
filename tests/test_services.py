@@ -12,15 +12,15 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.setup import async_setup_component
 
-from custom_components.inkop.const import DOMAIN
-from custom_components.inkop.coordinator import InkopCoordinator, Status
-from tests.conftest import ICA_ENTRY_ID, FakeIca, IcaConfigure, setup_inkop
+from custom_components.handla.const import DOMAIN
+from custom_components.handla.coordinator import HandlaCoordinator, Status
+from tests.conftest import ICA_ENTRY_ID, FakeIca, IcaConfigure, setup_handla
 
 
 @pytest.fixture(autouse=True)
 def fixed_today() -> Iterator[None]:
     with patch(
-        "custom_components.inkop.coordinator.dt_util.now",
+        "custom_components.handla.coordinator.dt_util.now",
         return_value=datetime(2026, 10, 14, 12, 0, tzinfo=UTC),
     ):
         yield
@@ -28,7 +28,7 @@ def fixed_today() -> Iterator[None]:
 
 @pytest.fixture
 def short_timeout() -> Iterator[None]:
-    with patch("custom_components.inkop.coordinator.LISTS_CHANGED_TIMEOUT", 0.05):
+    with patch("custom_components.handla.coordinator.LISTS_CHANGED_TIMEOUT", 0.05):
         yield
 
 
@@ -40,10 +40,12 @@ async def _create(hass: HomeAssistant, **data: Any) -> dict[str, Any]:
     return dict(result)
 
 
-async def _setup(hass: HomeAssistant, ica_dependency: IcaConfigure) -> InkopCoordinator:
+async def _setup(
+    hass: HomeAssistant, ica_dependency: IcaConfigure
+) -> HandlaCoordinator:
     ica_dependency()
-    entry = await setup_inkop(hass)
-    coordinator: InkopCoordinator = entry.runtime_data
+    entry = await setup_handla(hass)
+    coordinator: HandlaCoordinator = entry.runtime_data
     return coordinator
 
 
@@ -226,7 +228,7 @@ async def test_create_fails_when_ica_is_not_loaded(
 ) -> None:
     ica_entry = ica_dependency()
     assert ica_entry is not None
-    entry = await setup_inkop(hass)
+    entry = await setup_handla(hass)
     ica_entry.mock_state(hass, ConfigEntryState.NOT_LOADED)
 
     with pytest.raises(HomeAssistantError) as err:

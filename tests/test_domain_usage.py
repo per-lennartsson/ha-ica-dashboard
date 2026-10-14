@@ -2,7 +2,7 @@
 
 import pytest
 
-from custom_components.inkop.domain import (
+from custom_components.handla.domain import (
     DEFAULT_ICON,
     DEFAULT_QUICK_ITEMS,
     MAX_TRACKED,
