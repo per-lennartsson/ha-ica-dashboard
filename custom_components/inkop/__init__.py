@@ -5,7 +5,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
+from homeassistant.loader import async_get_integration
 
+from .card import async_register_card
 from .const import DOMAIN
 from .coordinator import InkopConfigEntry, InkopCoordinator
 from .dependency import (
@@ -38,6 +40,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: InkopConfigEntry) -> boo
             f"ha-ica-todo is not usable ({status.problem}); version {status.version}"
         )
     delete_dependency_issue(hass)
+
+    integration = await async_get_integration(hass, DOMAIN)
+    await async_register_card(hass, str(integration.version))
 
     coordinator = InkopCoordinator(hass, entry)
     await coordinator.async_start()

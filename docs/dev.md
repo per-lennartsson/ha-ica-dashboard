@@ -98,7 +98,38 @@ Notes for the check: the message follows the Home Assistant language (Swedish �
 
 ## Frontend tooling (Docker)
 
-Node is not installed on the host. All Node tooling runs in a Docker container. The exact `docker run` commands are added in plan step 1.7.
+Node is not installed on the host. Every Node command runs in a container through the wrapper `scripts/node.sh` (image `node:22-alpine`, the repository mounted at `/repo`, working directory `frontend/`, running as your user). Nothing is installed on the host; packages end up in `frontend/node_modules` (git-ignored).
+
+```bash
+./scripts/node.sh npm ci                 # install exactly what package-lock.json says
+./scripts/node.sh npm run format         # prettier --write
+./scripts/node.sh npm run lint           # eslint
+./scripts/node.sh npm run typecheck      # tsc --noEmit
+./scripts/node.sh npm run test           # vitest
+./scripts/node.sh npm run test:coverage  # vitest with coverage
+./scripts/node.sh npm run build          # builds custom_components/inkop/www/inkop-card.js
+```
+
+**Preview with mock data** (language and item-count buttons, no Home Assistant needed):
+
+```bash
+DOCKER_FLAGS="-p 5173:5173" ./scripts/node.sh npm run dev
+# then open http://localhost:5173 and stop with Ctrl+C
+```
+
+Adding or updating a package is an install: ask the maintainer first, then run for example `./scripts/node.sh npm install <package>` and commit `package.json` and `package-lock.json`.
+
+### How the card reaches Home Assistant
+
+`npm run build` writes `custom_components/inkop/www/inkop-card.js` (git-ignored for now; whether to commit it or attach it to releases is decided in plan step 1.11). When Inköp starts, `card.py` serves that file at `/inkop/inkop-card.js` and tells the frontend to load it in every dashboard, so **no Lovelace resource has to be added by hand**. If the file is missing, Inköp logs a warning and everything else keeps working.
+
+## Manual check: card loads (plan step 1.7)
+
+1. Build the card (above), then install `inkop` on your Home Assistant by copying `custom_components/inkop/` **including the `www/` folder** (see "Installing"), and restart.
+2. Open any dashboard in the browser and, in the developer tools, check that `/inkop/inkop-card.js?v=0.1.0` was loaded (status 200).
+3. Edit a dashboard → *Add card* → search for "Inköp": the card is listed. Add it (or use `type: custom:inkop-card`). It shows "Inköp", "Inköpskortet är laddat.", the number of items from `sensor.inkop_items_to_buy`, and the version.
+4. Switch your user profile language between Svenska and English: the card text follows.
+5. Check it on the phone in the companion app (it may need a refresh the first time: pull to refresh, or *Settings → Companion app → Troubleshooting → Reset frontend cache*).
 
 ## Python checks (local)
 

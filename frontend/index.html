@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Inköp: förhandsvisning</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 0;
+        padding: 16px;
+        background: #f4f4f5;
+      }
+      .controls {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 16px;
+      }
+      .card-host {
+        max-width: 480px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="controls" id="controls"></div>
+    <div class="card-host" id="host"></div>
+    <script type="module" src="/dev/main.ts"></script>
+  </body>
+</html>
