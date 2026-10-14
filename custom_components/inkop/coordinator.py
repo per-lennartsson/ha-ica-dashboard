@@ -25,11 +25,13 @@ from .domain import (
     default_list_name,
     entity_for,
     event_mentions,
+    parse_item_text,
     pick_active,
     same_id,
     title_from_name,
 )
 from .events import ListsChangedWaiter
+from .usage import UsageTracker
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -81,6 +83,7 @@ class InkopCoordinator(DataUpdateCoordinator[InkopData]):
             hass, STORAGE_VERSION, f"{DOMAIN}.active_list"
         )
         self._preferred: str | None = None
+        self.usage = UsageTracker(hass)
         self.status = Status.IDLE
         self.status_detail: str | None = None
 
@@ -88,8 +91,10 @@ class InkopCoordinator(DataUpdateCoordinator[InkopData]):
         """Load the saved active list, compute data and start listening."""
         stored = await self._store.async_load()
         self._preferred = stored.get("offline_id") if stored else None
+        await self.usage.async_load()
         self.data = self._compute()
         entry = self.config_entry
+        entry.async_on_unload(self.usage.async_flush)
         entry.async_on_unload(
             self.hass.bus.async_listen(
                 er.EVENT_ENTITY_REGISTRY_UPDATED, self._on_registry_event
@@ -166,6 +171,13 @@ class InkopCoordinator(DataUpdateCoordinator[InkopData]):
     @callback
     def _on_lists_changed(self, event: Event) -> None:
         self._recompute()
+
+    # --- usage statistics ----------------------------------------------------
+
+    def record_added(self, item_text: str) -> None:
+        """Count an item that was added through Inköp (quantity and unit ignored)."""
+        self.usage.record(parse_item_text(item_text).name)
+        self.async_update_listeners()
 
     # --- active list ---------------------------------------------------------
 

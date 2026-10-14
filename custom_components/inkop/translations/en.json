@@ -50,6 +50,9 @@
           "deleting": "Deleting list",
           "error": "Error"
         }
+      },
+      "frequent_items": {
+        "name": "Frequent items"
       }
     }
   },
@@ -149,6 +152,16 @@
         "entity_id": {
           "name": "List",
           "description": "The ICA list. Defaults to the active list."
+        }
+      }
+    },
+    "get_top_items": {
+      "name": "Get frequent items",
+      "description": "Return the items added most often, with icons, for quick-add buttons.",
+      "fields": {
+        "limit": {
+          "name": "Limit",
+          "description": "How many items to return."
         }
       }
     }

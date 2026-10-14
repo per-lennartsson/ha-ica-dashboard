@@ -7,7 +7,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from . import shopping
-from .const import DOMAIN
+from .const import DOMAIN, QUICK_ADD_LIMIT
 from .coordinator import InkopCoordinator
 
 try:  # Home Assistant 2026.10+ validates with probatio
@@ -42,6 +42,13 @@ REMOVE_ITEM_SCHEMA = vol.Schema(
     {vol.Optional("entity_id"): cv.entity_id, vol.Required("item"): cv.string}
 )
 CLEAR_TICKED_SCHEMA = vol.Schema({vol.Optional("entity_id"): cv.entity_id})
+GET_TOP_ITEMS_SCHEMA = vol.Schema(
+    {
+        vol.Optional("limit", default=QUICK_ADD_LIMIT): vol.All(
+            vol.Coerce(int), vol.Range(min=1, max=50)
+        )
+    }
+)
 
 
 def _coordinator(hass: HomeAssistant) -> InkopCoordinator:
@@ -69,10 +76,17 @@ def async_register_services(hass: HomeAssistant) -> None:
         return await _coordinator(hass).async_delete_list(call.data["entity_id"])
 
     async def add_item(call: ServiceCall) -> dict[str, Any]:
-        target = _coordinator(hass).resolve_list(call.data.get("entity_id"))
-        return await shopping.async_add_item(
+        coordinator = _coordinator(hass)
+        target = coordinator.resolve_list(call.data.get("entity_id"))
+        result = await shopping.async_add_item(
             hass, target, call.data["item"], call.data["confirm_duplicate"]
         )
+        if result["added"]:
+            coordinator.record_added(result["item"])
+        return result
+
+    async def get_top_items(call: ServiceCall) -> dict[str, Any]:
+        return {"items": _coordinator(hass).usage.top(call.data["limit"])}
 
     async def tick_item(call: ServiceCall) -> dict[str, Any]:
         target = _coordinator(hass).resolve_list(call.data.get("entity_id"))
@@ -102,6 +116,13 @@ def async_register_services(hass: HomeAssistant) -> None:
             supports_response=SupportsResponse.OPTIONAL,
         )
 
+    hass.services.async_register(
+        DOMAIN,
+        "get_top_items",
+        get_top_items,
+        schema=GET_TOP_ITEMS_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
+    )
     hass.services.async_register(
         DOMAIN, "set_active_list", set_active_list, schema=SET_ACTIVE_LIST_SCHEMA
     )

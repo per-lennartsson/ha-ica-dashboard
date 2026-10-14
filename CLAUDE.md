@@ -94,11 +94,12 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 │   ├── events.py            # collects ica_lists_changed events
 │   ├── services.py, services.yaml
 │   ├── shopping.py          # add / tick / remove / clear items on a list
+│   ├── usage.py             # persistent add counts (quick-add data)
 │   ├── todo_api.py          # thin wrappers around Home Assistant's todo.* services
 │   ├── entity.py, select.py, sensor.py
 │   ├── const.py
 │   └── domain/              # pure logic, no Home Assistant imports
-│       ├── items.py, duplicates.py, naming.py, lists.py, todo_items.py, versions.py
+│       ├── items.py, duplicates.py, naming.py, lists.py, todo_items.py, usage.py, icons.py, versions.py
 ├── tests/                   # pytest, mocked ICA and AI (conftest.py has FakeIca)
 ├── docs/                    # ica-contract.md, dev.md
 ├── .github/workflows/ci.yaml
@@ -106,7 +107,7 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 └── frontend/                # Lit card (TypeScript), added in step 1.7
 ```
 
-> Later: `notify.py` (1.6), usage statistics (1.5), `ai/` (Phase 2).
+> Later: `notify.py` (1.6), `ai/` (Phase 2).
 
 ## Setup
 
