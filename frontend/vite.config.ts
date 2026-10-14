@@ -7,7 +7,7 @@ export default defineConfig({
   },
   build: {
     lib: {
-      entry: "src/inkop-card.ts",
+      entry: "src/index.ts",
       formats: ["es"],
       fileName: () => "inkop-card.js",
     },

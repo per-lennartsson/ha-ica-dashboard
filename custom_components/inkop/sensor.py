@@ -37,6 +37,7 @@ class ItemCountSensor(SensorEntity, InkopEntity):
     """Number of items still to buy on the active list."""
 
     _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_icon = "mdi:cart-outline"  # also used when shown as a dashboard badge
 
     def __init__(self, coordinator: InkopCoordinator) -> None:
         super().__init__(coordinator, "items")

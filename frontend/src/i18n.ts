@@ -44,6 +44,13 @@ export const sv = {
   "action.failed": "Kunde inte uppdatera listan: {message}",
   "quick.label": "Vanliga varor",
   "common.dismiss": "Stäng",
+  "shortcut.to_buy": "att handla",
+  "shortcut.unknown": "Okänt antal",
+  "shortcut.not_running": "Inköp körs inte",
+  "shortcut.no_list": "Ingen lista",
+  "shortcut.aria": "{count} att handla på {title}",
+  "shortcut.aria_open": "{count} att handla på {title}. Öppna inköpslistan.",
+  "shortcut.invalid_path": "navigation_path måste börja med / (till exempel /lovelace/inkop).",
 } as const;
 
 export type TranslationKey = keyof typeof sv;
@@ -92,6 +99,13 @@ export const en: Record<TranslationKey, string> = {
   "action.failed": "Could not update the list: {message}",
   "quick.label": "Frequent items",
   "common.dismiss": "Dismiss",
+  "shortcut.to_buy": "to buy",
+  "shortcut.unknown": "Unknown count",
+  "shortcut.not_running": "Inköp is not running",
+  "shortcut.no_list": "No list",
+  "shortcut.aria": "{count} to buy on {title}",
+  "shortcut.aria_open": "{count} to buy on {title}. Open the shopping list.",
+  "shortcut.invalid_path": "navigation_path must start with / (for example /lovelace/inkop).",
 };
 
 /** Swedish for Swedish (and when no language is known), English for everything else. */

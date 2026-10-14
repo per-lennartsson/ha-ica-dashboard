@@ -28,6 +28,13 @@ export interface HomeAssistant {
   ): Promise<unknown>;
 }
 
+export interface InkopShortcutConfig {
+  type: string;
+  title?: string;
+  /** Dashboard path to open when tapped, e.g. /lovelace/inkop. Without it the card is a plain count. */
+  navigation_path?: string;
+}
+
 export interface InkopCardConfig {
   type: string;
   title?: string;
