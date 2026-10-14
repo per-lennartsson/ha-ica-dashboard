@@ -232,9 +232,11 @@ def mock_storage(hass_storage: dict[str, Any]) -> dict[str, Any]:
     return hass_storage
 
 
-async def setup_inkop(hass: HomeAssistant) -> MockConfigEntry:
+async def setup_inkop(
+    hass: HomeAssistant, options: dict[str, Any] | None = None
+) -> MockConfigEntry:
     """Add and set up an Inköp config entry (ICA must be faked first)."""
-    entry = MockConfigEntry(domain="inkop")
+    entry = MockConfigEntry(domain="inkop", options=options or {})
     entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()

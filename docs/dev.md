@@ -74,6 +74,20 @@ Record anything surprising (especially how ICA treats the text) in `plan.md`.
 3. Restart Home Assistant. The counts are still there.
 4. Look at the icons for your most common groceries. Tell me which look wrong or are missing (the mapping is a small keyword list in `domain/icons.py`). The names are unverified against the Material Design Icons set until the card shows them (step 1.9).
 
+## Manual check: notifications (plan step 1.6)
+
+Needs two Home Assistant users, each with the companion app on their phone (so `notify.mobile_app_<phone>` services exist).
+
+1. **Options:** *Settings → Devices & services → Inköp → Configure*. Choose both users, then pick each user's `mobile_app_...` service. Saving should end without errors.
+2. **Other user is told:** as user A (for example in the Home Assistant app), run `inkop.add_item` with `item: mjölk`. About 20 seconds later user B's phone shows "A lade till mjölk i <lista>". User A gets nothing.
+3. **Batching:** as user A add `ägg`, `smör` and `bröd` quickly. User B gets **one** message listing all three.
+4. **Both ways:** repeat as user B; user A is told, B is not.
+5. **Event:** in *Developer tools → Events*, listen to `inkop_item_added` and add an item: the event shows the item, list and who added it.
+6. **Automation:** run `inkop.add_item` from *Developer tools → Actions* while logged in, and from an automation. Check who gets told in each case (an automation has no user, so everyone is told).
+7. **Off:** configure again with nobody selected. Adding items sends nothing.
+
+Notes for the check: the message follows the Home Assistant language (Swedish → "Embla lade till ..."). Tapping a notification does not open the shopping view yet; that comes with the card (steps 1.9 and 1.10).
+
 ## Rules for testing against the real ICA account
 
 - Automated tests never use a real ICA account. Mocks only.

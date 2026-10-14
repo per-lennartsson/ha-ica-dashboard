@@ -88,18 +88,20 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 ├── custom_components/inkop/
 │   ├── manifest.json, strings.json, translations/   # sv + en
 │   ├── __init__.py          # setup, services registration
-│   ├── config_flow.py       # single-step flow, ICA dependency check
+│   ├── config_flow.py       # setup flow (ICA dependency check) + options flow (who is notified)
 │   ├── dependency.py        # checks ha-ica-todo (installed, version, loaded), repair issue
 │   ├── coordinator.py       # event-driven: ICA lists, active list, create/delete flows
 │   ├── events.py            # collects ica_lists_changed events
 │   ├── services.py, services.yaml
 │   ├── shopping.py          # add / tick / remove / clear items on a list
 │   ├── usage.py             # persistent add counts (quick-add data)
+│   ├── notify.py            # batched "someone added items" notifications, inkop_item_added event
+│   ├── schema.py            # probatio (HA 2026.10+) or voluptuous
 │   ├── todo_api.py          # thin wrappers around Home Assistant's todo.* services
 │   ├── entity.py, select.py, sensor.py
 │   ├── const.py
 │   └── domain/              # pure logic, no Home Assistant imports
-│       ├── items.py, duplicates.py, naming.py, lists.py, todo_items.py, usage.py, icons.py, versions.py
+│       ├── items.py, duplicates.py, naming.py, lists.py, todo_items.py, usage.py, icons.py, notify.py, versions.py
 ├── tests/                   # pytest, mocked ICA and AI (conftest.py has FakeIca)
 ├── docs/                    # ica-contract.md, dev.md
 ├── .github/workflows/ci.yaml
@@ -107,7 +109,7 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 └── frontend/                # Lit card (TypeScript), added in step 1.7
 ```
 
-> Later: `notify.py` (1.6), `ai/` (Phase 2).
+> Later: `ai/` (Phase 2).
 
 ## Setup
 

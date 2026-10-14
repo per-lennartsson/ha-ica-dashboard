@@ -9,7 +9,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.setup import async_setup_component
 
 from custom_components.inkop.const import DOMAIN
-from custom_components.inkop.services import vol
+from custom_components.inkop.schema import vol
 from tests.conftest import FakeIca, FakeTodo, IcaConfigure, setup_inkop
 
 STORE_KEY = f"{DOMAIN}.usage"
