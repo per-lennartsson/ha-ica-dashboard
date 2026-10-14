@@ -7,7 +7,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
-from .card import async_register_card
+from .card import async_register_card, async_unregister_resource
 from .const import DOMAIN
 from .coordinator import HandlaConfigEntry, HandlaCoordinator
 from .dependency import (
@@ -57,5 +57,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: HandlaConfigEntry) -> b
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: HandlaConfigEntry) -> None:
-    """Clean up the repair issue when the integration is removed."""
+    """Clean up the repair issue and the card's dashboard resource."""
     delete_dependency_issue(hass)
+    await async_unregister_resource(hass)

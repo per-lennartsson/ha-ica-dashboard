@@ -4,9 +4,16 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from homeassistant.components.lovelace.resources import ResourceStorageCollection
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
+from homeassistant.setup import async_setup_component
 
-from custom_components.handla.card import CARD_URL, async_register_card
+from custom_components.handla.card import (
+    CARD_URL,
+    async_register_card,
+    async_unregister_resource,
+)
 from custom_components.handla.const import DOMAIN
 from tests.conftest import IcaConfigure, setup_handla
 
@@ -112,3 +119,118 @@ async def test_setup_works_without_a_built_card(
         entry = await setup_handla(hass)
 
     assert entry.state.value == "loaded"
+
+
+@pytest.fixture
+async def lovelace(hass: HomeAssistant) -> ResourceStorageCollection:
+    assert await async_setup_component(hass, "lovelace", {})
+    # Setting up lovelace brings the real web server; the card tests use a stub
+    hass.http = MagicMock()  # type: ignore[assignment]
+    hass.http.async_register_static_paths = AsyncMock()
+    resources = hass.data["lovelace"].resources
+    assert isinstance(resources, ResourceStorageCollection)
+    return resources
+
+
+async def _register(hass: HomeAssistant, card_file: Path, version: str) -> bool:
+    hass.data.pop(DOMAIN, None)
+    with patch("custom_components.handla.card.CARD_FILE", card_file):
+        return await async_register_card(hass, version)
+
+
+async def test_card_becomes_a_dashboard_resource(
+    hass: HomeAssistant,
+    card_file: Path,
+    web_server: MagicMock,
+    extra_js: MagicMock,
+    lovelace: ResourceStorageCollection,
+) -> None:
+    assert await _register(hass, card_file, "0.1.0")
+
+    (item,) = lovelace.async_items()
+    assert item["url"] == f"{CARD_URL}?v=0.1.0"
+    assert item["type"] == "module"
+    extra_js.assert_not_called()
+
+
+async def test_a_new_version_updates_the_resource_instead_of_adding_one(
+    hass: HomeAssistant,
+    card_file: Path,
+    web_server: MagicMock,
+    extra_js: MagicMock,
+    lovelace: ResourceStorageCollection,
+) -> None:
+    await _register(hass, card_file, "0.1.0")
+    await _register(hass, card_file, "0.2.0")
+
+    (item,) = lovelace.async_items()
+    assert item["url"] == f"{CARD_URL}?v=0.2.0"
+
+
+async def test_a_resource_added_by_hand_is_not_duplicated(
+    hass: HomeAssistant,
+    card_file: Path,
+    web_server: MagicMock,
+    extra_js: MagicMock,
+    lovelace: ResourceStorageCollection,
+) -> None:
+    await lovelace.async_create_item({"res_type": "module", "url": CARD_URL})
+
+    assert await _register(hass, card_file, "0.1.0")
+
+    (item,) = lovelace.async_items()
+    assert item["url"] == CARD_URL
+
+
+async def test_a_failing_resource_write_falls_back_to_the_extra_script(
+    hass: HomeAssistant,
+    card_file: Path,
+    web_server: MagicMock,
+    extra_js: MagicMock,
+    lovelace: ResourceStorageCollection,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    with patch.object(
+        lovelace, "async_create_item", side_effect=HomeAssistantError("disk full")
+    ):
+        assert await _register(hass, card_file, "0.1.0")
+
+    assert "disk full" in caplog.text
+    extra_js.assert_called_once_with(hass, f"{CARD_URL}?v=0.1.0")
+
+
+async def test_removing_the_integration_removes_the_resource(
+    hass: HomeAssistant,
+    card_file: Path,
+    web_server: MagicMock,
+    extra_js: MagicMock,
+    lovelace: ResourceStorageCollection,
+) -> None:
+    await _register(hass, card_file, "0.1.0")
+
+    await async_unregister_resource(hass)
+
+    assert lovelace.async_items() == []
+
+
+async def test_removing_does_nothing_without_storage_resources(
+    hass: HomeAssistant,
+) -> None:
+    await async_unregister_resource(hass)
+
+
+async def test_a_failing_resource_delete_is_logged(
+    hass: HomeAssistant,
+    card_file: Path,
+    web_server: MagicMock,
+    extra_js: MagicMock,
+    lovelace: ResourceStorageCollection,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    await _register(hass, card_file, "0.1.0")
+    with patch.object(
+        lovelace, "async_delete_item", side_effect=HomeAssistantError("locked")
+    ):
+        await async_unregister_resource(hass)
+
+    assert "locked" in caplog.text
