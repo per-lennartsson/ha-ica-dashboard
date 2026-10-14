@@ -7,7 +7,29 @@
       }
     },
     "abort": {
-      "single_instance_allowed": "Inköp är redan konfigurerat. Endast en instans tillåts."
+      "single_instance_allowed": "Inköp är redan konfigurerat. Endast en instans tillåts.",
+      "ica_missing": "ICA-integrationen (ha-ica-todo) är inte installerad. Installera version {minimum} eller senare från https://github.com/per-lennartsson/ha-ica-todo och starta om Home Assistant.",
+      "ica_too_old": "ICA-integrationen (ha-ica-todo) version {version} är för gammal. Version {minimum} eller senare krävs. Uppdatera den i HACS och starta om Home Assistant.",
+      "ica_not_configured": "ICA-integrationen (ha-ica-todo) är installerad men inte konfigurerad. Lägg till den under Inställningar → Enheter och tjänster och försök igen.",
+      "ica_not_loaded": "ICA-integrationen (ha-ica-todo) är konfigurerad men inte laddad. Kontrollera dess status under Inställningar → Enheter och tjänster samt loggarna och försök igen."
+    }
+  },
+  "issues": {
+    "ica_missing": {
+      "title": "ICA-integrationen saknas",
+      "description": "Inköp kräver ICA-integrationen (ha-ica-todo) version {minimum} eller senare, men den är inte installerad. Installera den från https://github.com/per-lennartsson/ha-ica-todo och starta om Home Assistant."
+    },
+    "ica_too_old": {
+      "title": "ICA-integrationen är för gammal",
+      "description": "Inköp kräver ICA-integrationen (ha-ica-todo) version {minimum} eller senare, men version {version} är installerad. Uppdatera den i HACS och starta om Home Assistant."
+    },
+    "ica_not_configured": {
+      "title": "ICA-integrationen är inte konfigurerad",
+      "description": "Inköp kräver ICA-integrationen (ha-ica-todo). Den är installerad men inte konfigurerad. Lägg till den under Inställningar → Enheter och tjänster."
+    },
+    "ica_not_loaded": {
+      "title": "ICA-integrationen är inte laddad",
+      "description": "Inköp kräver ICA-integrationen (ha-ica-todo), som är konfigurerad men inte laddad. Kontrollera dess status under Inställningar → Enheter och tjänster samt loggarna. Inköp försöker igen automatiskt."
     }
   }
 }

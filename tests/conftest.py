@@ -1,12 +1,18 @@
 """Shared fixtures: a fake ICA integration (todo entities + ica services)."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import ExitStack
 from dataclasses import dataclass, field
+from types import SimpleNamespace
 from typing import Any
+from unittest.mock import AsyncMock, patch
 
 import pytest
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
 from homeassistant.helpers import entity_registry as er
+from homeassistant.loader import IntegrationNotFound
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 pytest_plugins = "pytest_homeassistant_custom_component"
 
@@ -76,3 +82,40 @@ def fake_ica(hass: HomeAssistant) -> FakeIca:
             supports_response=SupportsResponse.OPTIONAL,
         )
     return fake
+
+
+IcaConfigure = Callable[..., None]
+
+
+@pytest.fixture
+def ica_dependency(hass: HomeAssistant) -> Iterator[IcaConfigure]:
+    """Fake the ha-ica-todo dependency. Nothing is faked until the result is called.
+
+    Call it exactly once per test. With no arguments ICA is ready (v0.10.0, loaded);
+    otherwise e.g. `ica_dependency(version="v0.9.0")`, `ica_dependency(installed=False)`
+    or `ica_dependency(entry_state=None)` for "installed but not set up".
+    """
+    with ExitStack() as stack:
+        configured = False
+
+        def configure(
+            *,
+            installed: bool = True,
+            version: str | None = "v0.10.0",
+            entry_state: ConfigEntryState | None = ConfigEntryState.LOADED,
+        ) -> None:
+            nonlocal configured
+            assert not configured, "configure the ICA dependency only once per test"
+            configured = True
+            if installed:
+                manifest = {"version": version} if version is not None else {}
+                find = AsyncMock(return_value=SimpleNamespace(manifest=manifest))
+            else:
+                find = AsyncMock(side_effect=IntegrationNotFound("ica"))
+            stack.enter_context(
+                patch("custom_components.inkop.dependency.async_get_integration", find)
+            )
+            if entry_state is not None:
+                MockConfigEntry(domain=ICA_DOMAIN, state=entry_state).add_to_hass(hass)
+
+        yield configure

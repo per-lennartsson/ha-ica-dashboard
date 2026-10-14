@@ -32,11 +32,11 @@ Do not install both options at once. Remove the folder, or the HACS install, bef
 
 ## Checking that it loaded
 
-1. *Settings → Devices & services → Add integration → Inköp*, confirm. It is a single-instance integration, so a second attempt is refused.
+1. *Settings → Devices & services → Add integration → Inköp*, confirm. It is a single-instance integration, so a second attempt is refused. If `ha-ica-todo` is missing, older than v0.10.0, not set up or not loaded, the dialog stops with a message saying which (Swedish or English, depending on your language).
 2. The entry should show as loaded with no errors. In *Settings → System → Logs* there is a normal warning that `inkop` is a custom integration, and **no errors** mentioning `inkop`.
 3. To clean up: remove the Inköp entry from *Devices & services*.
 
-(The config flow is minimal until plan step 1.2 adds the `ha-ica-todo` check.)
+4. To see the dependency check fail on purpose, disable the ICA integration (*Devices & services → ICA → ⋮ → Disable*) and try to add Inköp. Re-enable ICA afterwards. If Inköp is already added and ICA is not usable at startup, Inköp waits and retries, and *Settings → System → Repairs* shows an issue until ICA is back.
 
 ## Rules for testing against the real ICA account
 
