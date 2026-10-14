@@ -125,8 +125,8 @@ Requires `ha-ica-todo` installed and configured in Home Assistant (HACS custom r
 ## Run
 
 Development needs no running Home Assistant: tests use an in-process HA core and mocks.
-Manual checks run on the maintainer's own HA (install a branch via HACS). TODO: see `docs/dev.md` once written.
-TODO: mock-data dev page command for the card (in Docker).
+Manual checks run on the maintainer's own HA with `ha-ica-todo >= v0.10.0`. How to install a branch or release, how to check that it loaded, and the rules for throwaway ICA lists are in `docs/dev.md`.
+TODO: mock-data dev page command for the card (in Docker, step 1.7).
 
 ## Test
 

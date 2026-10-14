@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Inköp",
+        "description": "Lägg till Inköp, inköpslistor ovanpå ICA-integrationen."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Inköp är redan konfigurerat. Endast en instans tillåts."
+    }
+  }
+}

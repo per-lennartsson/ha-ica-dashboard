@@ -3,11 +3,12 @@
   "name": "Inköp",
   "after_dependencies": ["ica"],
   "codeowners": ["@per-lennartsson"],
-  "config_flow": false,
+  "config_flow": true,
   "documentation": "https://github.com/per-lennartsson/ha-ica-dashboard",
   "integration_type": "service",
   "iot_class": "calculated",
   "issue_tracker": "https://github.com/per-lennartsson/ha-ica-dashboard/issues",
   "requirements": [],
+  "single_config_entry": true,
   "version": "0.1.0"
 }
