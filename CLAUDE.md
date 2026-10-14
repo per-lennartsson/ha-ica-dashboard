@@ -93,10 +93,12 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 │   ├── coordinator.py       # event-driven: ICA lists, active list, create/delete flows
 │   ├── events.py            # collects ica_lists_changed events
 │   ├── services.py, services.yaml
+│   ├── shopping.py          # add / tick / remove / clear items on a list
+│   ├── todo_api.py          # thin wrappers around Home Assistant's todo.* services
 │   ├── entity.py, select.py, sensor.py
 │   ├── const.py
 │   └── domain/              # pure logic, no Home Assistant imports
-│       ├── items.py, duplicates.py, naming.py, lists.py, versions.py
+│       ├── items.py, duplicates.py, naming.py, lists.py, todo_items.py, versions.py
 ├── tests/                   # pytest, mocked ICA and AI (conftest.py has FakeIca)
 ├── docs/                    # ica-contract.md, dev.md
 ├── .github/workflows/ci.yaml

@@ -37,3 +37,74 @@ delete_list:
             domain: todo
           exclude_entities:
             - todo.ica_favorite_articles
+
+add_item:
+  fields:
+    entity_id:
+      required: false
+      selector:
+        entity:
+          filter:
+            integration: ica
+            domain: todo
+          exclude_entities:
+            - todo.ica_favorite_articles
+    item:
+      required: true
+      example: "2 st gurka"
+      selector:
+        text:
+    confirm_duplicate:
+      required: false
+      default: false
+      selector:
+        boolean:
+
+tick_item:
+  fields:
+    entity_id:
+      required: false
+      selector:
+        entity:
+          filter:
+            integration: ica
+            domain: todo
+          exclude_entities:
+            - todo.ica_favorite_articles
+    item:
+      required: true
+      selector:
+        text:
+    ticked:
+      required: false
+      default: true
+      selector:
+        boolean:
+
+remove_item:
+  fields:
+    entity_id:
+      required: false
+      selector:
+        entity:
+          filter:
+            integration: ica
+            domain: todo
+          exclude_entities:
+            - todo.ica_favorite_articles
+    item:
+      required: true
+      selector:
+        text:
+
+clear_ticked:
+  fields:
+    entity_id:
+      required: false
+      selector:
+        entity:
+          filter:
+            integration: ica
+            domain: todo
+          exclude_entities:
+            - todo.ica_favorite_articles

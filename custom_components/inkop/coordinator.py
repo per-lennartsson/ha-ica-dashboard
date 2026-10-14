@@ -189,6 +189,17 @@ class InkopCoordinator(DataUpdateCoordinator[InkopData]):
         await self._store.async_save({"offline_id": offline_id})
         self._recompute()
 
+    def resolve_list(self, entity_id: str | None) -> ListInfo:
+        """The list a service call refers to: the given one, else the active one."""
+        if entity_id:
+            return self._list_by_entity(entity_id)
+        active = self.data.active
+        if active is None:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="no_list"
+            )
+        return active
+
     def _list_by_entity(self, entity_id: str) -> ListInfo:
         for item in self.data.lists:
             if item.entity_id == entity_id:

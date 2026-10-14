@@ -12,6 +12,7 @@ from .lists import (
     unique_labels,
 )
 from .naming import SWEDISH_MONTHS, default_list_name
+from .todo_items import TodoItem, duplicate_items, resolve_items
 from .versions import is_version_at_least, parse_version
 
 __all__ = [
@@ -19,7 +20,9 @@ __all__ = [
     "UNITS",
     "ListInfo",
     "ParsedItem",
+    "TodoItem",
     "default_list_name",
+    "duplicate_items",
     "entity_for",
     "event_mentions",
     "find_duplicates",
@@ -29,6 +32,7 @@ __all__ = [
     "parse_item_text",
     "parse_version",
     "pick_active",
+    "resolve_items",
     "same_id",
     "title_from_name",
     "unique_labels",

@@ -58,9 +58,11 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 - Decisions: (1) the active list is shared by the household and lives in the integration (select + `inkop.set_active_list`, saved across restarts); a user's own choice in the card stays in the browser (1.8). (2) With several ICA accounts the first loaded one is used. (3) Wait for `ica_lists_changed` at most 30 s (`LISTS_CHANGED_TIMEOUT`); a missing entity in the event counts as failure. (4) One create/delete at a time; a second call is refused (`busy`). (5) Entities: `select` active list, `sensor` items to buy (open items on the active list), `sensor` status (idle/creating/deleting/error). (6) Service schemas use `probatio` when available (Home Assistant 2026.10+) and fall back to `voluptuous`.
 
 ### 1.4 Add, duplicate check, remove, clear (L)
-- [ ] Services: `inkop.add_item` (returns duplicate info instead of adding when `confirm_duplicate` is false), `inkop.remove_item`, `inkop.tick_item`, `inkop.clear_ticked`.
-- [ ] Text goes in service data (never state; 255-char limit).
-- **Verify:** tests for add, duplicate flow (case-insensitive), remove, tick, clear; manual round-trip against the throwaway list in the ICA app.
+- [x] Services: `inkop.add_item` (returns duplicate info instead of adding when `confirm_duplicate` is false), `inkop.remove_item`, `inkop.tick_item`, `inkop.clear_ticked`.
+- [x] Text goes in service data (never state; 255-char limit).
+- **Verify (automated, done):** 221 tests pass, 100% coverage of `custom_components/inkop`; two deliberate breakages (ticked items counted as duplicates; confirmation ignored) were caught by the tests. Covered: add to active or explicit list, text normalisation, duplicates (case-insensitive, quantity ignored, ticked items ignored), confirm, empty text, no list, unknown list, list unavailable, failures from `todo.*`, tick/untick by uid or text (prefers the open item), ambiguity, identical entries, remove, clear.
+- **Verify (Manual, real HA, not yet done):** follow "Manual check: items" in `docs/dev.md` against a throwaway list in the ICA app.
+- Decisions: (1) only **open** items count as duplicates; something already bought may be wanted again. (2) A duplicate is the same name, ignoring case, spaces, quantity and unit. (3) `inkop.add_item` answers `added: false` + `duplicates` (no error) so the card can ask "finns redan – lägga till igen?" and call again with `confirm_duplicate: true`. (4) Items are found by uid, then exact text, then same name; ambiguous matches are refused with the candidates listed (the card uses uids). (5) All writes go through Home Assistant's `todo.*` services, never the ICA API. (6) Who added an item (for notifications) is added in 1.6 from the service-call context.
 
 ### 1.5 Usage statistics and quick-add (M)
 - [ ] Persist per-item add counts (HA `Store`); service/sensor exposes the top N items.
@@ -151,6 +153,7 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 |------|------|--------|
 | 2026-10-13 | 0.1 (update) | ha-ica-todo changes made on branch `list-events-and-metadata` (`c2fe1f1`, v0.10.0): `ica_lists_changed`, `ica_list_items_changed`, list entity attributes, fork metadata. Contract and plan updated; minimum version now `>= v0.10.0`. Review notes: event fires also on reload failure; item-change event has no user; removed fields not reported. |
 | 2026-10-13 | env | Upgraded dev env to Python 3.14.8 (Homebrew) and HA 2026.10.1 / pytest-homeassistant-custom-component 0.13.372. Checks green. `ai_task` is now testable. |
+| 2026-10-14 | 1.4 | Items implemented: `inkop.add_item` / `tick_item` / `remove_item` / `clear_ticked`, pure `domain/todo_items.py`, `todo_api.py`, `shopping.py`; 221 tests, 100% coverage. Manual check on the real HA pending. |
 | 2026-10-14 | 1.3 | Lists implemented: coordinator, `inkop.create_list` / `delete_list` / `set_active_list`, select + 2 sensors; 184 tests, 100% coverage. Manual check on the real HA (reload time!) pending. |
 | 2026-10-14 | 1.2 | Dependency check implemented (flow + setup + repair issue), 126 tests green. Manual check on the real HA pending. |
 | 2026-10-14 | 1.1 | Domain logic done: `domain/items.py`, `duplicates.py`, `naming.py`; 78 tests, 100% coverage of `domain/`. |
