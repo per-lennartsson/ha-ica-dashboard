@@ -37,9 +37,10 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 ## Phase 1: Core (no AI)
 
 ### 1.1 Pure domain logic (M)
-- [ ] `domain/` package: item text parsing and formatting (quantity, unit, name per the ICA rules), case-insensitive duplicate detection, default list name ("Att handla <dag> <månad>", "(2)", "(3)").
-- [ ] Unit tests including: comma decimals, ranges "2–3", whole-word units, Swedish month/day names, name collisions.
-- **Verify:** unit tests pass with no HA dependency; coverage of `domain/` ≥ 90%.
+- [x] `domain/` package: item text parsing and formatting (quantity, unit, name per the ICA rules), case-insensitive duplicate detection, default list name ("Att handla <dag> <månad>", "(2)", "(3)").
+- [x] Unit tests including: comma decimals, ranges "2–3", whole-word units, Swedish month/day names, name collisions.
+- **Verify (done):** 78 tests pass; `domain/` coverage 100% (`pytest --cov=custom_components/inkop/domain`); an AST test checks that `domain/` never imports Home Assistant. Parser checked against ha-ica-todo's regex on 27 inputs: identical except bare `12` / `1,5`, which ha-ica-todo splits into quantity 1 + name `2` / `,5` (bug; inkop keeps them as plain names).
+- Decisions: a duplicate is a same normalized name (case and whitespace-insensitive), quantity and unit ignored, no plural matching. Default list name is "Att handla <dagens datum> <månad>", e.g. "Att handla 14 oktober" (day of month, not weekday).
 
 ### 1.2 Config flow and dependency check (M)
 - [ ] Config flow: single instance; aborts with clear Swedish/English message if `ha-ica-todo` is missing, not loaded, or below the minimum version (`v0.10.0`, see `docs/ica-contract.md`).
@@ -146,6 +147,7 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 |------|------|--------|
 | 2026-10-13 | 0.1 (update) | ha-ica-todo changes made on branch `list-events-and-metadata` (`c2fe1f1`, v0.10.0): `ica_lists_changed`, `ica_list_items_changed`, list entity attributes, fork metadata. Contract and plan updated; minimum version now `>= v0.10.0`. Review notes: event fires also on reload failure; item-change event has no user; removed fields not reported. |
 | 2026-10-13 | env | Upgraded dev env to Python 3.14.8 (Homebrew) and HA 2026.10.1 / pytest-homeassistant-custom-component 0.13.372. Checks green. `ai_task` is now testable. |
+| 2026-10-14 | 1.1 | Domain logic done: `domain/items.py`, `duplicates.py`, `naming.py`; 78 tests, 100% coverage of `domain/`. |
 | 2026-10-14 | 0.4 | Manual verification on the real HA: `inkop` installed and worked. Docs and minimal config flow merged (`7a33bf1`). |
 | 2026-10-13 | 0.2 | Skeleton + tooling done. ruff, mypy and 2 smoke tests green. Dev env: Python 3.13.1 resolves HA 2025.4.4 (not 2026.9); `ai_task` (2025.8+) cannot be tested until Python/HA is upgraded. Node only via Docker. |
 | 2026-10-13 | 0.1 | Contract written from ha-ica-todo `main` @ `6c45aa7` (v0.9.0). Brief confirmed except: `create_shopping_list` needs `integration`; no item-change event; create/delete return before reload completes. Possible ha-ica-todo changes identified, none blocking. |
