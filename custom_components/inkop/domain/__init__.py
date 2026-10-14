@@ -13,6 +13,13 @@ from .lists import (
     unique_labels,
 )
 from .naming import SWEDISH_MONTHS, default_list_name
+from .notify import (
+    MAX_LISTED,
+    build_message,
+    choose_notify_services,
+    merge_items,
+    recipients_to_notify,
+)
 from .todo_items import TodoItem, duplicate_items, resolve_items
 from .usage import (
     MAX_TRACKED,
@@ -26,6 +33,7 @@ from .usage import (
 from .versions import is_version_at_least, parse_version
 
 __all__ = [
+    "MAX_LISTED",
     "DEFAULT_ICON",
     "MAX_TRACKED",
     "SWEDISH_MONTHS",
@@ -34,6 +42,8 @@ __all__ = [
     "ParsedItem",
     "TodoItem",
     "UsageEntry",
+    "build_message",
+    "choose_notify_services",
     "default_list_name",
     "duplicate_items",
     "entity_for",
@@ -44,10 +54,12 @@ __all__ = [
     "format_quantity",
     "icon_for",
     "is_version_at_least",
+    "merge_items",
     "normalize_name",
     "parse_item_text",
     "parse_version",
     "pick_active",
+    "recipients_to_notify",
     "record_use",
     "resolve_items",
     "same_id",

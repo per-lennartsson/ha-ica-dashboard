@@ -209,5 +209,30 @@
     "todo_failed": {
       "message": "The list {entity_id} could not be updated: {error}"
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Notifications",
+        "description": "Choose who is told when someone else adds items. Nobody is told about their own additions.",
+        "data": {
+          "users": "Users to notify"
+        },
+        "data_description": {
+          "users": "Leave empty to turn notifications off."
+        }
+      },
+      "recipient": {
+        "title": "Notify {name}",
+        "description": "Which notify service reaches {name}'s phone?",
+        "data": {
+          "service": "Notify service"
+        }
+      }
+    },
+    "abort": {
+      "no_users": "There are no Home Assistant users to choose from.",
+      "no_notify_services": "No notify services were found. Set up the Home Assistant companion app on a phone first."
+    }
   }
 }

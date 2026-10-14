@@ -209,5 +209,30 @@
     "todo_failed": {
       "message": "Listan {entity_id} kunde inte uppdateras: {error}"
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Aviseringar",
+        "description": "Välj vilka som får veta när någon annan lägger till varor. Ingen får avisering om sina egna tillägg.",
+        "data": {
+          "users": "Användare att avisera"
+        },
+        "data_description": {
+          "users": "Lämna tomt för att stänga av aviseringar."
+        }
+      },
+      "recipient": {
+        "title": "Avisera {name}",
+        "description": "Vilken aviseringstjänst når {name}s telefon?",
+        "data": {
+          "service": "Aviseringstjänst"
+        }
+      }
+    },
+    "abort": {
+      "no_users": "Det finns inga Home Assistant-användare att välja bland.",
+      "no_notify_services": "Inga aviseringstjänster hittades. Konfigurera Home Assistant-appen på en telefon först."
+    }
   }
 }

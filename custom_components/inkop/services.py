@@ -9,11 +9,7 @@ from homeassistant.helpers import config_validation as cv
 from . import shopping
 from .const import DOMAIN, QUICK_ADD_LIMIT
 from .coordinator import InkopCoordinator
-
-try:  # Home Assistant 2026.10+ validates with probatio
-    import probatio as vol
-except ImportError:  # pragma: no cover - older Home Assistant
-    import voluptuous as vol  # type: ignore[no-redef]
+from .schema import vol
 
 SET_ACTIVE_LIST_SCHEMA = vol.Schema({vol.Required("entity_id"): cv.entity_id})
 CREATE_LIST_SCHEMA = vol.Schema(
@@ -82,7 +78,9 @@ def async_register_services(hass: HomeAssistant) -> None:
             hass, target, call.data["item"], call.data["confirm_duplicate"]
         )
         if result["added"]:
-            coordinator.record_added(result["item"])
+            await coordinator.async_item_added(
+                result, call.context.user_id, call.context
+            )
         return result
 
     async def get_top_items(call: ServiceCall) -> dict[str, Any]:

@@ -6,7 +6,7 @@ from enum import StrEnum
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
-from homeassistant.core import Event, HomeAssistant, callback
+from homeassistant.core import Context, Event, HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.storage import Store
@@ -15,6 +15,7 @@ from homeassistant.util import dt as dt_util
 
 from .const import (
     DOMAIN,
+    EVENT_ITEM_ADDED,
     ICA_DOMAIN,
     ICA_LISTS_CHANGED,
     LISTS_CHANGED_TIMEOUT,
@@ -31,6 +32,7 @@ from .domain import (
     title_from_name,
 )
 from .events import ListsChangedWaiter
+from .notify import AddNotifier, event_data
 from .usage import UsageTracker
 
 _LOGGER = logging.getLogger(__name__)
@@ -84,6 +86,7 @@ class InkopCoordinator(DataUpdateCoordinator[InkopData]):
         )
         self._preferred: str | None = None
         self.usage = UsageTracker(hass)
+        self.notifier = AddNotifier(hass, entry)
         self.status = Status.IDLE
         self.status_detail: str | None = None
 
@@ -95,6 +98,7 @@ class InkopCoordinator(DataUpdateCoordinator[InkopData]):
         self.data = self._compute()
         entry = self.config_entry
         entry.async_on_unload(self.usage.async_flush)
+        entry.async_on_unload(self.notifier.async_flush)
         entry.async_on_unload(
             self.hass.bus.async_listen(
                 er.EVENT_ENTITY_REGISTRY_UPDATED, self._on_registry_event
@@ -174,10 +178,28 @@ class InkopCoordinator(DataUpdateCoordinator[InkopData]):
 
     # --- usage statistics ----------------------------------------------------
 
-    def record_added(self, item_text: str) -> None:
-        """Count an item that was added through Inköp (quantity and unit ignored)."""
-        self.usage.record(parse_item_text(item_text).name)
+    async def async_item_added(
+        self, result: dict[str, str], user_id: str | None, context: Context
+    ) -> None:
+        """An item was added through Inköp: count it, announce it, notify others."""
+        item = result["item"]
+        self.usage.record(parse_item_text(item).name)
         self.async_update_listeners()
+        user = await self.hass.auth.async_get_user(user_id) if user_id else None
+        self.hass.bus.async_fire(
+            EVENT_ITEM_ADDED,
+            event_data(
+                result["entity_id"],
+                result["list_title"],
+                item,
+                user_id,
+                user.name if user else None,
+            ),
+            context=context,
+        )
+        self.notifier.item_added(
+            result["entity_id"], result["list_title"], user_id, item
+        )
 
     # --- active list ---------------------------------------------------------
 

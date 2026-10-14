@@ -18,3 +18,8 @@ STORAGE_VERSION: Final = 1
 # Frequent items shown as quick-add buttons
 QUICK_ADD_LIMIT: Final = 12
 USAGE_SAVE_DELAY: Final = 10.0
+
+# Notifications when someone adds items
+CONF_RECIPIENTS: Final = "recipients"  # {user_id: notify service name}
+EVENT_ITEM_ADDED: Final = "inkop_item_added"
+NOTIFY_DELAY: Final = 20.0  # seconds: adds within this window become one message
