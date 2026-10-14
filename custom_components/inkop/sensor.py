@@ -12,6 +12,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import QUICK_ADD_LIMIT
 from .coordinator import InkopConfigEntry, InkopCoordinator, Status
+from .domain import lists_payload
 from .entity import InkopEntity
 
 
@@ -27,6 +28,7 @@ async def async_setup_entry(
             ItemCountSensor(coordinator),
             StatusSensor(coordinator),
             FrequentItemsSensor(coordinator),
+            ListsSensor(coordinator),
         ]
     )
 
@@ -96,3 +98,26 @@ class FrequentItemsSensor(SensorEntity, InkopEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         """The top items, most added first: name, count and icon."""
         return {"items": self.coordinator.usage.top(QUICK_ADD_LIMIT)}
+
+
+class ListsSensor(SensorEntity, InkopEntity):
+    """All ICA lists with item counts, for the card's list picker."""
+
+    _unrecorded_attributes = frozenset({"lists", "active_offline_id"})
+
+    def __init__(self, coordinator: InkopCoordinator) -> None:
+        super().__init__(coordinator, "lists")
+
+    @property
+    def native_value(self) -> int:
+        """Number of lists."""
+        return len(self.coordinator.data.lists)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """The lists (entity id, ICA id, title, open items) and the active list."""
+        data = self.coordinator.data
+        return {
+            "lists": lists_payload(data.lists),
+            "active_offline_id": data.active_offline_id,
+        }

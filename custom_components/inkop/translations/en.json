@@ -53,6 +53,9 @@
       },
       "frequent_items": {
         "name": "Frequent items"
+      },
+      "lists": {
+        "name": "Lists"
       }
     }
   },
@@ -164,6 +167,11 @@
           "description": "How many items to return."
         }
       }
+    },
+    "suggest_list_name": {
+      "name": "Suggest list name",
+      "description": "Return the default name for a new list, such as “Att handla 14 oktober”.",
+      "fields": {}
     }
   },
   "exceptions": {

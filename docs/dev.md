@@ -88,6 +88,18 @@ Needs two Home Assistant users, each with the companion app on their phone (so `
 
 Notes for the check: the message follows the Home Assistant language (Swedish → "Embla lade till ..."). Tapping a notification does not open the shopping view yet; that comes with the card (steps 1.9 and 1.10).
 
+## Manual check: list picker (plan step 1.8)
+
+Build the card and install as described under "How the card reaches Home Assistant". Add the card to a dashboard (`type: custom:inkop-card`). Use a throwaway list; check on a **phone in the companion app** as well as on a computer.
+
+1. **Picker:** the card lists your ICA lists with their open-item counts, and shows the household's active list. Pick another list: nothing is sent to ICA, and the choice is still there after you reload the page. A second user (other browser or phone) keeps their own choice.
+2. **Create:** tap "Ny lista". The name is prefilled ("Att handla <dag> <månad>", numbered if taken) and the field is focused with the keyboard open. Create it. While it works (4–5 s, or longer) you see "Skapar listan…" and **nothing can be tapped**; afterwards the new list is selected. Try tapping "Skapa lista" twice quickly: only one list is created.
+3. **Other devices:** while one device is creating, the other device's card also shows the progress and is locked.
+4. **Delete:** tap "Ta bort lista": the confirmation names the list. "Avbryt" does nothing. "Ta bort" shows "Tar bort listan…" and then the list is gone from the card and from the ICA app.
+5. **Errors:** with ICA disabled, try to create a list: the card shows a clear error and unlocks again.
+6. **Not running:** disable the Inköp integration entry (or stop `ha-ica-todo`): the card shows the "Inköp körs inte … ha-ica-todo" message.
+7. **Phone:** no sideways scrolling, buttons easy to hit, and the keyboard does not make the page zoom.
+
 ## Rules for testing against the real ICA account
 
 - Automated tests never use a real ICA account. Mocks only.

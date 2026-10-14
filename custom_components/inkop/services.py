@@ -83,6 +83,9 @@ def async_register_services(hass: HomeAssistant) -> None:
             )
         return result
 
+    async def suggest_list_name(call: ServiceCall) -> dict[str, Any]:
+        return {"name": _coordinator(hass).suggest_list_name()}
+
     async def get_top_items(call: ServiceCall) -> dict[str, Any]:
         return {"items": _coordinator(hass).usage.top(call.data["limit"])}
 
@@ -114,6 +117,13 @@ def async_register_services(hass: HomeAssistant) -> None:
             supports_response=SupportsResponse.OPTIONAL,
         )
 
+    hass.services.async_register(
+        DOMAIN,
+        "suggest_list_name",
+        suggest_list_name,
+        schema=vol.Schema({}),
+        supports_response=SupportsResponse.ONLY,
+    )
     hass.services.async_register(
         DOMAIN,
         "get_top_items",

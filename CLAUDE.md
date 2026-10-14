@@ -92,7 +92,7 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 │   ├── dependency.py        # checks ha-ica-todo (installed, version, loaded), repair issue
 │   ├── coordinator.py       # event-driven: ICA lists, active list, create/delete flows
 │   ├── events.py            # collects ica_lists_changed events
-│   ├── services.py, services.yaml
+│   ├── services.py, services.yaml   # set_active_list, create/delete_list, suggest_list_name, items, get_top_items
 │   ├── shopping.py          # add / tick / remove / clear items on a list
 │   ├── usage.py             # persistent add counts (quick-add data)
 │   ├── notify.py            # batched "someone added items" notifications, inkop_item_added event
@@ -108,7 +108,7 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 ├── docs/                    # ica-contract.md, dev.md
 ├── .github/workflows/ci.yaml
 ├── hacs.json, pyproject.toml, requirements_dev.txt, .env.example
-├── frontend/                # Lit card: src/, dev/ (mock-data preview), tests next to sources
+├── frontend/                # Lit card: src/ (card, lists, api, storage, i18n), dev/ (mock-data preview), tests next to sources
 └── scripts/node.sh          # runs Node commands in Docker
 ```
 

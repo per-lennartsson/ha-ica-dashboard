@@ -267,6 +267,12 @@ class InkopCoordinator(DataUpdateCoordinator[InkopData]):
         self.status_detail = detail
         self.async_update_listeners()
 
+    def suggest_list_name(self) -> str:
+        """ "Att handla <dag> <månad>", numbered if a list with that name exists."""
+        return default_list_name(
+            dt_util.now().date(), [item.title for item in self.data.lists]
+        )
+
     async def async_create_list(
         self, title: str | None, comment: str, set_active: bool
     ) -> dict[str, str]:
@@ -274,9 +280,7 @@ class InkopCoordinator(DataUpdateCoordinator[InkopData]):
         self._begin(Status.CREATING)
         try:
             ica_entry_id = self._ica_entry_id()
-            name = (title or "").strip() or default_list_name(
-                dt_util.now().date(), [item.title for item in self.data.lists]
-            )
+            name = (title or "").strip() or self.suggest_list_name()
             async with ListsChangedWaiter(self.hass) as waiter:
                 offline_id = await self._call_create(ica_entry_id, name, comment)
                 event = await waiter.wait_for(
