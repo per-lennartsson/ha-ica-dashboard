@@ -34,7 +34,7 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 * Home Assistant custom integration `inkop` (Python 3.14, developed against Home Assistant 2026.10), declaring `ha-ica-todo` as a dependency
 * Frontend: custom card in TypeScript with Lit, Swedish UI with i18n (sv, en)
 * AI: HA's provider-neutral `ai_task` platform; the user picks any configured AI Task entity (Anthropic or another). Claude/Anthropic is **not** assumed installed
-* Tests: `pytest` with `pytest-homeassistant-custom-component` (mocked ICA and AI services); frontend tests with Vitest (TODO: confirm)
+* Tests: `pytest` with `pytest-homeassistant-custom-component` (mocked ICA and AI services); frontend tests with Vitest + jsdom
 * Lint/typing: Ruff, mypy (Python); ESLint, Prettier, `tsc` (TypeScript)
 * CI: GitHub Actions (lint, type check, tests, HACS/hassfest validation, tagged releases)
 * Distribution: HACS custom repository, versioned releases
@@ -97,6 +97,8 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 │   ├── usage.py             # persistent add counts (quick-add data)
 │   ├── notify.py            # batched "someone added items" notifications, inkop_item_added event
 │   ├── schema.py            # probatio (HA 2026.10+) or voluptuous
+│   ├── card.py              # serves the built card and loads it in every dashboard
+│   ├── www/                 # built card (git-ignored): inkop-card.js
 │   ├── todo_api.py          # thin wrappers around Home Assistant's todo.* services
 │   ├── entity.py, select.py, sensor.py
 │   ├── const.py
@@ -106,7 +108,8 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 ├── docs/                    # ica-contract.md, dev.md
 ├── .github/workflows/ci.yaml
 ├── hacs.json, pyproject.toml, requirements_dev.txt, .env.example
-└── frontend/                # Lit card (TypeScript), added in step 1.7
+├── frontend/                # Lit card: src/, dev/ (mock-data preview), tests next to sources
+└── scripts/node.sh          # runs Node commands in Docker
 ```
 
 > Later: `ai/` (Phase 2).
@@ -122,7 +125,7 @@ cp .env.example .env   # only needed for manual checks against a real HA
 # Never put long-lived tokens in files that are committed
 ```
 
-Node is not installed on the host. Frontend tooling runs in Docker (TODO: commands in `docs/dev.md`, step 1.7).
+Node is not installed on the host. All frontend commands run in Docker through `./scripts/node.sh` (see `docs/dev.md`), for example `./scripts/node.sh npm ci`. Installing or adding packages needs the maintainer's permission.
 
 Requires `ha-ica-todo` installed and configured in Home Assistant (HACS custom repository `per-lennartsson/ha-ica-todo`) for manual checks.
 
@@ -130,7 +133,7 @@ Requires `ha-ica-todo` installed and configured in Home Assistant (HACS custom r
 
 Development needs no running Home Assistant: tests use an in-process HA core and mocks.
 Manual checks run on the maintainer's own HA with `ha-ica-todo >= v0.10.0`. How to install a branch or release, how to check that it loaded, and the rules for throwaway ICA lists are in `docs/dev.md`.
-TODO: mock-data dev page command for the card (in Docker, step 1.7).
+Card preview with mock data: `DOCKER_FLAGS="-p 5173:5173" ./scripts/node.sh npm run dev`, then open http://localhost:5173.
 
 ## Test
 
@@ -141,7 +144,14 @@ mypy custom_components
 pytest tests/ -v
 ```
 
-Frontend tests run in Docker (TODO: step 1.7).
+Frontend (Docker):
+
+```bash
+./scripts/node.sh npm run format:check
+./scripts/node.sh npm run lint
+./scripts/node.sh npm run test:coverage
+./scripts/node.sh npm run build   # writes custom_components/inkop/www/inkop-card.js
+```
 
 ## Plan and open questions
 

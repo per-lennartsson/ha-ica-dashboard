@@ -1,7 +1,7 @@
 {
   "domain": "inkop",
   "name": "Inköp",
-  "after_dependencies": ["ica"],
+  "after_dependencies": ["frontend", "http", "ica"],
   "codeowners": ["@per-lennartsson"],
   "config_flow": true,
   "documentation": "https://github.com/per-lennartsson/ha-ica-dashboard",

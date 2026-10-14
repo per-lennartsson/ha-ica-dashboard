@@ -19,6 +19,8 @@ dist/
 build/
 
 # Frontend
+# Built card, produced by ./scripts/node.sh npm run build (release/commit decision: plan step 1.11)
+custom_components/inkop/www/
 node_modules/
 frontend/dist/
 coverage/
