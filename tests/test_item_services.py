@@ -6,8 +6,8 @@ import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 
-from custom_components.inkop.const import DOMAIN
-from tests.conftest import FakeIca, FakeTodo, IcaConfigure, setup_inkop
+from custom_components.handla.const import DOMAIN
+from tests.conftest import FakeIca, FakeTodo, IcaConfigure, setup_handla
 
 
 @pytest.fixture
@@ -17,10 +17,10 @@ async def milk_list(
     fake_ica: FakeIca,
     fake_todo: FakeTodo,
 ) -> str:
-    """A set-up Inköp with one active list; returns that list's entity id."""
+    """A set-up Handla with one active list; returns that list's entity id."""
     ica_dependency()
     entity_id = fake_ica.add_list("Veckan", "L-1", items=0)
-    await setup_inkop(hass)
+    await setup_handla(hass)
     return entity_id
 
 
@@ -124,7 +124,7 @@ async def test_add_without_any_list_is_refused(
     fake_todo: FakeTodo,
 ) -> None:
     ica_dependency()
-    await setup_inkop(hass)
+    await setup_handla(hass)
 
     with pytest.raises(ServiceValidationError) as err:
         await _call(hass, "add_item", item="mjölk")

@@ -77,7 +77,7 @@ class AddNotifier:
                 await self._hass.services.async_call(
                     "notify",
                     service,
-                    {"title": title, "message": message, "data": {"tag": "inkop"}},
+                    {"title": title, "message": message, "data": {"tag": "handla"}},
                     blocking=True,
                 )
             except HomeAssistantError as err:
@@ -103,7 +103,7 @@ def event_data(
     user_id: str | None,
     user_name: str | None,
 ) -> dict[str, Any]:
-    """Payload of the `inkop_item_added` event."""
+    """Payload of the `handla_item_added` event."""
     return {
         "entity_id": list_entity_id,
         "list_title": list_title,

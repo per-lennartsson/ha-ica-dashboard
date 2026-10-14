@@ -1,11 +1,11 @@
-# Inköp
+# Handla
 
 Gemensamma inköpslistor i Home Assistant, ovanpå dina ICA-listor. Alla i hushållet ser samma lista, lägger till varor på ett ögonblick och får en avisering när någon annan lägger till något.
 
 [English](README.md)
 
 <p>
-  <img src="docs/images/overview.png" alt="Inköpskortet: listval, fält för att lägga till, snabbknappar, varor och avbockade varor" width="300">
+  <img src="docs/images/overview.png" alt="Handla-kortet: listval, fält för att lägga till, snabbknappar, varor och avbockade varor" width="300">
   <img src="docs/images/duplicate.png" alt="Frågar innan en vara som redan finns läggs till igen" width="300">
 </p>
 
@@ -25,29 +25,29 @@ Gemensamma inköpslistor i Home Assistant, ovanpå dina ICA-listor. Alla i hush�
 ## Krav
 
 - Home Assistant 2026.9 eller nyare, med [HACS](https://hacs.xyz/).
-- Ett ICA-konto, anslutet via [ha-ica-todo](https://github.com/per-lennartsson/ha-ica-todo) **v0.10.0 eller nyare** (en underhållen fork av ICA-integrationen). Inköp kontrollerar detta och säger till om det saknas.
+- Ett ICA-konto, anslutet via [ha-ica-todo](https://github.com/per-lennartsson/ha-ica-todo) **v0.10.0 eller nyare** (en underhållen fork av ICA-integrationen). Handla kontrollerar detta och säger till om det saknas.
 
 ## Installation
 
 1. **Installera ha-ica-todo** och ställ in den med ditt ICA-konto:
    HACS → ⋮ → *Anpassade databaser* (*Custom repositories*) → lägg till `https://github.com/per-lennartsson/ha-ica-todo` som typ *Integration* → ladda ner → starta om Home Assistant → *Inställningar → Enheter och tjänster → Lägg till integration → ICA*.
-2. **Installera Inköp** på samma sätt: lägg till `https://github.com/per-lennartsson/ha-ica-dashboard` som anpassad databas (typ *Integration*), ladda ner den senaste utgåvan och starta om Home Assistant.
-3. *Inställningar → Enheter och tjänster → Lägg till integration → **Inköp**.* Det är allt; ingen dashboard-resurs behöver läggas till för hand.
-4. *(Valfritt)* **Aviseringar:** *Enheter och tjänster → Inköp → Konfigurera*. Välj vem som ska få veta, och vilken `mobile_app_...`-tjänst som når deras telefon.
+2. **Installera Handla** på samma sätt: lägg till `https://github.com/per-lennartsson/ha-ica-dashboard` som anpassad databas (typ *Integration*), ladda ner den senaste utgåvan och starta om Home Assistant.
+3. *Inställningar → Enheter och tjänster → Lägg till integration → **Handla**.* Det är allt; ingen dashboard-resurs behöver läggas till för hand.
+4. *(Valfritt)* **Aviseringar:** *Enheter och tjänster → Handla → Konfigurera*. Välj vem som ska få veta, och vilken `mobile_app_...`-tjänst som når deras telefon.
 
 ## Dashboard
 
-Lägg kortet på en dashboard (till exempel en vy med sökvägen `inkop`):
+Lägg kortet på en dashboard (till exempel en vy med sökvägen `handla`):
 
 ```yaml
-type: custom:inkop-card
+type: custom:handla-card
 ```
 
 För telefonens dashboard, en liten genväg som visar hur många varor som är kvar och öppnar den vyn när man trycker:
 
 ```yaml
-type: custom:inkop-shortcut
-navigation_path: /lovelace/inkop
+type: custom:handla-shortcut
+navigation_path: /lovelace/handla
 ```
 
 Allt om korten, bricka-alternativet, entiteter, tjänster och händelser finns i [docs/usage.md](docs/usage.md) (på engelska).
@@ -55,14 +55,14 @@ Allt om korten, bricka-alternativet, entiteter, tjänster och händelser finns i
 ## Bra att veta
 
 - När en lista skapas eller tas bort laddar ICA-integrationen om sig, vilket tar några sekunder. Kortet visar förloppet och låser sig under tiden, så ingen trycker två gånger.
-- Snabbknapparna bygger på varor som lagts till **via Inköp**. Varor som läggs till direkt i ICA-appen räknas inte (men de syns i listan).
-- Aviseringar skickas för varor som läggs till via Inköp, inte för varor som läggs till i ICA-appen, och ett tryck på en avisering öppnar inte kortet än.
+- Snabbknapparna bygger på varor som lagts till **via Handla**. Varor som läggs till direkt i ICA-appen räknas inte (men de syns i listan).
+- Aviseringar skickas för varor som läggs till via Handla, inte för varor som läggs till i ICA-appen, och ett tryck på en avisering öppnar inte kortet än.
 - ICA ignorerar en tom enhet, så att byta namn på en vara kan inte ta bort dess enhet.
 - Ikonerna är Material Design Icons som väljs med en liten lista över svenska matvaror; okända varor får en kundvagn.
 
 ## Felsökning
 
-- **Kortet säger "Inköp körs inte":** kontrollera att ha-ica-todo (v0.10.0+) är installerad och laddad, och titta under *Inställningar → System → Reparationer*.
+- **Kortet säger "Handla körs inte":** kontrollera att ha-ica-todo (v0.10.0+) är installerad och laddad, och titta under *Inställningar → System → Reparationer*.
 - **Kortet syns inte:** starta om Home Assistant efter installationen och ladda sedan om sidan (i telefonappen: *Inställningar → Companion-appen → Felsökning → Återställ frontend-cache*).
 - **Något ser fel ut efter en uppdatering:** uppdatera webbläsaren med tvingad omladdning. Kortets fil är versionsmärkt, men webbläsare kan vara envisa.
 

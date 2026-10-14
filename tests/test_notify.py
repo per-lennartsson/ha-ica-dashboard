@@ -13,13 +13,13 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.event import async_call_later
 from pytest_homeassistant_custom_component.common import async_capture_events
 
-from custom_components.inkop.const import CONF_RECIPIENTS, DOMAIN, EVENT_ITEM_ADDED
-from tests.conftest import FakeIca, FakeTodo, IcaConfigure, setup_inkop
+from custom_components.handla.const import CONF_RECIPIENTS, DOMAIN, EVENT_ITEM_ADDED
+from tests.conftest import FakeIca, FakeTodo, IcaConfigure, setup_handla
 
 
 @pytest.fixture(autouse=True)
 def short_window() -> Iterator[None]:
-    with patch("custom_components.inkop.notify.NOTIFY_DELAY", 0.02):
+    with patch("custom_components.handla.notify.NOTIFY_DELAY", 0.02):
         yield
 
 
@@ -69,11 +69,11 @@ async def household(
     per: User,
     embla: User,
 ) -> str:
-    """Inköp set up with Per and Embla as recipients; returns the list entity id."""
+    """Handla set up with Per and Embla as recipients; returns the list entity id."""
     hass.config.language = "sv"
     ica_dependency()
     entity_id = fake_ica.add_list("Veckan", "L-1")
-    await setup_inkop(
+    await setup_handla(
         hass,
         {CONF_RECIPIENTS: {per.id: "mobile_app_per", embla.id: "mobile_app_embla"}},
     )
@@ -109,8 +109,8 @@ async def test_the_other_user_is_told_and_the_adder_is_not(
     assert phones.messages("mobile_app_embla") == ["Per lade till 2 st gurka i Veckan"]
     assert phones.messages("mobile_app_per") == []
     data = phones.calls[0][1]
-    assert data["title"] == "Inköp"
-    assert data["data"] == {"tag": "inkop"}
+    assert data["title"] == "Handla"
+    assert data["data"] == {"tag": "handla"}
 
 
 async def test_quick_adds_are_combined_into_one_message(
@@ -234,7 +234,7 @@ async def test_nothing_is_sent_without_recipients(
 ) -> None:
     ica_dependency()
     fake_ica.add_list("Veckan", "L-1")
-    await setup_inkop(hass)
+    await setup_handla(hass)
 
     await _add(hass, "mjölk", per)
     await _settle(hass)
@@ -255,7 +255,7 @@ async def test_malformed_options_are_ignored(
 ) -> None:
     ica_dependency()
     fake_ica.add_list("Veckan", "L-1")
-    await setup_inkop(hass, options)
+    await setup_handla(hass, options)
 
     await _add(hass, "mjölk", None)
     await _settle(hass)
@@ -311,7 +311,7 @@ async def test_long_batches_are_cut_off(
 async def test_pending_messages_are_sent_when_the_integration_unloads(
     hass: HomeAssistant, household: str, phones: Phones, per: User
 ) -> None:
-    with patch("custom_components.inkop.notify.NOTIFY_DELAY", 60):
+    with patch("custom_components.handla.notify.NOTIFY_DELAY", 60):
         await _add(hass, "mjölk", per)
         assert not phones.calls
 
@@ -325,7 +325,7 @@ async def test_one_timer_serves_a_whole_batch(
     hass: HomeAssistant, household: str, phones: Phones, per: User
 ) -> None:
     with patch(
-        "custom_components.inkop.notify.async_call_later",
+        "custom_components.handla.notify.async_call_later",
         wraps=async_call_later,
     ) as timer:
         await _add(hass, "mjölk", per)

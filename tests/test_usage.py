@@ -8,10 +8,10 @@ from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.setup import async_setup_component
 
-from custom_components.inkop.const import DOMAIN
-from custom_components.inkop.domain import DEFAULT_QUICK_ITEMS
-from custom_components.inkop.schema import vol
-from tests.conftest import FakeIca, FakeTodo, IcaConfigure, setup_inkop
+from custom_components.handla.const import DOMAIN
+from custom_components.handla.domain import DEFAULT_QUICK_ITEMS
+from custom_components.handla.schema import vol
+from tests.conftest import FakeIca, FakeTodo, IcaConfigure, setup_handla
 
 STORE_KEY = f"{DOMAIN}.usage"
 
@@ -58,7 +58,7 @@ def _sensor(hass: HomeAssistant, entry_id: str) -> State:
 
 
 async def test_adds_are_counted_by_name(hass: HomeAssistant, active_list: str) -> None:
-    await setup_inkop(hass)
+    await setup_handla(hass)
 
     await _add(hass, "2 st gurka")
     await _add(hass, "Gurka", confirm_duplicate=True)
@@ -73,7 +73,7 @@ async def test_adds_are_counted_by_name(hass: HomeAssistant, active_list: str) -
 async def test_an_unconfirmed_duplicate_is_not_counted(
     hass: HomeAssistant, active_list: str, fake_todo: FakeTodo
 ) -> None:
-    await setup_inkop(hass)
+    await setup_handla(hass)
     fake_todo.seed(active_list, "mjölk")
 
     result = await _add(hass, "mjölk")
@@ -85,7 +85,7 @@ async def test_an_unconfirmed_duplicate_is_not_counted(
 async def test_failed_adds_are_not_counted(
     hass: HomeAssistant, active_list: str
 ) -> None:
-    await setup_inkop(hass)
+    await setup_handla(hass)
     hass.states.async_set(active_list, "unavailable")
     await hass.async_block_till_done()
 
@@ -99,7 +99,7 @@ async def test_failed_adds_are_not_counted(
 async def test_ticking_and_removing_do_not_count(
     hass: HomeAssistant, active_list: str, fake_todo: FakeTodo
 ) -> None:
-    await setup_inkop(hass)
+    await setup_handla(hass)
     fake_todo.seed(active_list, "mjölk")
 
     await hass.services.async_call(
@@ -113,7 +113,7 @@ async def test_ticking_and_removing_do_not_count(
 
 
 async def test_top_items_limit(hass: HomeAssistant, active_list: str) -> None:
-    await setup_inkop(hass)
+    await setup_handla(hass)
     for name in ("a", "b", "c"):
         await _add(hass, name)
 
@@ -124,14 +124,14 @@ async def test_top_items_limit(hass: HomeAssistant, active_list: str) -> None:
 async def test_top_items_rejects_a_bad_limit(
     hass: HomeAssistant, active_list: str
 ) -> None:
-    await setup_inkop(hass)
+    await setup_handla(hass)
 
     with pytest.raises(vol.Invalid):
         await _top(hass, limit=0)
 
 
 async def test_sensor_follows_the_counts(hass: HomeAssistant, active_list: str) -> None:
-    entry = await setup_inkop(hass)
+    entry = await setup_handla(hass)
     assert _sensor(hass, entry.entry_id).state == "0"
     # No history yet: staples with count 0 so the card has buttons from day one
     staples = _sensor(hass, entry.entry_id).attributes["items"]
@@ -156,7 +156,7 @@ async def test_sensor_follows_the_counts(hass: HomeAssistant, active_list: str) 
 async def test_sensor_limits_to_the_quick_add_count(
     hass: HomeAssistant, active_list: str
 ) -> None:
-    entry = await setup_inkop(hass)
+    entry = await setup_handla(hass)
     for number in range(15):
         await _add(hass, f"vara {number}")
     await hass.async_block_till_done()
@@ -169,7 +169,7 @@ async def test_sensor_limits_to_the_quick_add_count(
 async def test_counts_are_saved_when_unloading_and_restored(
     hass: HomeAssistant, active_list: str, hass_storage: dict[str, Any]
 ) -> None:
-    entry = await setup_inkop(hass)
+    entry = await setup_handla(hass)
     await _add(hass, "mjölk")
     await _add(hass, "mjölk", confirm_duplicate=True)
 
@@ -196,7 +196,7 @@ async def test_counts_are_restored_from_storage(
             }
         },
     }
-    await setup_inkop(hass)
+    await setup_handla(hass)
 
     assert await _top(hass) == [{"name": "Ost", "count": 7, "icon": "mdi:cheese"}]
 
@@ -210,7 +210,7 @@ async def test_corrupt_storage_starts_empty(
         "key": STORE_KEY,
         "data": {"entries": {"x": {"nope": 1}, "y": "bad"}},
     }
-    await setup_inkop(hass)
+    await setup_handla(hass)
 
     assert await _top(hass) == []
 

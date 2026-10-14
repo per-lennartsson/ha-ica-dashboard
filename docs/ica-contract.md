@@ -1,6 +1,6 @@
 # ha-ica-todo contract
 
-What `inkop` may rely on from [ha-ica-todo](https://github.com/per-lennartsson/ha-ica-todo). Source of truth is the code; this file is a reviewed snapshot. Re-verify when raising the minimum version.
+What `handla` may rely on from [ha-ica-todo](https://github.com/per-lennartsson/ha-ica-todo). Source of truth is the code; this file is a reviewed snapshot. Re-verify when raising the minimum version.
 
 - Snapshot: branch `list-events-and-metadata`, commit `c2fe1f1` (v0.10.0). Re-check against the merged/released code before relying on it.
 - Domain: `ica`, `iot_class: cloud_polling`, `config_flow: true`, no HA `dependencies`
@@ -47,7 +47,7 @@ Confirmed against `services.yaml` / `services.py`. Differences from the project 
 | `ica.get_recipe` | `recipe_id` | response only |
 
 - Errors: not-loaded entry raises `HomeAssistantError` (`not_loaded`); unknown entity raises `ServiceValidationError`.
-- `MERGE` sums quantities with unit conversion (kg/g, l/dl/cl/ml, count units `st` and `förp` are separate groups); `IGNORE` leaves the existing row. `inkop` still needs its own case-insensitive duplicate prompt, since these modes decide silently.
+- `MERGE` sums quantities with unit conversion (kg/g, l/dl/cl/ml, count units `st` and `förp` are separate groups); `IGNORE` leaves the existing row. `handla` still needs its own case-insensitive duplicate prompt, since these modes decide silently.
 
 ## Events
 
@@ -58,10 +58,10 @@ Confirmed against `services.yaml` / `services.py`. Differences from the project 
 | `ica_list_items_changed` | A refresh finds added, removed or changed rows compared with the previous data. Not fired on the first load of a list. | `{entity_id, offline_id, added: [{uid, summary}], removed: [uid], changed: [{uid, summary, changed_props}]}` |
 
 - `ica_lists_changed` is **also fired if the reload fails**, then with an empty or partial `entities`. Treat a missing entity as failure, not as "keep waiting". `created` holds the ID we sent; ICA may store it upper case, so match case-insensitively.
-- `ica_list_items_changed` is fired for changes made through HA as well as in the ICA app, and carries **no user or context**. It cannot tell who changed an item. "Who added" must come from the HA service-call context of `todo.add_item` / `ica.upsert_shopping_list`. Use the event for changes made outside HA, and avoid notifying twice for changes `inkop` made itself.
+- `ica_list_items_changed` is fired for changes made through HA as well as in the ICA app, and carries **no user or context**. It cannot tell who changed an item. "Who added" must come from the HA service-call context of `todo.add_item` / `ica.upsert_shopping_list`. Use the event for changes made outside HA, and avoid notifying twice for changes `handla` made itself.
 - `changed` only reports fields present in the new row. An item that loses its quantity or unit is not reported as changed.
 
-## Behaviour `inkop` must handle
+## Behaviour `handla` must handle
 
 1. **Reload after create/delete (about 4–5 s):** entities vanish and reappear. Keep the UI in a busy state until `ica_lists_changed` arrives, with a timeout as a safety net (the event fires after the reload even on failure, but not if HA restarts).
 2. List IDs are upper case from ICA: compare case-insensitively.
@@ -71,4 +71,4 @@ Confirmed against `services.yaml` / `services.py`. Differences from the project 
 
 ## Minimum version
 
-`>= v0.10.0` (first version with `ica_lists_changed`, `ica_list_items_changed` and the list attributes). v0.9.0 had create/delete and the parsing fixes but none of these, so it is not supported. The constant `MIN_ICA_VERSION` in `custom_components/inkop/const.py` matches this. Raise this again only if a later ha-ica-todo change is released and needed.
+`>= v0.10.0` (first version with `ica_lists_changed`, `ica_list_items_changed` and the list attributes). v0.9.0 had create/delete and the parsing fixes but none of these, so it is not supported. The constant `MIN_ICA_VERSION` in `custom_components/handla/const.py` matches this. Raise this again only if a later ha-ica-todo change is released and needed.

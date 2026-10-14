@@ -1,6 +1,6 @@
 """Tests for duplicate detection."""
 
-from custom_components.inkop.domain import find_duplicates, normalize_name
+from custom_components.handla.domain import find_duplicates, normalize_name
 
 
 def test_normalize_name_ignores_case_and_whitespace() -> None:

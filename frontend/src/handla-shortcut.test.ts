@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { InkopShortcut } from "./inkop-shortcut";
+import { HandlaShortcut } from "./handla-shortcut";
 import { LISTS_ENTITY } from "./lists";
 import type { HomeAssistant } from "./types";
 
@@ -34,9 +34,9 @@ function makeHass(scenario: Scenario = {}): HomeAssistant {
 
 async function mount(
   hass?: HomeAssistant,
-  config: object = { type: "custom:inkop-shortcut" },
-): Promise<InkopShortcut> {
-  const card = document.createElement("inkop-shortcut") as InkopShortcut;
+  config: object = { type: "custom:handla-shortcut" },
+): Promise<HandlaShortcut> {
+  const card = document.createElement("handla-shortcut") as HandlaShortcut;
   card.setConfig(config as never);
   if (hass) card.hass = hass;
   document.body.appendChild(card);
@@ -44,11 +44,11 @@ async function mount(
   return card;
 }
 
-const root = (card: InkopShortcut) => card.shadowRoot as ShadowRoot;
-const surface = (card: InkopShortcut) => root(card).querySelector(".card") as HTMLElement;
-const count = (card: InkopShortcut) =>
+const root = (card: HandlaShortcut) => card.shadowRoot as ShadowRoot;
+const surface = (card: HandlaShortcut) => root(card).querySelector(".card") as HTMLElement;
+const count = (card: HandlaShortcut) =>
   root(card).querySelector('[data-testid="count"]')?.textContent;
-const listName = (card: InkopShortcut) =>
+const listName = (card: HandlaShortcut) =>
   root(card).querySelector('[data-testid="list"]')?.textContent;
 
 afterEach(() => {
@@ -68,7 +68,7 @@ describe("what it shows", () => {
   });
 
   it("prefers this user's own choice of list", async () => {
-    window.localStorage.setItem("inkop:selected-list", "A-1");
+    window.localStorage.setItem("handla:selected-list", "A-1");
     const card = await mount(makeHass({ lists: [BREAD, MILK], active: "B-2" }));
 
     expect(count(card)).toBe("2");
@@ -94,7 +94,7 @@ describe("what it shows", () => {
 
   it("uses a configured title instead of the list name", async () => {
     const card = await mount(makeHass({ lists: [BREAD], active: "A-1" }), {
-      type: "custom:inkop-shortcut",
+      type: "custom:handla-shortcut",
       title: "Handla",
     });
 
@@ -109,11 +109,11 @@ describe("what it shows", () => {
   });
 
   it.each([undefined, { lists: [BREAD], listsState: "unavailable" }])(
-    "says Inköp is not running without data (%#)",
+    "says Handla is not running without data (%#)",
     async (scenario) => {
       const card = await mount(scenario ? makeHass(scenario) : undefined);
 
-      expect(root(card).textContent).toContain("Inköp körs inte");
+      expect(root(card).textContent).toContain("Handla körs inte");
       expect(count(card)).toBeUndefined();
     },
   );
@@ -133,7 +133,7 @@ describe("what it shows", () => {
   });
 
   it("renders nothing until it has a configuration", async () => {
-    const card = document.createElement("inkop-shortcut") as InkopShortcut;
+    const card = document.createElement("handla-shortcut") as HandlaShortcut;
     document.body.appendChild(card);
     await card.updateComplete;
 
@@ -142,7 +142,7 @@ describe("what it shows", () => {
 });
 
 describe("opening the shopping view", () => {
-  const withPath = { type: "custom:inkop-shortcut", navigation_path: "/lovelace/inkop" };
+  const withPath = { type: "custom:handla-shortcut", navigation_path: "/lovelace/handla" };
   const hass = () => makeHass({ lists: [BREAD], active: "A-1" });
 
   it("navigates on tap", async () => {
@@ -152,7 +152,7 @@ describe("opening the shopping view", () => {
 
     surface(card).click();
 
-    expect(window.location.pathname).toBe("/lovelace/inkop");
+    expect(window.location.pathname).toBe("/lovelace/handla");
     expect(events).toHaveLength(1);
   });
 
@@ -163,7 +163,7 @@ describe("opening the shopping view", () => {
 
       surface(card).dispatchEvent(new KeyboardEvent("keydown", { key, cancelable: true }));
 
-      expect(window.location.pathname).toBe("/lovelace/inkop");
+      expect(window.location.pathname).toBe("/lovelace/handla");
     },
   );
 
@@ -200,7 +200,7 @@ describe("opening the shopping view", () => {
     expect(root(card).querySelector(".chevron")).toBeNull();
   });
 
-  it("has no chevron when Inköp is not running", async () => {
+  it("has no chevron when Handla is not running", async () => {
     const card = await mount(makeHass(), withPath);
 
     expect(root(card).querySelector(".chevron")).toBeNull();
@@ -209,28 +209,28 @@ describe("opening the shopping view", () => {
 
 describe("configuration", () => {
   it("rejects a configuration that is not an object", () => {
-    const card = document.createElement("inkop-shortcut") as InkopShortcut;
+    const card = document.createElement("handla-shortcut") as HandlaShortcut;
     expect(() => card.setConfig(null as never)).toThrow("Ogiltig kortkonfiguration.");
   });
 
-  it.each(["lovelace/inkop", "//evil.example", "https://example.com", 5])(
+  it.each(["lovelace/handla", "//evil.example", "https://example.com", 5])(
     "rejects the navigation path %j",
     (path) => {
-      const card = document.createElement("inkop-shortcut") as InkopShortcut;
+      const card = document.createElement("handla-shortcut") as HandlaShortcut;
       expect(() =>
-        card.setConfig({ type: "custom:inkop-shortcut", navigation_path: path } as never),
+        card.setConfig({ type: "custom:handla-shortcut", navigation_path: path } as never),
       ).toThrow("navigation_path måste börja med /");
     },
   );
 
   it("reports a card size and a stub configuration", () => {
-    const card = document.createElement("inkop-shortcut") as InkopShortcut;
+    const card = document.createElement("handla-shortcut") as HandlaShortcut;
     expect(card.getCardSize()).toBe(1);
-    expect(InkopShortcut.getStubConfig()).toEqual({});
+    expect(HandlaShortcut.getStubConfig()).toEqual({});
   });
 
   it("is listed once for the card picker", () => {
-    expect(customElements.get("inkop-shortcut")).toBe(InkopShortcut);
-    expect(window.customCards?.filter((c) => c.type === "inkop-shortcut")).toHaveLength(1);
+    expect(customElements.get("handla-shortcut")).toBe(HandlaShortcut);
+    expect(window.customCards?.filter((c) => c.type === "handla-shortcut")).toHaveLength(1);
   });
 });

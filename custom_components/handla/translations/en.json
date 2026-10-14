@@ -2,12 +2,12 @@
   "config": {
     "step": {
       "user": {
-        "title": "Inköp",
-        "description": "Add Inköp, shopping lists on top of the ICA integration."
+        "title": "Handla",
+        "description": "Add Handla, shopping lists on top of the ICA integration."
       }
     },
     "abort": {
-      "single_instance_allowed": "Inköp is already set up. Only one instance is allowed.",
+      "single_instance_allowed": "Handla is already set up. Only one instance is allowed.",
       "ica_missing": "The ICA integration (ha-ica-todo) is not installed. Install version {minimum} or later from https://github.com/per-lennartsson/ha-ica-todo and restart Home Assistant.",
       "ica_too_old": "The ICA integration (ha-ica-todo) version {version} is too old. Version {minimum} or later is required. Update it in HACS and restart Home Assistant.",
       "ica_not_configured": "The ICA integration (ha-ica-todo) is installed but not set up. Add it under Settings → Devices & services, then try again.",
@@ -17,19 +17,19 @@
   "issues": {
     "ica_missing": {
       "title": "ICA integration is missing",
-      "description": "Inköp needs the ICA integration (ha-ica-todo) version {minimum} or later, but it is not installed. Install it from https://github.com/per-lennartsson/ha-ica-todo and restart Home Assistant."
+      "description": "Handla needs the ICA integration (ha-ica-todo) version {minimum} or later, but it is not installed. Install it from https://github.com/per-lennartsson/ha-ica-todo and restart Home Assistant."
     },
     "ica_too_old": {
       "title": "ICA integration is too old",
-      "description": "Inköp needs the ICA integration (ha-ica-todo) version {minimum} or later, but version {version} is installed. Update it in HACS and restart Home Assistant."
+      "description": "Handla needs the ICA integration (ha-ica-todo) version {minimum} or later, but version {version} is installed. Update it in HACS and restart Home Assistant."
     },
     "ica_not_configured": {
       "title": "ICA integration is not set up",
-      "description": "Inköp needs the ICA integration (ha-ica-todo). It is installed but not set up. Add it under Settings → Devices & services."
+      "description": "Handla needs the ICA integration (ha-ica-todo). It is installed but not set up. Add it under Settings → Devices & services."
     },
     "ica_not_loaded": {
       "title": "ICA integration is not loaded",
-      "description": "Inköp needs the ICA integration (ha-ica-todo), which is set up but not loaded. Check its status under Settings → Devices & services and the logs. Inköp retries automatically."
+      "description": "Handla needs the ICA integration (ha-ica-todo), which is set up but not loaded. Check its status under Settings → Devices & services and the logs. Handla retries automatically."
     }
   },
   "entity": {
@@ -182,7 +182,7 @@
       "message": "{entity_id} is not a known ICA shopping list."
     },
     "not_set_up": {
-      "message": "Inköp is not set up."
+      "message": "Handla is not set up."
     },
     "ica_unavailable": {
       "message": "The ICA integration (ha-ica-todo) is not loaded. Try again in a moment."

@@ -2,7 +2,7 @@
 
 import pytest
 
-from custom_components.inkop.domain import is_version_at_least, parse_version
+from custom_components.handla.domain import is_version_at_least, parse_version
 
 
 @pytest.mark.parametrize(

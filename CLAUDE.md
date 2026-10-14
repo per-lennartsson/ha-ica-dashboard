@@ -2,11 +2,13 @@
 
 ## Project
 
-"Inköp": a shopping-list solution for Home Assistant, built on ICA shopping lists. A custom integration (`inkop`, Python) owns the domain logic and a thin custom card (TypeScript/Lit) provides the UI. Designed for multiple users sharing the same shopping list, each on their own device via the Home Assistant companion app. The UI is in Swedish. The project is HACS-ready so others can reuse it.
+"Handla": a shopping-list solution for Home Assistant, built on ICA shopping lists. A custom integration (`handla`, Python) owns the domain logic and a thin custom card (TypeScript/Lit) provides the UI. Designed for multiple users sharing the same shopping list, each on their own device via the Home Assistant companion app. The UI is in Swedish. The project is HACS-ready so others can reuse it.
+
+Naming: the product is **Handla** (Home Assistant domain `handla`; it was called Inköp / `inkop` before its first release). The HACS title and the integration name are "Handla – Shared shopping lists for ICA"; the device and the cards are just "Handla", which keeps entity ids short (`sensor.handla_items_to_buy`). The GitHub repository is still `ha-ica-dashboard`.
 
 Environment: Home Assistant OS (core 2026.9.x) with HACS.
 
-**Required dependency:** [ha-ica-todo](https://github.com/per-lennartsson/ha-ica-todo), a maintained fork of `lazytarget/ha-ica-todo`. It is installed separately (HACS custom repository). `inkop` declares it as a dependency, checks the minimum version at setup, and shows a clear message in the UI when it is missing or not loaded. Check the repo for the current version, services and entities before relying on them. The ICA entities and services (all under the `ica` domain):
+**Required dependency:** [ha-ica-todo](https://github.com/per-lennartsson/ha-ica-todo), a maintained fork of `lazytarget/ha-ica-todo`. It is installed separately (HACS custom repository). `handla` declares it as a dependency, checks the minimum version at setup, and shows a clear message in the UI when it is missing or not loaded. Check the repo for the current version, services and entities before relying on them. The ICA entities and services (all under the `ica` domain):
 * Each tracked ICA shopping list is a `todo` entity, plus a favourites list.
 * Services: `ica.create_shopping_list` (title, optional comment, track), `ica.delete_shopping_list`, `ica.refresh_all`, `ica.get_baseitems`, `ica.add_baseitem`, `ica.upsert_shopping_list`, `ica.add_offers_to_shopping_list`, `ica.lookup_product`, `ica.get_recipe`.
 * Item text is parsed as "quantity unit name". Units count only as whole words: st, förp, kg, hg, g, l, dl, cl, ml, msk, tsk, krm. Quantity is a number (comma decimals allowed), and ranges like "2–3" keep the higher number. Ticking or renaming an item parses the text back.
@@ -31,13 +33,13 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 
 ## Tech stack
 
-* Home Assistant custom integration `inkop` (Python 3.14, developed against Home Assistant 2026.10), declaring `ha-ica-todo` as a dependency
+* Home Assistant custom integration `handla` (Python 3.14, developed against Home Assistant 2026.10), declaring `ha-ica-todo` as a dependency
 * Frontend: custom card in TypeScript with Lit, Swedish UI with i18n (sv, en)
 * AI: HA's provider-neutral `ai_task` platform; the user picks any configured AI Task entity (Anthropic or another). Claude/Anthropic is **not** assumed installed
 * Tests: `pytest` with `pytest-homeassistant-custom-component` (mocked ICA and AI services); frontend tests with Vitest + jsdom
 * Lint/typing: Ruff, mypy (Python); ESLint, Prettier, `tsc` (TypeScript)
 * CI: GitHub Actions (lint, type check, tests, HACS/hassfest validation, tagged releases)
-* Distribution: HACS custom repository; versioned GitHub releases carry `inkop.zip` (integration + built card), built by the release workflow. The built card is not committed
+* Distribution: HACS custom repository; versioned GitHub releases carry `handla.zip` (integration + built card), built by the release workflow. The built card is not committed
 
 ## Code conventions
 
@@ -49,7 +51,7 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 
 ## Architecture
 
-* `inkop` owns the domain logic: lists, duplicate rules, quantity rules, usage statistics, notifications and the optional AI module. It exposes services, entities and events. The card stays thin and contains no business logic.
+* `handla` owns the domain logic: lists, duplicate rules, quantity rules, usage statistics, notifications and the optional AI module. It exposes services, entities and events. The card stays thin and contains no business logic.
 * All calls to ICA go through `ha-ica-todo` services and `todo` entities. Never call the ICA API directly or handle ICA credentials/tokens.
 * All I/O (HA service calls, AI Task calls) lives in a separate layer. Pure domain logic (parsing, duplicate detection, name generation) is plain Python and unit-testable without HA.
 * The AI module is optional. Toggle it via the integration's options flow, and choose the AI Task entity there. Off by default. No AI code path may run, and no AI UI may render, when disabled.
@@ -85,7 +87,7 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 ```
 /
 ├── CLAUDE.md, plan.md, README.md, README.sv.md
-├── custom_components/inkop/
+├── custom_components/handla/
 │   ├── manifest.json, strings.json, translations/   # sv + en
 │   ├── __init__.py          # setup, services registration
 │   ├── config_flow.py       # setup flow (ICA dependency check) + options flow (who is notified)
@@ -95,10 +97,10 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 │   ├── services.py, services.yaml   # set_active_list, create/delete_list, suggest_list_name, items, get_top_items
 │   ├── shopping.py          # add / tick / remove / clear items on a list
 │   ├── usage.py             # persistent add counts (quick-add data)
-│   ├── notify.py            # batched "someone added items" notifications, inkop_item_added event
+│   ├── notify.py            # batched "someone added items" notifications, handla_item_added event
 │   ├── schema.py            # probatio (HA 2026.10+) or voluptuous
 │   ├── card.py              # serves the built card and loads it in every dashboard
-│   ├── www/                 # built card (git-ignored): inkop-card.js
+│   ├── www/                 # built card (git-ignored): handla-card.js
 │   ├── todo_api.py          # thin wrappers around Home Assistant's todo.* services
 │   ├── entity.py, select.py, sensor.py
 │   ├── const.py
@@ -106,11 +108,11 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 │       ├── items.py, duplicates.py, naming.py, lists.py, todo_items.py, usage.py, icons.py, notify.py, versions.py
 ├── tests/                   # pytest, mocked ICA and AI (conftest.py has FakeIca)
 ├── docs/                    # ica-contract.md, dev.md, usage.md (cards, shortcut, badge), release.md, images/
-├── .github/workflows/       # ci.yaml, release.yaml (builds card + inkop.zip on a published release)
+├── .github/workflows/       # ci.yaml, release.yaml (builds card + handla.zip on a published release)
 ├── hacs.json, pyproject.toml, requirements_dev.txt, .env.example
-├── frontend/                # Lit card: src/ (index, inkop-card, inkop-items, inkop-shortcut, lists, items, api, navigate, storage, i18n), dev/ (mock-data preview), tests next to sources
+├── frontend/                # Lit card: src/ (index, handla-card, handla-items, handla-shortcut, lists, items, api, navigate, storage, i18n), dev/ (mock-data preview), tests next to sources
 ├── scripts/node.sh          # runs Node commands in Docker
-└── scripts/package-release.sh  # builds dist/inkop.zip for a release (docs/release.md)
+└── scripts/package-release.sh  # builds dist/handla.zip for a release (docs/release.md)
 ```
 
 > Later: `ai/` (Phase 2).
@@ -151,7 +153,7 @@ Frontend (Docker):
 ./scripts/node.sh npm run format:check
 ./scripts/node.sh npm run lint
 ./scripts/node.sh npm run test:coverage
-./scripts/node.sh npm run build   # writes custom_components/inkop/www/inkop-card.js
+./scripts/node.sh npm run build   # writes custom_components/handla/www/handla-card.js
 ```
 
 ## Plan and open questions

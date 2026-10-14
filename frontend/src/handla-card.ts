@@ -1,5 +1,5 @@
 import { LitElement, css, html, nothing, type PropertyValues } from "lit";
-import "./inkop-items";
+import "./handla-items";
 import { createList, deleteList, errorMessage, suggestListName } from "./api";
 import { localize, type TranslationKey } from "./i18n";
 import {
@@ -11,11 +11,11 @@ import {
   type Status,
 } from "./lists";
 import { loadSelectedList, saveSelectedList } from "./storage";
-import type { HomeAssistant, InkopCardConfig } from "./types";
+import type { HomeAssistant, HandlaCardConfig } from "./types";
 
 type Mode = "list" | "create" | "delete";
 
-export class InkopCard extends LitElement {
+export class HandlaCard extends LitElement {
   static override properties = {
     hass: { attribute: false },
     _config: { state: true },
@@ -131,7 +131,7 @@ export class InkopCard extends LitElement {
   `;
 
   declare hass?: HomeAssistant;
-  declare _config?: InkopCardConfig;
+  declare _config?: HandlaCardConfig;
   declare _mode: Mode;
   declare _name: string;
   declare _pending: boolean;
@@ -151,7 +151,7 @@ export class InkopCard extends LitElement {
     this._deleteTarget = null;
   }
 
-  static getStubConfig(): Partial<InkopCardConfig> {
+  static getStubConfig(): Partial<HandlaCardConfig> {
     return {};
   }
 
@@ -160,7 +160,7 @@ export class InkopCard extends LitElement {
     this._selected = loadSelectedList();
   }
 
-  setConfig(config: InkopCardConfig): void {
+  setConfig(config: HandlaCardConfig): void {
     if (typeof config !== "object" || config === null) {
       throw new Error(localize(this.hass?.language, "card.invalid_config"));
     }
@@ -303,7 +303,7 @@ export class InkopCard extends LitElement {
       }
       ${
         this._mode === "list" && selected
-          ? html`<inkop-items .hass=${this.hass} .list=${selected} .locked=${busy}></inkop-items>`
+          ? html`<handla-items .hass=${this.hass} .list=${selected} .locked=${busy}></handla-items>`
           : nothing
       }
     `;
@@ -436,17 +436,17 @@ export class InkopCard extends LitElement {
   }
 }
 
-if (!customElements.get("inkop-card")) {
-  customElements.define("inkop-card", InkopCard);
+if (!customElements.get("handla-card")) {
+  customElements.define("handla-card", HandlaCard);
 }
 
 window.customCards = window.customCards ?? [];
-if (!window.customCards.some((card) => card.type === "inkop-card")) {
+if (!window.customCards.some((card) => card.type === "handla-card")) {
   window.customCards.push({
-    type: "inkop-card",
-    name: "Inköp",
+    type: "handla-card",
+    name: "Handla",
     description: "Shopping lists on top of ICA",
   });
 }
 
-console.info(`%c INKÖP %c v${__INKOP_VERSION__} `, "background:#03a9f4;color:#fff", "");
+console.info(`%c HANDLA %c v${__HANDLA_VERSION__} `, "background:#03a9f4;color:#fff", "");

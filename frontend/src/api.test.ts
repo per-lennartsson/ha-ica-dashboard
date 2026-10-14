@@ -50,7 +50,7 @@ describe("suggestListName", () => {
     const { hass, callService } = hassReturning({ response: { name: "Att handla 14 oktober" } });
     expect(await suggestListName(hass)).toBe("Att handla 14 oktober");
     expect(callService).toHaveBeenCalledWith(
-      "inkop",
+      "handla",
       "suggest_list_name",
       {},
       undefined,
@@ -70,7 +70,7 @@ describe("createList", () => {
     const { hass, callService } = hassReturning({ response: { offline_id: "NEW-1" } });
     expect(await createList(hass, "Veckan")).toBe("NEW-1");
     expect(callService).toHaveBeenCalledWith(
-      "inkop",
+      "handla",
       "create_list",
       { title: "Veckan", set_active: true },
       undefined,
@@ -102,7 +102,7 @@ describe("deleteList", () => {
     const { hass, callService } = hassReturning(undefined);
     await deleteList(hass, "todo.ica_veckan");
     expect(callService).toHaveBeenCalledWith(
-      "inkop",
+      "handla",
       "delete_list",
       { entity_id: "todo.ica_veckan" },
       undefined,
@@ -124,7 +124,7 @@ describe("addItem", () => {
       duplicates: [],
     });
     expect(callService).toHaveBeenCalledWith(
-      "inkop",
+      "handla",
       "add_item",
       { entity_id: "todo.a", item: "2 st gurka", confirm_duplicate: false },
       undefined,
@@ -195,7 +195,7 @@ describe("tickItem, removeItem and clearTicked", () => {
     await tickItem(hass, "todo.a", "u1", true);
     await tickItem(hass, "todo.a", "u1", false);
     expect(callService.mock.calls[0]).toEqual([
-      "inkop",
+      "handla",
       "tick_item",
       { entity_id: "todo.a", item: "u1", ticked: true },
       undefined,
@@ -209,7 +209,7 @@ describe("tickItem, removeItem and clearTicked", () => {
     const { hass, callService } = hassReturning(undefined);
     await removeItem(hass, "todo.a", "u1");
     expect(callService).toHaveBeenCalledWith(
-      "inkop",
+      "handla",
       "remove_item",
       { entity_id: "todo.a", item: "u1" },
       undefined,
@@ -222,7 +222,7 @@ describe("tickItem, removeItem and clearTicked", () => {
     const { hass, callService } = hassReturning(undefined);
     await clearTicked(hass, "todo.a");
     expect(callService).toHaveBeenCalledWith(
-      "inkop",
+      "handla",
       "clear_ticked",
       { entity_id: "todo.a" },
       undefined,

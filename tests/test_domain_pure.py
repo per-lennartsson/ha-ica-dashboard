@@ -3,7 +3,7 @@
 import ast
 from pathlib import Path
 
-DOMAIN_DIR = Path(__file__).parent.parent / "custom_components" / "inkop" / "domain"
+DOMAIN_DIR = Path(__file__).parent.parent / "custom_components" / "handla" / "domain"
 
 
 def _imported_modules(path: Path) -> set[str]:

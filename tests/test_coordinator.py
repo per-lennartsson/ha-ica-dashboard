@@ -7,19 +7,19 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 
-from custom_components.inkop.const import DOMAIN
-from custom_components.inkop.coordinator import InkopCoordinator
+from custom_components.handla.const import DOMAIN
+from custom_components.handla.coordinator import HandlaCoordinator
 from tests.conftest import (
     ICA_DOMAIN,
     ICA_ENTRY_ID,
     FakeIca,
     IcaConfigure,
-    setup_inkop,
+    setup_handla,
 )
 
 
-async def _coordinator(hass: HomeAssistant) -> InkopCoordinator:
-    entry = await setup_inkop(hass)
+async def _coordinator(hass: HomeAssistant) -> HandlaCoordinator:
+    entry = await setup_handla(hass)
     return entry.runtime_data  # type: ignore[no-any-return]
 
 
@@ -137,7 +137,7 @@ async def test_set_active_list_service_and_persistence(
     ica_dependency()
     fake_ica.add_list("Bröd", "B-2")
     milk = fake_ica.add_list("Mjölk", "M-1")
-    entry = await setup_inkop(hass)
+    entry = await setup_handla(hass)
 
     await hass.services.async_call(
         DOMAIN, "set_active_list", {"entity_id": milk}, blocking=True
@@ -191,7 +191,7 @@ async def test_set_active_list_rejects_unknown_entity(
 ) -> None:
     ica_dependency()
     fake_ica.add_list("Mjölk", "M-1")
-    await setup_inkop(hass)
+    await setup_handla(hass)
 
     with pytest.raises(ServiceValidationError):
         await hass.services.async_call(

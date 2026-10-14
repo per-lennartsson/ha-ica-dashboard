@@ -45,7 +45,7 @@ describe("readLists", () => {
   });
 
   it.each([undefined, {}, { [LISTS_ENTITY]: { state: "unavailable", attributes: {} } }])(
-    "is null when Inköp is not running (%#)",
+    "is null when Handla is not running (%#)",
     (states) => {
       const hass = states === undefined ? undefined : hassWith(states as HomeAssistant["states"]);
       expect(readLists(hass)).toBeNull();

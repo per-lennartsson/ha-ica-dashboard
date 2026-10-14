@@ -5,8 +5,8 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
 
-from custom_components.inkop.const import DOMAIN, MIN_ICA_VERSION
-from custom_components.inkop.dependency import (
+from custom_components.handla.const import DOMAIN, MIN_ICA_VERSION
+from custom_components.handla.dependency import (
     ISSUE_ID,
     IcaProblem,
     IcaStatus,

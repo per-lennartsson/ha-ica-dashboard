@@ -2,7 +2,7 @@
 
 import pytest
 
-from custom_components.inkop.domain import (
+from custom_components.handla.domain import (
     UNITS,
     ParsedItem,
     format_quantity,

@@ -4,24 +4,24 @@ from homeassistant.components.select import SelectEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .coordinator import InkopConfigEntry, InkopCoordinator
+from .coordinator import HandlaConfigEntry, HandlaCoordinator
 from .domain import ListInfo, unique_labels
-from .entity import InkopEntity
+from .entity import HandlaEntity
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: InkopConfigEntry,
+    entry: HandlaConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the active-list select."""
     async_add_entities([ActiveListSelect(entry.runtime_data)])
 
 
-class ActiveListSelect(InkopEntity, SelectEntity):
+class ActiveListSelect(HandlaEntity, SelectEntity):
     """Choose which ICA list is the active one (shared by all users)."""
 
-    def __init__(self, coordinator: InkopCoordinator) -> None:
+    def __init__(self, coordinator: HandlaCoordinator) -> None:
         super().__init__(coordinator, "active_list")
 
     def _labelled(self) -> list[tuple[str, ListInfo]]:

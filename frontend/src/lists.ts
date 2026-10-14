@@ -2,8 +2,8 @@
 
 import type { HomeAssistant } from "./types";
 
-export const LISTS_ENTITY = "sensor.inkop_lists";
-export const STATUS_ENTITY = "sensor.inkop_status";
+export const LISTS_ENTITY = "sensor.handla_lists";
+export const STATUS_ENTITY = "sensor.handla_status";
 
 export interface ListInfo {
   entityId: string;
@@ -43,7 +43,7 @@ function parseList(raw: unknown): ListInfo | null {
   };
 }
 
-/** The lists, or null when Inköp is not running (sensor missing or unavailable). */
+/** The lists, or null when Handla is not running (sensor missing or unavailable). */
 export function readLists(hass: HomeAssistant | undefined): ListsState | null {
   const entity = hass?.states[LISTS_ENTITY];
   if (!entity || entity.state === "unavailable" || entity.state === "unknown") return null;

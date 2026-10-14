@@ -1,7 +1,7 @@
 """Parsing and formatting of shopping list item text, e.g. "2 st Gurka".
 
 Mirrors how ha-ica-todo parses and displays items (see docs/ica-contract.md), so
-text typed in Inköp round-trips through the ICA integration unchanged.
+text typed in Handla round-trips through the ICA integration unchanged.
 """
 
 import re

@@ -67,9 +67,9 @@ jobs:
       - run: ./scripts/package-release.sh v0.0.0
       - name: Check the zip
         run: |
-          unzip -l dist/inkop.zip
-          unzip -p dist/inkop.zip manifest.json | grep '"version": "0.0.0"'
-          unzip -l dist/inkop.zip | grep -q www/inkop-card.js
+          unzip -l dist/handla.zip
+          unzip -p dist/handla.zip manifest.json | grep '"version": "0.0.0"'
+          unzip -l dist/handla.zip | grep -q www/handla-card.js
 
   hassfest:
     name: Hassfest

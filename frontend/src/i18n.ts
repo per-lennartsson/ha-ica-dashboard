@@ -1,10 +1,10 @@
 /** Texts for the card. Swedish is the source; English must have the same keys. */
 
 export const sv = {
-  "card.title": "Inköp",
+  "card.title": "Handla",
   "card.invalid_config": "Ogiltig kortkonfiguration.",
   "card.not_running":
-    "Inköp körs inte. Kontrollera att ICA-integrationen (ha-ica-todo) är installerad och laddad (Inställningar → System → Reparationer) och att Inköp är tillagt under Enheter och tjänster.",
+    "Handla körs inte. Kontrollera att ICA-integrationen (ha-ica-todo) är installerad och laddad (Inställningar → System → Reparationer) och att Handla är tillagt under Enheter och tjänster.",
   "lists.label": "Lista",
   "lists.none": "Det finns inga inköpslistor än. Skapa en för att komma igång.",
   "lists.new": "Ny lista",
@@ -46,11 +46,11 @@ export const sv = {
   "common.dismiss": "Stäng",
   "shortcut.to_buy": "att handla",
   "shortcut.unknown": "Okänt antal",
-  "shortcut.not_running": "Inköp körs inte",
+  "shortcut.not_running": "Handla körs inte",
   "shortcut.no_list": "Ingen lista",
   "shortcut.aria": "{count} att handla på {title}",
   "shortcut.aria_open": "{count} att handla på {title}. Öppna inköpslistan.",
-  "shortcut.invalid_path": "navigation_path måste börja med / (till exempel /lovelace/inkop).",
+  "shortcut.invalid_path": "navigation_path måste börja med / (till exempel /lovelace/handla).",
 } as const;
 
 export type TranslationKey = keyof typeof sv;
@@ -59,7 +59,7 @@ export const en: Record<TranslationKey, string> = {
   "card.title": "Shopping",
   "card.invalid_config": "Invalid card configuration.",
   "card.not_running":
-    "Inköp is not running. Check that the ICA integration (ha-ica-todo) is installed and loaded (Settings → System → Repairs) and that Inköp is added under Devices & services.",
+    "Handla is not running. Check that the ICA integration (ha-ica-todo) is installed and loaded (Settings → System → Repairs) and that Handla is added under Devices & services.",
   "lists.label": "List",
   "lists.none": "There are no shopping lists yet. Create one to get started.",
   "lists.new": "New list",
@@ -101,11 +101,11 @@ export const en: Record<TranslationKey, string> = {
   "common.dismiss": "Dismiss",
   "shortcut.to_buy": "to buy",
   "shortcut.unknown": "Unknown count",
-  "shortcut.not_running": "Inköp is not running",
+  "shortcut.not_running": "Handla is not running",
   "shortcut.no_list": "No list",
   "shortcut.aria": "{count} to buy on {title}",
   "shortcut.aria_open": "{count} to buy on {title}. Open the shopping list.",
-  "shortcut.invalid_path": "navigation_path must start with / (for example /lovelace/inkop).",
+  "shortcut.invalid_path": "navigation_path must start with / (for example /lovelace/handla).",
 };
 
 /** Swedish for Swedish (and when no language is known), English for everything else. */

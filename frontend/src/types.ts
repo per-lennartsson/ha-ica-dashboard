@@ -28,21 +28,21 @@ export interface HomeAssistant {
   ): Promise<unknown>;
 }
 
-export interface InkopShortcutConfig {
+export interface HandlaShortcutConfig {
   type: string;
   title?: string;
-  /** Dashboard path to open when tapped, e.g. /lovelace/inkop. Without it the card is a plain count. */
+  /** Dashboard path to open when tapped, e.g. /lovelace/handla. Without it the card is a plain count. */
   navigation_path?: string;
 }
 
-export interface InkopCardConfig {
+export interface HandlaCardConfig {
   type: string;
   title?: string;
 }
 
 declare global {
   /** Set at build time from package.json. */
-  const __INKOP_VERSION__: string;
+  const __HANDLA_VERSION__: string;
 
   interface Window {
     customCards?: Array<{ type: string; name: string; description: string }>;

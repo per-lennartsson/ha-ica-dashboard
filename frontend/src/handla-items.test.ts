@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { InkopItems } from "./inkop-items";
-import "./inkop-items"; // registers <inkop-items>
+import type { HandlaItems } from "./handla-items";
+import "./handla-items"; // registers <handla-items>
 import { FREQUENT_ENTITY } from "./items";
 import type { ListInfo } from "./lists";
 import type { HomeAssistant } from "./types";
@@ -82,7 +82,7 @@ function makeEnv(options: Options = {}) {
   return { build, push, subscribeMessage, unsubscribe, callService, subscribers };
 }
 
-async function settle(el?: InkopItems): Promise<void> {
+async function settle(el?: HandlaItems): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 0));
   await el?.updateComplete;
 }
@@ -91,8 +91,8 @@ async function mount(
   hass: HomeAssistant,
   list: ListInfo | null = LIST_A,
   locked = false,
-): Promise<InkopItems> {
-  const el = document.createElement("inkop-items") as InkopItems;
+): Promise<HandlaItems> {
+  const el = document.createElement("handla-items") as HandlaItems;
   el.hass = hass;
   el.list = list;
   el.locked = locked;
@@ -101,13 +101,13 @@ async function mount(
   return el;
 }
 
-const root = (el: InkopItems) => el.shadowRoot as ShadowRoot;
-const input = (el: InkopItems) => root(el).querySelector<HTMLInputElement>("input[type=text]");
-const row = (el: InkopItems, summary: string) =>
+const root = (el: HandlaItems) => el.shadowRoot as ShadowRoot;
+const input = (el: HandlaItems) => root(el).querySelector<HTMLInputElement>("input[type=text]");
+const row = (el: HandlaItems, summary: string) =>
   [...root(el).querySelectorAll<HTMLElement>("li.item[data-uid]")].find(
     (li) => li.querySelector(".text")?.textContent?.trim() === summary,
   );
-const rowTexts = (el: InkopItems) =>
+const rowTexts = (el: HandlaItems) =>
   [...root(el).querySelectorAll("li.item")].map((li) => {
     const text = li.querySelector(".text")?.textContent?.replace(/\s+/g, " ").trim() ?? "";
     const prefix = li.classList.contains("pending")
@@ -117,25 +117,25 @@ const rowTexts = (el: InkopItems) =>
         : "-";
     return `${prefix} ${text}`;
   });
-const button = (el: InkopItems, action: string) =>
+const button = (el: HandlaItems, action: string) =>
   root(el).querySelector<HTMLButtonElement>(`[data-action="${action}"]`);
-const testid = (el: InkopItems, id: string) => root(el).querySelector(`[data-testid="${id}"]`);
+const testid = (el: HandlaItems, id: string) => root(el).querySelector(`[data-testid="${id}"]`);
 
-async function type(el: InkopItems, value: string): Promise<void> {
+async function type(el: HandlaItems, value: string): Promise<void> {
   const field = input(el) as HTMLInputElement;
   field.value = value;
   field.dispatchEvent(new Event("input"));
   await el.updateComplete;
 }
 
-async function submit(el: InkopItems): Promise<void> {
+async function submit(el: HandlaItems): Promise<void> {
   root(el)
     .querySelector("form")
     ?.dispatchEvent(new Event("submit", { cancelable: true }));
   await settle(el);
 }
 
-async function add(el: InkopItems, text: string): Promise<void> {
+async function add(el: HandlaItems, text: string): Promise<void> {
   await type(el, text);
   await submit(el);
 }
@@ -436,7 +436,7 @@ describe("adding items", () => {
     await add(el, "  2 st gurka ");
 
     expect(env.callService).toHaveBeenCalledWith(
-      "inkop",
+      "handla",
       "add_item",
       { entity_id: "todo.ica_a", item: "2 st gurka", confirm_duplicate: false },
       undefined,
@@ -756,7 +756,7 @@ describe("quick-add buttons", () => {
     await settle(el);
 
     expect(env.callService).toHaveBeenCalledWith(
-      "inkop",
+      "handla",
       "add_item",
       { entity_id: "todo.ica_a", item: "ägg", confirm_duplicate: false },
       undefined,
@@ -807,7 +807,7 @@ describe("ticking, removing and clearing", () => {
     await settle(el);
 
     expect(env.callService).toHaveBeenCalledWith(
-      "inkop",
+      "handla",
       "tick_item",
       { entity_id: "todo.ica_a", item: "u1", ticked: true },
       undefined,
@@ -888,7 +888,7 @@ describe("ticking, removing and clearing", () => {
     await settle(el);
 
     expect(env.callService).toHaveBeenCalledWith(
-      "inkop",
+      "handla",
       "remove_item",
       { entity_id: "todo.ica_a", item: "u3" },
       undefined,
@@ -939,7 +939,7 @@ describe("ticking, removing and clearing", () => {
     await settle(el);
 
     expect(env.callService).toHaveBeenCalledWith(
-      "inkop",
+      "handla",
       "clear_ticked",
       { entity_id: "todo.ica_a" },
       undefined,

@@ -48,11 +48,11 @@ def build_message(
         listed += f" +{extra} till" if swedish else f" +{extra} more"
     if swedish:
         if adder_name:
-            return "Inköp", f"{adder_name} lade till {listed} i {list_title}"
-        return "Inköp", f"Nytt på {list_title}: {listed}"
+            return "Handla", f"{adder_name} lade till {listed} i {list_title}"
+        return "Handla", f"Nytt på {list_title}: {listed}"
     if adder_name:
-        return "Inköp", f"{adder_name} added {listed} to {list_title}"
-    return "Inköp", f"New on {list_title}: {listed}"
+        return "Handla", f"{adder_name} added {listed} to {list_title}"
+    return "Handla", f"New on {list_title}: {listed}"
 
 
 def choose_notify_services(names: Iterable[str]) -> list[str]:

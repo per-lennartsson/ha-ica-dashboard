@@ -2,7 +2,7 @@
 
 import pytest
 
-from custom_components.inkop.domain import (
+from custom_components.handla.domain import (
     ListInfo,
     entity_for,
     event_mentions,

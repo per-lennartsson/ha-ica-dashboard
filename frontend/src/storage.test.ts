@@ -20,7 +20,7 @@ describe("selected list storage", () => {
 
   it("keeps the choice in this browser's localStorage under a namespaced key", () => {
     saveSelectedList("ABC-1");
-    expect(window.localStorage.getItem("inkop:selected-list")).toBe("ABC-1");
+    expect(window.localStorage.getItem("handla:selected-list")).toBe("ABC-1");
   });
 
   it("survives blocked storage when reading", () => {

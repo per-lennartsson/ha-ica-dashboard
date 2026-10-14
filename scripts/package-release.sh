@@ -1,11 +1,11 @@
 #!/bin/sh
-# Packages the integration as dist/inkop.zip for a release (HACS zip_release).
+# Packages the integration as dist/handla.zip for a release (HACS zip_release).
 #
 #   scripts/package-release.sh v0.1.0
 #
 # The card must already be built with the same version (see docs/release.md); the
-# release workflow does both. The zip holds the contents of custom_components/inkop/,
-# which HACS unpacks into custom_components/inkop/ on the user's Home Assistant.
+# release workflow does both. The zip holds the contents of custom_components/handla/,
+# which HACS unpacks into custom_components/handla/ on the user's Home Assistant.
 set -eu
 
 TAG="${1:?usage: package-release.sh vMAJOR.MINOR.PATCH}"
@@ -16,24 +16,24 @@ esac
 VERSION="${TAG#v}"
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SRC="$ROOT/custom_components/inkop"
+SRC="$ROOT/custom_components/handla"
 OUT="$ROOT/dist"
 
-if [ ! -f "$SRC/www/inkop-card.js" ]; then
+if [ ! -f "$SRC/www/handla-card.js" ]; then
   echo "The card is not built: run the frontend build first (docs/release.md)" >&2
   exit 1
 fi
-if ! grep -qF "$VERSION" "$SRC/www/inkop-card.js"; then
+if ! grep -qF "$VERSION" "$SRC/www/handla-card.js"; then
   echo "The built card does not contain version $VERSION: build it with that version" >&2
   exit 1
 fi
 
 rm -rf "$OUT"
-mkdir -p "$OUT/inkop"
-cp -R "$SRC/." "$OUT/inkop/"
-find "$OUT/inkop" -name __pycache__ -type d -prune -exec rm -rf {} +
+mkdir -p "$OUT/handla"
+cp -R "$SRC/." "$OUT/handla/"
+find "$OUT/handla" -name __pycache__ -type d -prune -exec rm -rf {} +
 
-python3 - "$OUT/inkop/manifest.json" "$VERSION" <<'PY'
+python3 - "$OUT/handla/manifest.json" "$VERSION" <<'PY'
 import json
 import sys
 
@@ -46,5 +46,5 @@ with open(path, "w", encoding="utf-8") as file:
     file.write("\n")
 PY
 
-(cd "$OUT/inkop" && zip -qr -X ../inkop.zip .)
-echo "Built $OUT/inkop.zip for $TAG"
+(cd "$OUT/handla" && zip -qr -X ../handla.zip .)
+echo "Built $OUT/handla.zip for $TAG"
