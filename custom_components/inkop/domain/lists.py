@@ -18,6 +18,19 @@ class ListInfo:
     comment: str | None = None
 
 
+def lists_payload(lists: Sequence[ListInfo]) -> list[dict[str, Any]]:
+    """Lists as plain dicts for the sensor the card reads."""
+    return [
+        {
+            "entity_id": item.entity_id,
+            "offline_id": item.offline_id,
+            "title": item.title,
+            "item_count": item.item_count,
+        }
+        for item in lists
+    ]
+
+
 def same_id(a: str | None, b: str | None) -> bool:
     """Compare ICA list IDs case-insensitively (ICA returns them in upper case)."""
     return a is not None and b is not None and a.casefold() == b.casefold()

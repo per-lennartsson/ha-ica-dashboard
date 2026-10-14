@@ -6,6 +6,7 @@ from custom_components.inkop.domain import (
     ListInfo,
     entity_for,
     event_mentions,
+    lists_payload,
     pick_active,
     same_id,
     title_from_name,
@@ -71,3 +72,20 @@ def test_event_mentions_and_entity_for() -> None:
     assert entity_for(event, "abc-1") == "todo.x"
     assert entity_for(event, "other") is None
     assert entity_for({}, "abc-1") is None
+
+
+def test_lists_payload() -> None:
+    lists = [
+        ListInfo("todo.a", "A-1", "Bröd", 2, "kommentar"),
+        ListInfo("todo.b", "B-2", "Mjölk"),
+    ]
+    assert lists_payload(lists) == [
+        {"entity_id": "todo.a", "offline_id": "A-1", "title": "Bröd", "item_count": 2},
+        {
+            "entity_id": "todo.b",
+            "offline_id": "B-2",
+            "title": "Mjölk",
+            "item_count": None,
+        },
+    ]
+    assert lists_payload([]) == []

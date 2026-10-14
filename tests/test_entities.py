@@ -172,3 +172,49 @@ async def test_unload_and_reload_keep_entities(
     await hass.async_block_till_done()
 
     assert _state(hass, "sensor", "items", entry.entry_id).state == "2"
+
+
+async def test_lists_sensor_shows_every_list_and_the_active_one(
+    hass: HomeAssistant, ica_dependency: IcaConfigure, fake_ica: FakeIca
+) -> None:
+    ica_dependency()
+    bread = fake_ica.add_list("Bröd", "B-2", items=2)
+    milk = fake_ica.add_list("Mjölk", "M-1", items=0)
+    entry = await setup_inkop(hass)
+
+    state = _state(hass, "sensor", "lists", entry.entry_id)
+    assert state.state == "2"
+    assert state.attributes["active_offline_id"] == "B-2"
+    assert state.attributes["lists"] == [
+        {"entity_id": bread, "offline_id": "B-2", "title": "Bröd", "item_count": 2},
+        {"entity_id": milk, "offline_id": "M-1", "title": "Mjölk", "item_count": 0},
+    ]
+
+
+async def test_lists_sensor_follows_counts_and_new_lists(
+    hass: HomeAssistant, ica_dependency: IcaConfigure, fake_ica: FakeIca
+) -> None:
+    ica_dependency()
+    milk = fake_ica.add_list("Mjölk", "M-1", items=1)
+    entry = await setup_inkop(hass)
+
+    hass.states.async_set(milk, "4", hass.states.get(milk).attributes)  # type: ignore[union-attr]
+    fake_ica.add_list("Ägg", "E-3")
+    await hass.async_block_till_done()
+
+    state = _state(hass, "sensor", "lists", entry.entry_id)
+    assert state.state == "2"
+    counts = {i["title"]: i["item_count"] for i in state.attributes["lists"]}
+    assert counts == {"Mjölk": 4, "Ägg": 0}
+
+
+async def test_lists_sensor_without_lists(
+    hass: HomeAssistant, ica_dependency: IcaConfigure
+) -> None:
+    ica_dependency()
+    entry = await setup_inkop(hass)
+
+    state = _state(hass, "sensor", "lists", entry.entry_id)
+    assert state.state == "0"
+    assert state.attributes["lists"] == []
+    assert state.attributes["active_offline_id"] is None

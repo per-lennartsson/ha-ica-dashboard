@@ -53,6 +53,9 @@
       },
       "frequent_items": {
         "name": "Vanliga varor"
+      },
+      "lists": {
+        "name": "Listor"
       }
     }
   },
@@ -164,6 +167,11 @@
           "description": "Hur många varor som ska returneras."
         }
       }
+    },
+    "suggest_list_name": {
+      "name": "Föreslå listnamn",
+      "description": "Returnera standardnamnet för en ny lista, till exempel “Att handla 14 oktober”.",
+      "fields": {}
     }
   },
   "exceptions": {

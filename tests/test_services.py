@@ -349,3 +349,44 @@ async def test_delete_times_out_when_no_event_arrives(
 
     assert err.value.translation_key == "delete_timeout"
     assert coordinator.status is Status.ERROR
+
+
+# --- suggest_list_name ------------------------------------------------------
+
+
+async def _suggest(hass: HomeAssistant) -> str:
+    result = await hass.services.async_call(
+        DOMAIN, "suggest_list_name", {}, blocking=True, return_response=True
+    )
+    assert result is not None
+    return str(result["name"])
+
+
+async def test_suggest_list_name_uses_the_date(
+    hass: HomeAssistant, ica_dependency: IcaConfigure, fake_ica: FakeIca
+) -> None:
+    await _setup(hass, ica_dependency)
+
+    assert await _suggest(hass) == "Att handla 14 oktober"
+
+
+async def test_suggest_list_name_numbers_a_taken_name(
+    hass: HomeAssistant, ica_dependency: IcaConfigure, fake_ica: FakeIca
+) -> None:
+    await _setup(hass, ica_dependency)
+    fake_ica.add_list("Att handla 14 oktober", "OLD-1")
+    fake_ica.add_list("Att handla 14 oktober (2)", "OLD-2")
+    await hass.async_block_till_done()
+
+    assert await _suggest(hass) == "Att handla 14 oktober (3)"
+
+
+async def test_suggest_list_name_needs_a_set_up_integration(
+    hass: HomeAssistant,
+) -> None:
+    assert await async_setup_component(hass, DOMAIN, {})
+
+    with pytest.raises(ServiceValidationError) as err:
+        await _suggest(hass)
+
+    assert err.value.translation_key == "not_set_up"

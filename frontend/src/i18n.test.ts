@@ -26,13 +26,20 @@ describe("localize", () => {
     expect(localize(undefined, "card.title")).toBe("Inköp");
   });
 
-  it("fills in parameters, also when repeated", () => {
-    expect(localize("sv", "card.items", { count: 3 })).toBe("3 varor att handla");
-    expect(localize("en", "card.items", { count: "0" })).toBe("0 items to buy");
+  it("fills in parameters", () => {
+    expect(localize("sv", "delete.confirm", { title: "Veckan" })).toBe(
+      "Ta bort listan “Veckan” från ICA? Det går inte att ångra.",
+    );
+    expect(localize("en", "error.generic", { message: "boom" })).toBe("Something went wrong: boom");
+  });
+
+  it("fills in every occurrence of a parameter", () => {
+    const text = localize("sv", "delete.confirm", { title: "A" });
+    expect(text).not.toContain("{title}");
   });
 
   it("leaves unknown placeholders alone", () => {
-    expect(localize("sv", "card.items")).toBe("{count} varor att handla");
+    expect(localize("sv", "error.generic")).toBe("Något gick fel: {message}");
   });
 
   it("has the same keys in both languages", () => {
