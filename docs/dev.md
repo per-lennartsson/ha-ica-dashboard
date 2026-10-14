@@ -114,6 +114,18 @@ Use a throwaway list as the card's selected list, and check on a **phone in the 
 8. **Views:** switch to another dashboard view and back: the items still update live.
 9. **Phone:** no sideways scrolling, easy to hit the boxes and ×, the page does not zoom when the field is focused, and the keyboard does not cover the field.
 
+## Manual check: mobile shortcut (plan step 1.10)
+
+Build the card, install as before, and add the shortcut to the **phone dashboard** (`type: custom:inkop-shortcut`, with `navigation_path` set to the view that holds the full card; see `docs/usage.md`). Also add the badge from `docs/usage.md` to try that option.
+
+1. **Shows the count:** the shortcut shows the number of items left to buy and the list name. Add or tick an item in the full card (or in the ICA app): the number follows within a few seconds, without reloading.
+2. **Your own list:** pick another list in the full card on this device: the shortcut switches to it. On a second phone with a different choice it shows that person's list.
+3. **Tap:** tapping the shortcut opens the shopping view (no page reload, the back button returns to the dashboard).
+4. **Look and feel on the phone:** the card is easy to hit with a thumb, the text is readable in light and dark theme, and nothing is cut off with a long list name.
+5. **Without `navigation_path`:** the card is a plain count and tapping does nothing.
+6. **Badge:** the entity badge shows the count with a cart icon and tapping it navigates to the same view.
+7. **Not running:** with the integration disabled the shortcut says "Inköp körs inte".
+
 ## Rules for testing against the real ICA account
 
 - Automated tests never use a real ICA account. Mocks only.

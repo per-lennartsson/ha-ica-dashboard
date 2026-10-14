@@ -4,8 +4,9 @@
  * sensor while they run, items change live through a mock websocket subscription, and a
  * second list operation during that time is refused.
  */
-import "../src/inkop-card";
+import "../src/index";
 import type { InkopCard } from "../src/inkop-card";
+import type { InkopShortcut } from "../src/inkop-shortcut";
 import type { HomeAssistant } from "../src/types";
 
 interface MockItem {
@@ -291,12 +292,25 @@ function fail(message: string): never {
   throw { message };
 }
 
+// The phone shortcut: a tap navigates (here the preview just reports where it would go)
+const shortcut = document.createElement("inkop-shortcut") as InkopShortcut;
+shortcut.setConfig({ type: "custom:inkop-shortcut", navigation_path: "/lovelace/inkop" });
+const where = document.createElement("p");
+where.id = "where";
+where.style.cssText = "margin: 4px 0 16px; font-size: 0.85rem; color: #555";
+window.addEventListener("location-changed", () => {
+  where.textContent = `Genvägen öppnar: ${window.location.pathname}`;
+  window.history.replaceState(null, "", "/");
+});
+document.getElementById("host")?.append(shortcut, where);
+
 const card = document.createElement("inkop-card") as InkopCard;
 card.setConfig({ type: "custom:inkop-card" });
 document.getElementById("host")?.appendChild(card);
 
 function refresh(): void {
   card.hass = makeHass();
+  shortcut.hass = makeHass();
 }
 
 function addControl(label: string, onClick: () => void): void {

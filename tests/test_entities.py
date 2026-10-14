@@ -218,3 +218,14 @@ async def test_lists_sensor_without_lists(
     assert state.state == "0"
     assert state.attributes["lists"] == []
     assert state.attributes["active_offline_id"] is None
+
+
+async def test_items_sensor_has_a_cart_icon_for_badges(
+    hass: HomeAssistant, ica_dependency: IcaConfigure, fake_ica: FakeIca
+) -> None:
+    ica_dependency()
+    fake_ica.add_list("Mjölk", "M-1", items=3)
+    entry = await setup_inkop(hass)
+
+    state = _state(hass, "sensor", "items", entry.entry_id)
+    assert state.attributes["icon"] == "mdi:cart-outline"

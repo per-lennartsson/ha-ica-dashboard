@@ -105,10 +105,10 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 │   └── domain/              # pure logic, no Home Assistant imports
 │       ├── items.py, duplicates.py, naming.py, lists.py, todo_items.py, usage.py, icons.py, notify.py, versions.py
 ├── tests/                   # pytest, mocked ICA and AI (conftest.py has FakeIca)
-├── docs/                    # ica-contract.md, dev.md
+├── docs/                    # ica-contract.md, dev.md, usage.md (cards, shortcut, badge)
 ├── .github/workflows/ci.yaml
 ├── hacs.json, pyproject.toml, requirements_dev.txt, .env.example
-├── frontend/                # Lit card: src/ (inkop-card, inkop-items, lists, items, api, storage, i18n), dev/ (mock-data preview), tests next to sources
+├── frontend/                # Lit card: src/ (index, inkop-card, inkop-items, inkop-shortcut, lists, items, api, navigate, storage, i18n), dev/ (mock-data preview), tests next to sources
 └── scripts/node.sh          # runs Node commands in Docker
 ```
 
