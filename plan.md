@@ -30,7 +30,7 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 - [x] `docs/dev.md`: how to install a branch/release of `inkop` via HACS custom repository on the own HA OS, ha-ica-todo already installed, rules for throwaway ICA lists and cleanup. (Optional: Docker HA instance, not required.)
 - [x] Update CLAUDE.md `Run` section.
 - [x] Minimal config flow (single instance, creates the entry; `strings.json`, sv/en translations, tests) so `inkop` can be added from the UI without editing YAML. Dependency checks stay in step 1.2.
-- **Verify:** (needs the maintainer) `inkop` installs on the real HA (HACS or folder copy), is added via *Add integration → Inköp*, shows as loaded, and shows no errors in the log. Not ticked until done.
+- [x] **Verify:** `inkop` installs on the real HA, is added via *Add integration → Inköp* and works (confirmed by the maintainer).
 
 ---
 
@@ -146,5 +146,6 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 |------|------|--------|
 | 2026-10-13 | 0.1 (update) | ha-ica-todo changes made on branch `list-events-and-metadata` (`c2fe1f1`, v0.10.0): `ica_lists_changed`, `ica_list_items_changed`, list entity attributes, fork metadata. Contract and plan updated; minimum version now `>= v0.10.0`. Review notes: event fires also on reload failure; item-change event has no user; removed fields not reported. |
 | 2026-10-13 | env | Upgraded dev env to Python 3.14.8 (Homebrew) and HA 2026.10.1 / pytest-homeassistant-custom-component 0.13.372. Checks green. `ai_task` is now testable. |
+| 2026-10-14 | 0.4 | Manual verification on the real HA: `inkop` installed and worked. Docs and minimal config flow merged (`7a33bf1`). |
 | 2026-10-13 | 0.2 | Skeleton + tooling done. ruff, mypy and 2 smoke tests green. Dev env: Python 3.13.1 resolves HA 2025.4.4 (not 2026.9); `ai_task` (2025.8+) cannot be tested until Python/HA is upgraded. Node only via Docker. |
 | 2026-10-13 | 0.1 | Contract written from ha-ica-todo `main` @ `6c45aa7` (v0.9.0). Brief confirmed except: `create_shopping_list` needs `integration`; no item-change event; create/delete return before reload completes. Possible ha-ica-todo changes identified, none blocking. |
