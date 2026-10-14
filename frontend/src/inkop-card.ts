@@ -1,4 +1,5 @@
 import { LitElement, css, html, nothing, type PropertyValues } from "lit";
+import "./inkop-items";
 import { createList, deleteList, errorMessage, suggestListName } from "./api";
 import { localize, type TranslationKey } from "./i18n";
 import {
@@ -299,6 +300,11 @@ export class InkopCard extends LitElement {
           : this._mode === "delete" && target
             ? this._renderDelete(target, busy)
             : this._renderPicker(lists, selected, busy)
+      }
+      ${
+        this._mode === "list" && selected
+          ? html`<inkop-items .hass=${this.hass} .list=${selected} .locked=${busy}></inkop-items>`
+          : nothing
       }
     `;
   }

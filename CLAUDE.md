@@ -108,7 +108,7 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 ├── docs/                    # ica-contract.md, dev.md
 ├── .github/workflows/ci.yaml
 ├── hacs.json, pyproject.toml, requirements_dev.txt, .env.example
-├── frontend/                # Lit card: src/ (card, lists, api, storage, i18n), dev/ (mock-data preview), tests next to sources
+├── frontend/                # Lit card: src/ (inkop-card, inkop-items, lists, items, api, storage, i18n), dev/ (mock-data preview), tests next to sources
 └── scripts/node.sh          # runs Node commands in Docker
 ```
 

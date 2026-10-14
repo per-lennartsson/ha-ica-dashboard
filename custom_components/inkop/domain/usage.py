@@ -13,6 +13,19 @@ from .icons import icon_for
 
 MAX_TRACKED = 500
 
+# Shown as quick-add buttons until real history takes over (Swedish staples)
+DEFAULT_QUICK_ITEMS = (
+    "mjölk",
+    "bröd",
+    "ägg",
+    "smör",
+    "ost",
+    "kaffe",
+    "bananer",
+    "tomater",
+)
+MIN_QUICK_ITEMS = 8
+
 
 @dataclass(frozen=True)
 class UsageEntry:
@@ -67,6 +80,27 @@ def top_payload(entries: Mapping[str, UsageEntry], limit: int) -> list[dict[str,
         {"name": e.name, "count": e.count, "icon": icon_for(e.name)}
         for e in top_items(entries, limit)
     ]
+
+
+def quick_add_payload(
+    entries: Mapping[str, UsageEntry],
+    limit: int,
+    minimum: int = MIN_QUICK_ITEMS,
+) -> list[dict[str, Any]]:
+    """Buttons for quick-add: the most added items, topped up with staples.
+
+    Real items always come first. Staples (count 0) only fill the remaining places up
+    to `minimum` buttons (never more than `limit`) and never repeat a real item.
+    """
+    items = top_payload(entries, limit)
+    shown = {normalize_name(item["name"]) for item in items}
+    for name in DEFAULT_QUICK_ITEMS:
+        if len(items) >= min(minimum, limit):
+            break
+        if normalize_name(name) not in shown:
+            shown.add(normalize_name(name))
+            items.append({"name": name, "count": 0, "icon": icon_for(name)})
+    return items
 
 
 def entries_to_json(entries: Mapping[str, UsageEntry]) -> dict[str, dict[str, Any]]:

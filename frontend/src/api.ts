@@ -58,3 +58,62 @@ export async function createList(hass: HomeAssistant, title: string): Promise<st
 export async function deleteList(hass: HomeAssistant, entityId: string): Promise<void> {
   await call(hass, "delete_list", { entity_id: entityId });
 }
+
+export interface AddResult {
+  added: boolean;
+  /** An open item with the same name was already on the list. */
+  duplicate: boolean;
+  /** The item text as stored (normalised by the integration). */
+  item: string;
+  duplicates: Array<{ uid: string; summary: string }>;
+}
+
+/**
+ * Adds an item. When an open item with the same name exists nothing is added unless
+ * `confirmDuplicate` is true; the result then has added=false and duplicate=true.
+ */
+export async function addItem(
+  hass: HomeAssistant,
+  entityId: string,
+  item: string,
+  confirmDuplicate = false,
+): Promise<AddResult> {
+  const response = await call(
+    hass,
+    "add_item",
+    { entity_id: entityId, item, confirm_duplicate: confirmDuplicate },
+    true,
+  );
+  const raw = Array.isArray(response["duplicates"]) ? response["duplicates"] : [];
+  return {
+    added: response["added"] === true,
+    duplicate: response["duplicate"] === true,
+    item: typeof response["item"] === "string" ? response["item"] : item,
+    duplicates: raw.flatMap((entry: unknown) => {
+      if (typeof entry !== "object" || entry === null) return [];
+      const { uid, summary } = entry as Record<string, unknown>;
+      return typeof uid === "string" && typeof summary === "string" ? [{ uid, summary }] : [];
+    }),
+  };
+}
+
+export async function tickItem(
+  hass: HomeAssistant,
+  entityId: string,
+  uid: string,
+  ticked: boolean,
+): Promise<void> {
+  await call(hass, "tick_item", { entity_id: entityId, item: uid, ticked });
+}
+
+export async function removeItem(
+  hass: HomeAssistant,
+  entityId: string,
+  uid: string,
+): Promise<void> {
+  await call(hass, "remove_item", { entity_id: entityId, item: uid });
+}
+
+export async function clearTicked(hass: HomeAssistant, entityId: string): Promise<void> {
+  await call(hass, "clear_ticked", { entity_id: entityId });
+}

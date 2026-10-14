@@ -4,11 +4,14 @@ import pytest
 
 from custom_components.inkop.domain import (
     DEFAULT_ICON,
+    DEFAULT_QUICK_ITEMS,
     MAX_TRACKED,
+    MIN_QUICK_ITEMS,
     UsageEntry,
     entries_from_json,
     entries_to_json,
     icon_for,
+    quick_add_payload,
     record_use,
     top_items,
     top_payload,
@@ -132,3 +135,47 @@ def test_icons_for_common_groceries(name: str, icon: str) -> None:
 def test_unknown_items_get_the_default_icon() -> None:
     assert icon_for("xyzzy") == DEFAULT_ICON
     assert icon_for("") == DEFAULT_ICON
+
+
+def test_quick_add_without_history_is_the_staples() -> None:
+    items = quick_add_payload({}, 12)
+    assert [i["name"] for i in items] == list(DEFAULT_QUICK_ITEMS)
+    assert all(i["count"] == 0 for i in items)
+    assert items[0] == {"name": "mjölk", "count": 0, "icon": "mdi:cow"}
+    assert len(items) == MIN_QUICK_ITEMS
+
+
+def test_quick_add_puts_real_items_first_and_fills_up_with_staples() -> None:
+    entries = record_use(record_use({}, "ananas", "1"), "ananas", "2")
+    items = quick_add_payload(entries, 12)
+    assert items[0] == {"name": "ananas", "count": 2, "icon": DEFAULT_ICON}
+    assert [i["name"] for i in items[1:]] == list(
+        DEFAULT_QUICK_ITEMS[: MIN_QUICK_ITEMS - 1]
+    )
+    assert len(items) == MIN_QUICK_ITEMS
+
+
+def test_quick_add_never_repeats_a_real_item_among_the_staples() -> None:
+    entries = record_use({}, "MJÖLK", "1")
+    names = [i["name"] for i in quick_add_payload(entries, 12)]
+    assert names.count("MJÖLK") == 1
+    assert "mjölk" not in names
+    assert len(names) == MIN_QUICK_ITEMS
+
+
+def test_quick_add_needs_no_staples_with_enough_history() -> None:
+    entries: dict[str, UsageEntry] = {}
+    for number in range(MIN_QUICK_ITEMS):
+        entries = record_use(entries, f"vara {number}", f"2026-01-0{number + 1}")
+    items = quick_add_payload(entries, 12)
+    assert len(items) == MIN_QUICK_ITEMS
+    assert all(i["count"] == 1 for i in items)
+
+
+def test_quick_add_respects_the_limit() -> None:
+    assert len(quick_add_payload({}, 3)) == 3
+    assert quick_add_payload({}, 0) == []
+
+
+def test_quick_add_with_a_higher_minimum() -> None:
+    assert len(quick_add_payload({}, 12, minimum=3)) == 3

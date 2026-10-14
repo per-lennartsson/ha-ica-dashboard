@@ -12,7 +12,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import QUICK_ADD_LIMIT
 from .coordinator import InkopConfigEntry, InkopCoordinator, Status
-from .domain import lists_payload
+from .domain import lists_payload, quick_add_payload
 from .entity import InkopEntity
 
 
@@ -96,8 +96,9 @@ class FrequentItemsSensor(SensorEntity, InkopEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """The top items, most added first: name, count and icon."""
-        return {"items": self.coordinator.usage.top(QUICK_ADD_LIMIT)}
+        """Quick-add buttons: most added first, topped up with staples (count 0)."""
+        entries = self.coordinator.usage.entries
+        return {"items": quick_add_payload(entries, QUICK_ADD_LIMIT)}
 
 
 class ListsSensor(SensorEntity, InkopEntity):
