@@ -43,9 +43,10 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 - Decisions: a duplicate is a same normalized name (case and whitespace-insensitive), quantity and unit ignored, no plural matching. Default list name is "Att handla <dagens datum> <månad>", e.g. "Att handla 14 oktober" (day of month, not weekday).
 
 ### 1.2 Config flow and dependency check (M)
-- [ ] Config flow: single instance; aborts with clear Swedish/English message if `ha-ica-todo` is missing, not loaded, or below the minimum version (`v0.10.0`, see `docs/ica-contract.md`).
-- [ ] Setup re-checks the dependency and raises a repair issue if it disappears.
-- **Verify:** flow tests for missing, too old, and OK; Manual (real HA): add the integration with ha-ica-todo present, and (if practical) with it disabled.
+- [x] Config flow: single instance; aborts with clear Swedish/English message if `ha-ica-todo` is missing, not set up, not loaded, or below the minimum version (`v0.10.0`, see `docs/ica-contract.md`). Pure version comparison in `domain/versions.py`, I/O check in `dependency.py`.
+- [x] Setup re-checks the dependency; if unusable it raises a repair issue and retries (`ConfigEntryNotReady`); the issue clears when ICA is usable again or the entry is removed. **Not monitored while running** on purpose: ha-ica-todo reloads on every list create/delete, which must not look like a problem (step 1.3 handles that as a busy state).
+- **Verify (automated, done):** 126 tests pass, 100% coverage of `custom_components/inkop`; tests cover missing, too old (incl. unparseable version), not configured, not loaded, OK, repair issue create/update/clear, recovery on retry, and translation keys/placeholders (sv/en/strings.json checked consistent).
+- **Verify (Manual, real HA, not yet done):** add the integration with ha-ica-todo present (works), and with it disabled or removed (clear message in Swedish/English; repair issue after restart).
 
 ### 1.3 Coordinator and list management services (L)
 - [ ] Coordinator reading ICA `todo` entities.
@@ -147,6 +148,7 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 |------|------|--------|
 | 2026-10-13 | 0.1 (update) | ha-ica-todo changes made on branch `list-events-and-metadata` (`c2fe1f1`, v0.10.0): `ica_lists_changed`, `ica_list_items_changed`, list entity attributes, fork metadata. Contract and plan updated; minimum version now `>= v0.10.0`. Review notes: event fires also on reload failure; item-change event has no user; removed fields not reported. |
 | 2026-10-13 | env | Upgraded dev env to Python 3.14.8 (Homebrew) and HA 2026.10.1 / pytest-homeassistant-custom-component 0.13.372. Checks green. `ai_task` is now testable. |
+| 2026-10-14 | 1.2 | Dependency check implemented (flow + setup + repair issue), 126 tests green. Manual check on the real HA pending. |
 | 2026-10-14 | 1.1 | Domain logic done: `domain/items.py`, `duplicates.py`, `naming.py`; 78 tests, 100% coverage of `domain/`. |
 | 2026-10-14 | 0.4 | Manual verification on the real HA: `inkop` installed and worked. Docs and minimal config flow merged (`7a33bf1`). |
 | 2026-10-13 | 0.2 | Skeleton + tooling done. ruff, mypy and 2 smoke tests green. Dev env: Python 3.13.1 resolves HA 2025.4.4 (not 2026.9); `ai_task` (2025.8+) cannot be tested until Python/HA is upgraded. Node only via Docker. |
