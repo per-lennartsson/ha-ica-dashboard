@@ -10,23 +10,24 @@ Day-to-day development needs **no running Home Assistant**. Automated tests use 
 
 ## Installing `inkop` for a manual check
 
-Choose one.
+Choose one. Releases are installed through HACS from the `inkop.zip` that the release workflow builds (`docs/release.md`), so HACS **cannot install `main` or a branch**: it needs a published release. For anything that is not released yet, copy the folder.
 
-### Option A: HACS custom repository (preferred, tests the real install path)
+### Option A: copy the folder (any branch, fast)
 
-1. HACS → ⋮ → *Custom repositories* → add `https://github.com/per-lennartsson/ha-ica-dashboard`, type *Integration*.
-2. Open *Inköp* in HACS → *Download*. With no release published, HACS installs the default branch (`main`) and shows a commit hash as the version. Once releases exist it offers them. Unmerged feature branches are not reliably installable through HACS: use option B for those.
+1. On the dev machine, check out the branch to test and **build the card** (`./scripts/node.sh npm ci` once, then `./scripts/node.sh npm run build`): the built file `custom_components/inkop/www/inkop-card.js` is not in git.
+2. Copy `custom_components/inkop/` **including `www/`** into the HA config folder `config/custom_components/inkop/` (Samba share, SSH `scp`, or File editor).
 3. Restart Home Assistant.
 
-To update after new commits: HACS → *Inköp* → *Redownload*, then restart.
+To update: build and copy again, then restart (or reload if only Python files in a loaded entry changed).
 
-### Option B: copy the folder (fast, any branch)
+### Option B: HACS release (tests the real install path)
 
-1. On the dev machine, check out the branch to test.
-2. Copy `custom_components/inkop/` into the HA config folder `config/custom_components/inkop/` (Samba share, SSH `scp`, or File editor).
-3. Restart Home Assistant.
+Use this to verify a published release (including pre-releases).
 
-To update: copy again and restart (or reload if only Python files in a loaded entry changed).
+1. HACS → ⋮ → *Custom repositories* → add `https://github.com/per-lennartsson/ha-ica-dashboard`, type *Integration*. For a pre-release, enable *Show beta versions* on the Inköp page in HACS.
+2. Open *Inköp* in HACS → *Download* → choose the release → restart Home Assistant.
+
+To update: HACS → *Inköp* → *Update* (or *Redownload*), then restart.
 
 Do not install both options at once. Remove the folder, or the HACS install, before switching.
 
@@ -161,7 +162,7 @@ Adding or updating a package is an install: ask the maintainer first, then run f
 
 ### How the card reaches Home Assistant
 
-`npm run build` writes `custom_components/inkop/www/inkop-card.js` (git-ignored for now; whether to commit it or attach it to releases is decided in plan step 1.11). When Inköp starts, `card.py` serves that file at `/inkop/inkop-card.js` and tells the frontend to load it in every dashboard, so **no Lovelace resource has to be added by hand**. If the file is missing, Inköp logs a warning and everything else keeps working.
+`npm run build` writes `custom_components/inkop/www/inkop-card.js`. It is git-ignored: the release workflow builds it and ships it inside `inkop.zip` (`docs/release.md`); for a manual check you build it yourself and copy the folder. When Inköp starts, `card.py` serves that file at `/inkop/inkop-card.js` and tells the frontend to load it in every dashboard, so **no Lovelace resource has to be added by hand**. If the file is missing, Inköp logs a warning and everything else keeps working.
 
 ## Manual check: card loads (plan step 1.7)
 

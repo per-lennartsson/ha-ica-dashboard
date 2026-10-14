@@ -1,0 +1,44 @@
+name: Release
+
+# Publishing a GitHub release (tag vMAJOR.MINOR.PATCH) builds the card, stamps the
+# version into the integration and attaches inkop.zip, which HACS installs.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write # to attach the zip to the release
+
+jobs:
+  asset:
+    name: Build and attach inkop.zip
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Check the tag
+        run: |
+          case "$TAG" in
+            v[0-9]*.[0-9]*.[0-9]*) ;;
+            *) echo "The tag must look like v1.2.3, got: $TAG"; exit 1 ;;
+          esac
+      - name: Test and build the card with the release version
+        working-directory: frontend
+        run: |
+          npm ci
+          npm pkg set version="${TAG#v}"
+          npm run lint
+          npm test
+          npm run build
+      - name: Package the integration
+        run: ./scripts/package-release.sh "$TAG"
+      - name: Attach inkop.zip to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "$TAG" dist/inkop.zip --clobber

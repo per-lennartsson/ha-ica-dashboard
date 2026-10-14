@@ -48,6 +48,29 @@ jobs:
       - run: npm run test:coverage
       - run: npm run build
 
+  package:
+    name: Release package builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Build the card with a test version
+        working-directory: frontend
+        run: |
+          npm ci
+          npm pkg set version=0.0.0
+          npm run build
+      - run: ./scripts/package-release.sh v0.0.0
+      - name: Check the zip
+        run: |
+          unzip -l dist/inkop.zip
+          unzip -p dist/inkop.zip manifest.json | grep '"version": "0.0.0"'
+          unzip -l dist/inkop.zip | grep -q www/inkop-card.js
+
   hassfest:
     name: Hassfest
     runs-on: ubuntu-latest
