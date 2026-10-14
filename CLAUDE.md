@@ -84,28 +84,27 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 
 ```
 /
-├── CLAUDE.md
-├── custom_components/
-│   └── inkop/              # Integration
-│       ├── manifest.json   # Declares ha-ica-todo dependency
-│       ├── config_flow.py  # Config + options flow (AI toggle, AI Task entity)
-│       ├── coordinator.py
-│       ├── services.yaml
-│       ├── translations/   # sv.json, en.json
-│       ├── domain/         # Pure logic: parsing, duplicates, naming, stats
-│       ├── ai/             # Optional AI module
-│       └── notify.py
-├── frontend/               # Lit card (TypeScript)
-│   ├── src/
-│   └── tests/
-├── tests/                  # pytest, mocked ICA and AI
-├── .github/workflows/      # CI + release
-├── hacs.json
-├── .env.example
-└── README.md
+├── CLAUDE.md, plan.md, README.md
+├── custom_components/inkop/
+│   ├── manifest.json, strings.json, translations/   # sv + en
+│   ├── __init__.py          # setup, services registration
+│   ├── config_flow.py       # single-step flow, ICA dependency check
+│   ├── dependency.py        # checks ha-ica-todo (installed, version, loaded), repair issue
+│   ├── coordinator.py       # event-driven: ICA lists, active list, create/delete flows
+│   ├── events.py            # collects ica_lists_changed events
+│   ├── services.py, services.yaml
+│   ├── entity.py, select.py, sensor.py
+│   ├── const.py
+│   └── domain/              # pure logic, no Home Assistant imports
+│       ├── items.py, duplicates.py, naming.py, lists.py, versions.py
+├── tests/                   # pytest, mocked ICA and AI (conftest.py has FakeIca)
+├── docs/                    # ica-contract.md, dev.md
+├── .github/workflows/ci.yaml
+├── hacs.json, pyproject.toml, requirements_dev.txt, .env.example
+└── frontend/                # Lit card (TypeScript), added in step 1.7
 ```
 
-> TODO: adjust this tree to the real layout as it is built.
+> Later: `notify.py` (1.6), usage statistics (1.5), `ai/` (Phase 2).
 
 ## Setup
 

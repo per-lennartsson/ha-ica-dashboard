@@ -31,5 +31,92 @@
       "title": "ICA-integrationen är inte laddad",
       "description": "Inköp kräver ICA-integrationen (ha-ica-todo), som är konfigurerad men inte laddad. Kontrollera dess status under Inställningar → Enheter och tjänster samt loggarna. Inköp försöker igen automatiskt."
     }
+  },
+  "entity": {
+    "select": {
+      "active_list": {
+        "name": "Aktiv lista"
+      }
+    },
+    "sensor": {
+      "items": {
+        "name": "Att handla"
+      },
+      "status": {
+        "name": "Status",
+        "state": {
+          "idle": "Vilar",
+          "creating": "Skapar lista",
+          "deleting": "Tar bort lista",
+          "error": "Fel"
+        }
+      }
+    }
+  },
+  "services": {
+    "set_active_list": {
+      "name": "Välj aktiv lista",
+      "description": "Gör en ICA-lista till hushållets aktiva inköpslista.",
+      "fields": {
+        "entity_id": {
+          "name": "Lista",
+          "description": "ICA-listan som ska bli aktiv."
+        }
+      }
+    },
+    "create_list": {
+      "name": "Skapa lista",
+      "description": "Skapa en ny ICA-inköpslista och vänta tills den är klar.",
+      "fields": {
+        "title": {
+          "name": "Namn",
+          "description": "Listans namn. Standard är \"Att handla <dag> <månad>\"."
+        },
+        "comment": {
+          "name": "Kommentar",
+          "description": "Valfri kommentar på listan."
+        },
+        "set_active": {
+          "name": "Gör aktiv",
+          "description": "Gör den nya listan till aktiv lista."
+        }
+      }
+    },
+    "delete_list": {
+      "name": "Ta bort lista",
+      "description": "Ta bort en ICA-inköpslista permanent och vänta tills Home Assistant har uppdaterats.",
+      "fields": {
+        "entity_id": {
+          "name": "Lista",
+          "description": "ICA-listan som ska tas bort."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "busy": {
+      "message": "En annan listoperation pågår fortfarande. Vänta tills den är klar."
+    },
+    "unknown_list": {
+      "message": "{entity_id} är ingen känd ICA-inköpslista."
+    },
+    "not_set_up": {
+      "message": "Inköp är inte konfigurerat."
+    },
+    "ica_unavailable": {
+      "message": "ICA-integrationen (ha-ica-todo) är inte laddad. Försök igen om en stund."
+    },
+    "create_failed": {
+      "message": "Kunde inte skapa listan \"{name}\": {error}"
+    },
+    "create_timeout": {
+      "message": "Listan \"{name}\" skapades men dök inte upp i Home Assistant i tid. Kontrollera ICA-integrationen."
+    },
+    "delete_failed": {
+      "message": "Kunde inte ta bort listan \"{name}\": {error}"
+    },
+    "delete_timeout": {
+      "message": "Listan \"{name}\" togs bort men Home Assistant hann inte uppdateras i tid. Kontrollera ICA-integrationen."
+    }
   }
 }

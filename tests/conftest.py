@@ -1,6 +1,7 @@
 """Shared fixtures: a fake ICA integration (todo entities + ica services)."""
 
-from collections.abc import Callable, Iterator
+import asyncio
+from collections.abc import Awaitable, Callable, Iterator
 from contextlib import ExitStack
 from dataclasses import dataclass, field
 from types import SimpleNamespace
@@ -27,25 +28,121 @@ def auto_enable_custom_integrations(enable_custom_integrations: None) -> None:
 
 @dataclass
 class FakeIca:
-    """Records calls to mocked ica.* services and creates fake list entities."""
+    """Fakes ha-ica-todo: list entities, ica.* services and the lists-changed event."""
 
     hass: HomeAssistant
     calls: list[tuple[str, dict[str, Any]]] = field(default_factory=list)
     responses: dict[str, Any] = field(default_factory=dict)
+    handlers: dict[str, Callable[[dict[str, Any]], Awaitable[Any]]] = field(
+        default_factory=dict
+    )
 
-    def add_list(self, title: str, offline_id: str, items: int = 0) -> str:
-        """Register a fake ICA list entity and return its entity_id."""
+    def add_list(
+        self,
+        title: str,
+        offline_id: str,
+        items: int = 0,
+        comment: str | None = None,
+    ) -> str:
+        """Register a fake ICA list entity (as v0.10.0 exposes it)."""
         registry = er.async_get(self.hass)
         entry = registry.async_get_or_create(
             "todo",
             ICA_DOMAIN,
             unique_id=f"{ICA_ENTRY_ID}-{offline_id}",
             suggested_object_id=f"ica_{title.lower().replace(' ', '_')}",
+            original_name=f"ICA {title}",
         )
         self.hass.states.async_set(
-            entry.entity_id, str(items), {"friendly_name": f"ICA {title}"}
+            entry.entity_id,
+            str(items),
+            {
+                "friendly_name": f"ICA {title}",
+                "offline_id": offline_id,
+                "config_entry_id": ICA_ENTRY_ID,
+                "comment": comment,
+            },
         )
         return entry.entity_id
+
+    def remove_list(self, entity_id: str) -> None:
+        """Remove a fake list entity completely."""
+        er.async_get(self.hass).async_remove(entity_id)
+        self.hass.states.async_remove(entity_id)
+
+    def fire_lists_changed(
+        self,
+        created: list[str] | None = None,
+        deleted: list[str] | None = None,
+        entities: dict[str, str] | None = None,
+    ) -> None:
+        """Fire ica_lists_changed like ha-ica-todo v0.10.0 does after a reload."""
+        self.hass.bus.async_fire(
+            "ica_lists_changed",
+            {
+                "config_entry_id": ICA_ENTRY_ID,
+                "created": created or [],
+                "deleted": deleted or [],
+                "entities": entities or {},
+            },
+        )
+
+    def install_create(
+        self,
+        offline_id: str = "NEW-1",
+        *,
+        fire: bool = True,
+        include_entity: bool = True,
+        early: bool = False,
+        gate: asyncio.Event | None = None,
+    ) -> None:
+        """Make ica.create_shopping_list add a list and (optionally) fire the event.
+
+        `early` fires before the service returns; otherwise right after, like the
+        real background reload. `gate` blocks the service until it is set.
+        """
+
+        async def handler(data: dict[str, Any]) -> dict[str, Any]:
+            if gate is not None:
+                await gate.wait()
+            entity_id = self.add_list(data["title"], offline_id)
+            payload = {offline_id: entity_id} if include_entity else {}
+
+            async def later() -> None:
+                await asyncio.sleep(0)
+                self.fire_lists_changed(created=[offline_id], entities=payload)
+
+            if fire and early:
+                self.fire_lists_changed(created=[offline_id], entities=payload)
+            elif fire:
+                self.hass.async_create_task(later())
+            return {
+                "success": True,
+                "offline_id": offline_id,
+                "title": data["title"],
+                "tracked": True,
+            }
+
+        self.handlers["create_shopping_list"] = handler
+
+    def install_delete(self, *, fire: bool = True) -> None:
+        """Make ica.delete_shopping_list remove the list and (optionally) fire."""
+
+        async def handler(data: dict[str, Any]) -> dict[str, Any]:
+            entity_id = data["entity_id"]
+            state = self.hass.states.get(entity_id)
+            offline_id = state.attributes["offline_id"] if state else "?"
+            self.remove_list(entity_id)
+
+            async def later() -> None:
+                await asyncio.sleep(0)
+                self.fire_lists_changed(deleted=[offline_id])
+
+            if fire:
+                self.hass.async_create_task(later())
+            return {"success": True, "entity_id": entity_id, "offline_id": offline_id}
+
+        self.handlers["delete_shopping_list"] = handler
 
     def calls_to(self, service: str) -> list[dict[str, Any]]:
         """Return the data of every call made to ica.<service>."""
@@ -60,6 +157,8 @@ def fake_ica(hass: HomeAssistant) -> FakeIca:
     def make_handler(name: str) -> Callable[[ServiceCall], Any]:
         async def handler(call: ServiceCall) -> Any:
             fake.calls.append((name, dict(call.data)))
+            if name in fake.handlers:
+                return await fake.handlers[name](dict(call.data))
             return fake.responses.get(name, {"success": True})
 
         return handler
@@ -84,7 +183,7 @@ def fake_ica(hass: HomeAssistant) -> FakeIca:
     return fake
 
 
-IcaConfigure = Callable[..., None]
+IcaConfigure = Callable[..., MockConfigEntry | None]
 
 
 @pytest.fixture
@@ -103,7 +202,7 @@ def ica_dependency(hass: HomeAssistant) -> Iterator[IcaConfigure]:
             installed: bool = True,
             version: str | None = "v0.10.0",
             entry_state: ConfigEntryState | None = ConfigEntryState.LOADED,
-        ) -> None:
+        ) -> MockConfigEntry | None:
             nonlocal configured
             assert not configured, "configure the ICA dependency only once per test"
             configured = True
@@ -115,7 +214,27 @@ def ica_dependency(hass: HomeAssistant) -> Iterator[IcaConfigure]:
             stack.enter_context(
                 patch("custom_components.inkop.dependency.async_get_integration", find)
             )
-            if entry_state is not None:
-                MockConfigEntry(domain=ICA_DOMAIN, state=entry_state).add_to_hass(hass)
+            if entry_state is None:
+                return None
+            entry = MockConfigEntry(
+                domain=ICA_DOMAIN, state=entry_state, entry_id=ICA_ENTRY_ID
+            )
+            entry.add_to_hass(hass)
+            return entry
 
         yield configure
+
+
+@pytest.fixture(autouse=True)
+def mock_storage(hass_storage: dict[str, Any]) -> dict[str, Any]:
+    """Keep Store writes in memory for every test."""
+    return hass_storage
+
+
+async def setup_inkop(hass: HomeAssistant) -> MockConfigEntry:
+    """Add and set up an Inköp config entry (ICA must be faked first)."""
+    entry = MockConfigEntry(domain="inkop")
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    return entry
