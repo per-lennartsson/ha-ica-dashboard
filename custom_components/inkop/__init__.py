@@ -1,21 +1,35 @@
 """The Inköp integration: shopping lists on top of ha-ica-todo."""
 
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.typing import ConfigType
 
+from .const import DOMAIN
+from .coordinator import InkopConfigEntry, InkopCoordinator
 from .dependency import (
     async_check_ica,
     create_dependency_issue,
     delete_dependency_issue,
 )
+from .services import async_register_services
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+PLATFORMS = [Platform.SELECT, Platform.SENSOR]
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Register services; they act on the loaded config entry."""
+    async_register_services(hass)
+    return True
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: InkopConfigEntry) -> bool:
     """Set up Inköp, or retry later (with a repair issue) if ICA is not usable.
 
-    Only checked here, not while running: ha-ica-todo reloads whenever a list is
-    created or deleted, which must not be reported as a problem.
+    The dependency is only checked here, not while running: ha-ica-todo reloads
+    whenever a list is created or deleted, which must not be reported as a problem.
     """
     status = await async_check_ica(hass)
     if status.problem is not None:
@@ -24,14 +38,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             f"ha-ica-todo is not usable ({status.problem}); version {status.version}"
         )
     delete_dependency_issue(hass)
+
+    coordinator = InkopCoordinator(hass, entry)
+    await coordinator.async_start()
+    entry.runtime_data = coordinator
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Unload a config entry."""
-    return True
+async def async_unload_entry(hass: HomeAssistant, entry: InkopConfigEntry) -> bool:
+    """Unload the platforms."""
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
-async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+async def async_remove_entry(hass: HomeAssistant, entry: InkopConfigEntry) -> None:
     """Clean up the repair issue when the integration is removed."""
     delete_dependency_issue(hass)

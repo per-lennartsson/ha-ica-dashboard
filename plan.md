@@ -49,11 +49,13 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 - **Verify (Manual, real HA, not yet done):** add the integration with ha-ica-todo present (works), and with it disabled or removed (clear message in Swedish/English; repair issue after restart).
 
 ### 1.3 Coordinator and list management services (L)
-- [ ] Coordinator reading ICA `todo` entities.
-- [ ] Services: `inkop.set_active_list`, `inkop.create_list` (prefilled name, wraps `ica.create_shopping_list`), `inkop.delete_list` (wraps `ica.delete_shopping_list`).
-- [ ] Handle the 4–5 s integration reload: busy state until the `ica_lists_changed` event (v0.10.0), with a timeout as a safety net. A missing entity in the event means failure. Use the `offline_id` entity attribute, not registry parsing. Use events/coordinator, not templates.
-- [ ] Entities: active-list select, item-count sensor, busy/status sensor.
-- **Verify:** tests with mocked ICA services; Manual (real HA, the main risk check): create and delete a throwaway list and see the busy state clear. Throwaway lists cleaned up.
+- [x] Coordinator reading ICA `todo` entities.
+- [x] Services: `inkop.set_active_list`, `inkop.create_list` (prefilled name, wraps `ica.create_shopping_list`), `inkop.delete_list` (wraps `ica.delete_shopping_list`).
+- [x] Handle the 4–5 s integration reload: busy state until the `ica_lists_changed` event (v0.10.0), with a timeout as a safety net. A missing entity in the event means failure. Use the `offline_id` entity attribute, not registry parsing. Use events/coordinator, not templates.
+- [x] Entities: active-list select, item-count sensor, busy/status sensor.
+- **Verify (automated, done):** 184 tests pass, 100% coverage of `custom_components/inkop`. Covered: create/delete success, default and numbered names, event arriving before or after the service returns, lower/upper-case ids, timeout, event without entity (failed reload), ICA error, ICA not loaded, busy refusal, status transitions, active list default/persistence/fallback, favourites ignored, list kept while ICA reloads, translations consistent.
+- **Verify (Manual, real HA, the main risk check, not yet done):** follow "Manual check: lists" in `docs/dev.md` with throwaway lists, record the reload time, clean up.
+- Decisions: (1) the active list is shared by the household and lives in the integration (select + `inkop.set_active_list`, saved across restarts); a user's own choice in the card stays in the browser (1.8). (2) With several ICA accounts the first loaded one is used. (3) Wait for `ica_lists_changed` at most 30 s (`LISTS_CHANGED_TIMEOUT`); a missing entity in the event counts as failure. (4) One create/delete at a time; a second call is refused (`busy`). (5) Entities: `select` active list, `sensor` items to buy (open items on the active list), `sensor` status (idle/creating/deleting/error). (6) Service schemas use `probatio` when available (Home Assistant 2026.10+) and fall back to `voluptuous`.
 
 ### 1.4 Add, duplicate check, remove, clear (L)
 - [ ] Services: `inkop.add_item` (returns duplicate info instead of adding when `confirm_duplicate` is false), `inkop.remove_item`, `inkop.tick_item`, `inkop.clear_ticked`.
@@ -141,6 +143,7 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 - ICA API or ha-ica-todo changes may break services: pin a minimum version, test against mocks, keep `docs/ica-contract.md` current.
 - Integration reload after create/delete may race with follow-up calls: mitigated by the `ica_lists_changed` event (v0.10.0), but still needs a busy state and timeout (1.3). New ha-ica-todo code (events, attributes) has only helper-level tests so far; first real check is 1.3 on the own HA.
 - Quantity/unit edge cases around renaming (ICA ignores a null unit): document as limitation.
+- Dev environment runs Home Assistant 2026.10.1 while production is 2026.9.x (e.g. service schemas moved from `voluptuous` to `probatio`; handled with a fallback). Consider pinning the dev environment to the production version, or testing both.
 - Open: confirm Vitest as frontend test tool; decide whether to commit `frontend/dist` for HACS or attach it to releases; final usage-statistics source (own counts only, or also ICA history).
 
 ## Progress log
@@ -148,6 +151,7 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 |------|------|--------|
 | 2026-10-13 | 0.1 (update) | ha-ica-todo changes made on branch `list-events-and-metadata` (`c2fe1f1`, v0.10.0): `ica_lists_changed`, `ica_list_items_changed`, list entity attributes, fork metadata. Contract and plan updated; minimum version now `>= v0.10.0`. Review notes: event fires also on reload failure; item-change event has no user; removed fields not reported. |
 | 2026-10-13 | env | Upgraded dev env to Python 3.14.8 (Homebrew) and HA 2026.10.1 / pytest-homeassistant-custom-component 0.13.372. Checks green. `ai_task` is now testable. |
+| 2026-10-14 | 1.3 | Lists implemented: coordinator, `inkop.create_list` / `delete_list` / `set_active_list`, select + 2 sensors; 184 tests, 100% coverage. Manual check on the real HA (reload time!) pending. |
 | 2026-10-14 | 1.2 | Dependency check implemented (flow + setup + repair issue), 126 tests green. Manual check on the real HA pending. |
 | 2026-10-14 | 1.1 | Domain logic done: `domain/items.py`, `duplicates.py`, `naming.py`; 78 tests, 100% coverage of `domain/`. |
 | 2026-10-14 | 0.4 | Manual verification on the real HA: `inkop` installed and worked. Docs and minimal config flow merged (`7a33bf1`). |

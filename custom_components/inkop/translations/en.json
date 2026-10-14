@@ -31,5 +31,92 @@
       "title": "ICA integration is not loaded",
       "description": "Inköp needs the ICA integration (ha-ica-todo), which is set up but not loaded. Check its status under Settings → Devices & services and the logs. Inköp retries automatically."
     }
+  },
+  "entity": {
+    "select": {
+      "active_list": {
+        "name": "Active list"
+      }
+    },
+    "sensor": {
+      "items": {
+        "name": "Items to buy"
+      },
+      "status": {
+        "name": "Status",
+        "state": {
+          "idle": "Idle",
+          "creating": "Creating list",
+          "deleting": "Deleting list",
+          "error": "Error"
+        }
+      }
+    }
+  },
+  "services": {
+    "set_active_list": {
+      "name": "Set active list",
+      "description": "Make an ICA list the household's active shopping list.",
+      "fields": {
+        "entity_id": {
+          "name": "List",
+          "description": "The ICA shopping list to make active."
+        }
+      }
+    },
+    "create_list": {
+      "name": "Create list",
+      "description": "Create a new ICA shopping list and wait until it is ready.",
+      "fields": {
+        "title": {
+          "name": "Title",
+          "description": "Name of the list. Defaults to \"Att handla <day> <month>\"."
+        },
+        "comment": {
+          "name": "Comment",
+          "description": "Optional comment on the list."
+        },
+        "set_active": {
+          "name": "Make active",
+          "description": "Make the new list the active list."
+        }
+      }
+    },
+    "delete_list": {
+      "name": "Delete list",
+      "description": "Permanently delete an ICA shopping list and wait until Home Assistant has updated.",
+      "fields": {
+        "entity_id": {
+          "name": "List",
+          "description": "The ICA shopping list to delete."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "busy": {
+      "message": "Another list operation is still running. Wait for it to finish."
+    },
+    "unknown_list": {
+      "message": "{entity_id} is not a known ICA shopping list."
+    },
+    "not_set_up": {
+      "message": "Inköp is not set up."
+    },
+    "ica_unavailable": {
+      "message": "The ICA integration (ha-ica-todo) is not loaded. Try again in a moment."
+    },
+    "create_failed": {
+      "message": "Could not create the list \"{name}\": {error}"
+    },
+    "create_timeout": {
+      "message": "The list \"{name}\" was created, but did not appear in Home Assistant in time. Check the ICA integration."
+    },
+    "delete_failed": {
+      "message": "Could not delete the list \"{name}\": {error}"
+    },
+    "delete_timeout": {
+      "message": "The list \"{name}\" was deleted, but Home Assistant did not finish updating in time. Check the ICA integration."
+    }
   }
 }

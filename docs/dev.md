@@ -38,6 +38,20 @@ Do not install both options at once. Remove the folder, or the HACS install, bef
 
 4. To see the dependency check fail on purpose, disable the ICA integration (*Devices & services → ICA → ⋮ → Disable*) and try to add Inköp. Re-enable ICA afterwards. If Inköp is already added and ICA is not usable at startup, Inköp waits and retries, and *Settings → System → Repairs* shows an issue until ICA is back.
 
+## Manual check: lists (plan step 1.3)
+
+Needs `ha-ica-todo` v0.10.0 or later. Use *Developer tools → Actions*. Use a throwaway list name and clean up afterwards (see the rules below).
+
+1. **Create:** run `inkop.create_list` with `title: TEST inkop <date>`. Within a few seconds the sensor *Inköp Status* goes `creating` → `idle`, the response shows the new `entity_id`, the list appears in the ICA app, and *Inköp Active list* switches to it. Note how many seconds it took.
+2. **Default name:** run `inkop.create_list` with no title. The name should be "Att handla <dag> <månad>" (add `(2)` if you run it twice on the same day). Delete it afterwards.
+3. **No double taps:** run `inkop.create_list` and, right away, once more. The second call is refused with "another list operation is still running".
+4. **Item count:** add an item to the test list (todo card or ICA app). *Inköp Items to buy* changes while that list is active.
+5. **Switch:** run `inkop.set_active_list` for another list, or use the select. Restart Home Assistant: the choice is kept.
+6. **Delete:** run `inkop.delete_list` for the test list. Status goes `deleting` → `idle`, the list is gone from the ICA app, and the active list moves to another one.
+7. **Failure message (optional):** disable the ICA integration and run `inkop.create_list`. You should get a clear error and the status sensor should show `error` until the next successful operation. Re-enable ICA afterwards.
+
+Record the results (and the reload time in step 1) in `plan.md`.
+
 ## Rules for testing against the real ICA account
 
 - Automated tests never use a real ICA account. Mocks only.

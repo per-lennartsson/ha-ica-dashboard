@@ -1,0 +1,39 @@
+set_active_list:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          filter:
+            integration: ica
+            domain: todo
+          exclude_entities:
+            - todo.ica_favorite_articles
+
+create_list:
+  fields:
+    title:
+      required: false
+      selector:
+        text:
+    comment:
+      required: false
+      selector:
+        text:
+    set_active:
+      required: false
+      default: true
+      selector:
+        boolean:
+
+delete_list:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          filter:
+            integration: ica
+            domain: todo
+          exclude_entities:
+            - todo.ica_favorite_articles
