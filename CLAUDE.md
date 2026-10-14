@@ -37,7 +37,7 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 * Tests: `pytest` with `pytest-homeassistant-custom-component` (mocked ICA and AI services); frontend tests with Vitest + jsdom
 * Lint/typing: Ruff, mypy (Python); ESLint, Prettier, `tsc` (TypeScript)
 * CI: GitHub Actions (lint, type check, tests, HACS/hassfest validation, tagged releases)
-* Distribution: HACS custom repository, versioned releases
+* Distribution: HACS custom repository; versioned GitHub releases carry `inkop.zip` (integration + built card), built by the release workflow. The built card is not committed
 
 ## Code conventions
 
@@ -84,7 +84,7 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 
 ```
 /
-├── CLAUDE.md, plan.md, README.md
+├── CLAUDE.md, plan.md, README.md, README.sv.md
 ├── custom_components/inkop/
 │   ├── manifest.json, strings.json, translations/   # sv + en
 │   ├── __init__.py          # setup, services registration
@@ -105,11 +105,12 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 │   └── domain/              # pure logic, no Home Assistant imports
 │       ├── items.py, duplicates.py, naming.py, lists.py, todo_items.py, usage.py, icons.py, notify.py, versions.py
 ├── tests/                   # pytest, mocked ICA and AI (conftest.py has FakeIca)
-├── docs/                    # ica-contract.md, dev.md, usage.md (cards, shortcut, badge)
-├── .github/workflows/ci.yaml
+├── docs/                    # ica-contract.md, dev.md, usage.md (cards, shortcut, badge), release.md, images/
+├── .github/workflows/       # ci.yaml, release.yaml (builds card + inkop.zip on a published release)
 ├── hacs.json, pyproject.toml, requirements_dev.txt, .env.example
 ├── frontend/                # Lit card: src/ (index, inkop-card, inkop-items, inkop-shortcut, lists, items, api, navigate, storage, i18n), dev/ (mock-data preview), tests next to sources
-└── scripts/node.sh          # runs Node commands in Docker
+├── scripts/node.sh          # runs Node commands in Docker
+└── scripts/package-release.sh  # builds dist/inkop.zip for a release (docs/release.md)
 ```
 
 > Later: `ai/` (Phase 2).
