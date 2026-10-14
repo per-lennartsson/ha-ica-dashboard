@@ -30,6 +30,7 @@ export const sv = {
   "items.tick": "Bocka av {item}",
   "items.untick": "Ta bort bocken på {item}",
   "items.remove": "Ta bort {item}",
+  "items.ticked": "Avbockade ({count})",
   "items.clear": "Rensa avbockade ({count})",
   "items.unavailable":
     "Listan är inte tillgänglig just nu (ICA laddar kanske om). Försök igen om en stund.",
@@ -77,6 +78,7 @@ export const en: Record<TranslationKey, string> = {
   "items.tick": "Tick off {item}",
   "items.untick": "Untick {item}",
   "items.remove": "Remove {item}",
+  "items.ticked": "Ticked ({count})",
   "items.clear": "Clear ticked ({count})",
   "items.unavailable":
     "The list is not available right now (ICA may be reloading). Try again in a moment.",

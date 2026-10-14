@@ -197,6 +197,61 @@ describe("live items", () => {
     expect(rowTexts(el)).toEqual(["- mjölk", "- smör", "x bröd"]);
   });
 
+  it("separates ticked items from the rest with a labelled divider showing how many", async () => {
+    const env = makeEnv();
+    const el = await mount(env.build());
+    env.push([
+      { uid: "1", summary: "bröd", status: "completed" },
+      { uid: "2", summary: "mjölk" },
+      { uid: "3", summary: "ost", status: "completed" },
+    ]);
+    await el.updateComplete;
+
+    const children = [...root(el).querySelectorAll("ul > li")].map((li) =>
+      li.classList.contains("divider")
+        ? `| ${li.textContent?.replace(/\s+/g, " ").trim()}`
+        : li.querySelector(".text")?.textContent?.trim(),
+    );
+    expect(children).toEqual(["mjölk", "| Avbockade (2)", "bröd", "ost"]);
+    expect(testid(el, "ticked-divider")?.getAttribute("role")).toBe("separator");
+  });
+
+  it("shows no divider when nothing is ticked", async () => {
+    const env = makeEnv();
+    const el = await mount(env.build());
+    env.push([{ uid: "1", summary: "mjölk" }]);
+    await el.updateComplete;
+
+    expect(testid(el, "ticked-divider")).toBeNull();
+  });
+
+  it("puts the divider first when everything is ticked, in English too", async () => {
+    const env = makeEnv({ language: "en" });
+    const el = await mount(env.build());
+    env.push([{ uid: "1", summary: "bread", status: "completed" }]);
+    await el.updateComplete;
+
+    const first = root(el).querySelector("ul > li");
+    expect(first?.classList.contains("divider")).toBe(true);
+    expect(first?.textContent?.trim()).toBe("Ticked (1)");
+  });
+
+  it("keeps the divider between a pending item and the ticked ones", async () => {
+    const gate = deferred<unknown>();
+    const callService = vi.fn(() => gate.promise) as unknown as CallService;
+    const env = makeEnv({ callService });
+    const el = await mount(env.build());
+    env.push([{ uid: "1", summary: "bröd", status: "completed" }]);
+    await el.updateComplete;
+
+    await add(el, "ägg");
+
+    expect(rowTexts(el)).toEqual(["… ägg lägger till…", "x bröd"]);
+    expect(testid(el, "ticked-divider")).not.toBeNull();
+    gate.resolve(addedResponse("ägg"));
+    await settle(el);
+  });
+
   it("follows later changes", async () => {
     const env = makeEnv();
     const el = await mount(env.build());
