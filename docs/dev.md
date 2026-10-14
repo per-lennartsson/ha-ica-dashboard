@@ -171,7 +171,7 @@ Adding or updating a package is an install: ask the maintainer first, then run f
 
 ### How the card reaches Home Assistant
 
-`npm run build` writes `custom_components/handla/www/handla-card.js`. It is git-ignored: the release workflow builds it and ships it inside `handla.zip` (`docs/release.md`); for a manual check you build it yourself and copy the folder. When Handla starts, `card.py` serves that file at `/handla/handla-card.js` and tells the frontend to load it in every dashboard, so **no Lovelace resource has to be added by hand**. If the file is missing, Handla logs a warning and everything else keeps working.
+`npm run build` writes `custom_components/handla/www/handla-card.js`. It is git-ignored: the release workflow builds it and ships it inside `handla.zip` (`docs/release.md`); for a manual check you build it yourself and copy the folder. When Handla starts, `card.py` serves that file at `/handla/handla-card.js` and registers it as a dashboard resource (module, with `?v=<version>`), so **no Lovelace resource has to be added by hand**. Home Assistant loads resources before it draws a dashboard; a script added with `add_extra_js_url` is not awaited and was seen to leave `handla-card` undefined ("Custom element doesn't exist"). A resource you added yourself with the same path is kept, not duplicated, and the entry is removed when you remove the integration. Dashboards in YAML mode cannot be edited by an integration: there Handla falls back to `add_extra_js_url`, and you add `/handla/handla-card.js` as a module under `resources:` yourself. If the file is missing, Handla logs a warning and everything else keeps working.
 
 ## Manual check: card loads (plan step 1.7)
 
