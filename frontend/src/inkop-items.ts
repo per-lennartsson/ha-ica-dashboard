@@ -163,6 +163,23 @@ export class InkopItems extends LitElement {
       background: var(--primary-color, #03a9f4);
       border-color: var(--primary-color, #03a9f4);
     }
+    li.divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 20px;
+      padding-bottom: 4px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--secondary-text-color, #727272);
+    }
+    li.divider::after {
+      content: "";
+      flex: 1 1 auto;
+      border-top: 2px solid var(--divider-color, #cfcfcf);
+    }
     .clear {
       margin-top: 12px;
     }
@@ -544,7 +561,15 @@ export class InkopItems extends LitElement {
             </li>
           `,
         )}
-        ${items.map((item) => this._renderRow(item))}
+        ${items.filter((item) => !item.completed).map((item) => this._renderRow(item))}
+        ${
+          ticked > 0
+            ? html`<li class="divider" role="separator" data-testid="ticked-divider">
+                ${this._t("items.ticked", { count: ticked })}
+              </li>`
+            : nothing
+        }
+        ${items.filter((item) => item.completed).map((item) => this._renderRow(item))}
       </ul>
       ${
         ticked > 0
