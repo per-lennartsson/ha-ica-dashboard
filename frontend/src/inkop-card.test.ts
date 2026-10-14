@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { InkopCard } from "./inkop-card";
+import type { InkopItems } from "./inkop-items";
 import { LISTS_ENTITY, STATUS_ENTITY } from "./lists";
 import type { HomeAssistant } from "./types";
 
@@ -536,5 +537,56 @@ describe("progress and errors from the integration", () => {
   it("still shows an error without detail", async () => {
     const card = await mount(makeHass({ lists: [BREAD], status: "error" }).hass);
     expect(root(card).querySelector('[data-testid="error"]')?.textContent).toContain("?");
+  });
+});
+
+describe("items view inside the card", () => {
+  const itemsView = (card: InkopCard) =>
+    root(card).querySelector("inkop-items") as InkopItems | null;
+
+  it("shows the items of the selected list under the picker", async () => {
+    const card = await mount(makeHass({ lists: [BREAD, MILK], active: "B-2" }).hass);
+
+    expect(itemsView(card)?.list?.offlineId).toBe("B-2");
+    expect(itemsView(card)?.locked).toBe(false);
+  });
+
+  it("follows the user's choice of list", async () => {
+    const card = await mount(makeHass({ lists: [BREAD, MILK], active: "B-2" }).hass);
+
+    const picker = select(card) as HTMLSelectElement;
+    picker.value = "A-1";
+    picker.dispatchEvent(new Event("change"));
+    await card.updateComplete;
+
+    expect(itemsView(card)?.list?.offlineId).toBe("A-1");
+  });
+
+  it("is not shown when there are no lists or Inköp is not running", async () => {
+    expect(itemsView(await mount(makeHass({ lists: [] }).hass))).toBeNull();
+    expect(itemsView(await mount(makeHass().hass))).toBeNull();
+  });
+
+  it("is locked while a list is being created or deleted", async () => {
+    const card = await mount(makeHass({ lists: [BREAD], status: "creating" }).hass);
+    expect(itemsView(card)?.locked).toBe(true);
+
+    card.hass = makeHass({ lists: [BREAD], status: "idle" }).hass;
+    await card.updateComplete;
+    expect(itemsView(card)?.locked).toBe(false);
+  });
+
+  it("is replaced by the create form and the delete confirmation", async () => {
+    const card = await mount(makeHass({ lists: [BREAD] }).hass);
+
+    await click(card, "new-list");
+    expect(itemsView(card)).toBeNull();
+    await click(card, "cancel");
+    expect(itemsView(card)).not.toBeNull();
+
+    await click(card, "delete-list");
+    expect(itemsView(card)).toBeNull();
+    await click(card, "cancel");
+    expect(itemsView(card)).not.toBeNull();
   });
 });

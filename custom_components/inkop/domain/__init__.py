@@ -23,10 +23,13 @@ from .notify import (
 )
 from .todo_items import TodoItem, duplicate_items, resolve_items
 from .usage import (
+    DEFAULT_QUICK_ITEMS,
     MAX_TRACKED,
+    MIN_QUICK_ITEMS,
     UsageEntry,
     entries_from_json,
     entries_to_json,
+    quick_add_payload,
     record_use,
     top_items,
     top_payload,
@@ -36,7 +39,9 @@ from .versions import is_version_at_least, parse_version
 __all__ = [
     "MAX_LISTED",
     "DEFAULT_ICON",
+    "DEFAULT_QUICK_ITEMS",
     "MAX_TRACKED",
+    "MIN_QUICK_ITEMS",
     "SWEDISH_MONTHS",
     "UNITS",
     "ListInfo",
@@ -61,6 +66,7 @@ __all__ = [
     "parse_item_text",
     "parse_version",
     "pick_active",
+    "quick_add_payload",
     "recipients_to_notify",
     "record_use",
     "resolve_items",

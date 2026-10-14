@@ -100,6 +100,20 @@ Build the card and install as described under "How the card reaches Home Assista
 6. **Not running:** disable the Inköp integration entry (or stop `ha-ica-todo`): the card shows the "Inköp körs inte … ha-ica-todo" message.
 7. **Phone:** no sideways scrolling, buttons easy to hit, and the keyboard does not make the page zoom.
 
+## Manual check: items view (plan step 1.9)
+
+Use a throwaway list as the card's selected list, and check on a **phone in the companion app** as well as on a computer.
+
+1. **Add with Enter:** type `2 st gurka` and press Enter/Send on the keyboard. The field empties, **stays focused and the keyboard stays open**, and the item shows as "lägger till…" and then as a normal row. Check in the ICA app that ICA read it as quantity 2, unit st, name gurka. Type several items quickly: all arrive, in order.
+2. **Duplicate:** add `gurka` again. The card asks "“gurka” finns redan – lägga till igen?". "Hoppa över" drops it; "Lägg till igen" adds it. If you typed more items meanwhile, they wait for your answer.
+3. **Quick-add buttons:** with no history you see staples (mjölk, bröd, ...) with icons. Tap one: it is added (and asks if it is already on the list). After a while the buttons you use most come first. **Look at the icons** and tell me which ones are wrong or show as empty squares (the icon names are unverified until now).
+4. **Tick and remove:** tap the box to tick (the item is struck through and moves to the bottom), tap again to untick, tap × to remove. Check in the ICA app. A row is locked while its call runs.
+5. **Clear ticked:** with ticked items, "Rensa avbockade (N)" appears and removes only those.
+6. **Live:** add or tick an item in the ICA app (or on a second device): the card updates by itself within a few seconds.
+7. **List reload:** create or delete another list: while ha-ica-todo reloads, the card shows "Listan är inte tillgänglig just nu…", typing is blocked, and afterwards the items come back **without reloading the page**.
+8. **Views:** switch to another dashboard view and back: the items still update live.
+9. **Phone:** no sideways scrolling, easy to hit the boxes and ×, the page does not zoom when the field is focused, and the keyboard does not cover the field.
+
 ## Rules for testing against the real ICA account
 
 - Automated tests never use a real ICA account. Mocks only.
@@ -128,6 +142,8 @@ Node is not installed on the host. Every Node command runs in a container throug
 DOCKER_FLAGS="-p 5173:5173" ./scripts/node.sh npm run dev
 # then open http://localhost:5173 and stop with Ctrl+C
 ```
+
+If Prettier or another tool reports a bizarre syntax error right after a file was saved, run the command again: Docker's shared folder can show a half-written file for a moment.
 
 Adding or updating a package is an install: ask the maintainer first, then run for example `./scripts/node.sh npm install <package>` and commit `package.json` and `package-lock.json`.
 

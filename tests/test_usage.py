@@ -9,6 +9,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.setup import async_setup_component
 
 from custom_components.inkop.const import DOMAIN
+from custom_components.inkop.domain import DEFAULT_QUICK_ITEMS
 from custom_components.inkop.schema import vol
 from tests.conftest import FakeIca, FakeTodo, IcaConfigure, setup_inkop
 
@@ -132,15 +133,24 @@ async def test_top_items_rejects_a_bad_limit(
 async def test_sensor_follows_the_counts(hass: HomeAssistant, active_list: str) -> None:
     entry = await setup_inkop(hass)
     assert _sensor(hass, entry.entry_id).state == "0"
-    assert _sensor(hass, entry.entry_id).attributes["items"] == []
+    # No history yet: staples with count 0 so the card has buttons from day one
+    staples = _sensor(hass, entry.entry_id).attributes["items"]
+    assert [i["name"] for i in staples] == list(DEFAULT_QUICK_ITEMS)
+    assert {i["count"] for i in staples} == {0}
 
-    await _add(hass, "mjölk")
-    await _add(hass, "ägg")
+    await _add(hass, "kaffe")
+    await _add(hass, "kaffe", confirm_duplicate=True)
+    await _add(hass, "ananas")
     await hass.async_block_till_done()
 
     state = _sensor(hass, entry.entry_id)
-    assert state.state == "2"
-    assert {i["name"] for i in state.attributes["items"]} == {"mjölk", "ägg"}
+    assert state.state == "2"  # only real items are counted
+    items = state.attributes["items"]
+    assert [(i["name"], i["count"]) for i in items[:2]] == [("kaffe", 2), ("ananas", 1)]
+    assert len(items) == 8
+    assert [i["name"] for i in items].count(
+        "kaffe"
+    ) == 1  # staples never repeat a real item
 
 
 async def test_sensor_limits_to_the_quick_add_count(

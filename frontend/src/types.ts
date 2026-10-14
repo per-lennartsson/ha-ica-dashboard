@@ -5,8 +5,17 @@ export interface HassEntity {
   attributes: Record<string, unknown>;
 }
 
+/** The websocket connection; only subscribing is used (live todo items). */
+export interface HassConnection {
+  subscribeMessage<T>(
+    callback: (message: T) => void,
+    subscribeMessage: Record<string, unknown>,
+  ): Promise<() => unknown>;
+}
+
 export interface HomeAssistant {
   states: Record<string, HassEntity>;
+  connection?: HassConnection;
   /** Language of the logged in user, e.g. "sv" or "en". */
   language: string;
   callService(
