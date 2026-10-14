@@ -11,6 +11,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.loader import IntegrationNotFound
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -238,3 +239,98 @@ async def setup_inkop(hass: HomeAssistant) -> MockConfigEntry:
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     return entry
+
+
+class FakeTodo:
+    """In-memory stand-in for Home Assistant's todo.* entity services.
+
+    Mirrors the real shapes: get_items answers {entity_id: {"items": [...]}} and
+    update_item / remove_item accept an item uid or its exact summary.
+    """
+
+    def __init__(self, hass: HomeAssistant) -> None:
+        self.hass = hass
+        self.lists: dict[str, list[dict[str, str]]] = {}
+        self.calls: list[tuple[str, dict[str, Any]]] = []
+        self._next = 0
+        for name in (
+            "get_items",
+            "add_item",
+            "update_item",
+            "remove_item",
+            "remove_completed_items",
+        ):
+            hass.services.async_register(
+                "todo",
+                name,
+                self._make(name),
+                supports_response=(
+                    SupportsResponse.ONLY
+                    if name == "get_items"
+                    else SupportsResponse.NONE
+                ),
+            )
+
+    def seed(self, entity_id: str, summary: str, *, completed: bool = False) -> str:
+        """Put an item on a list and return its uid."""
+        self._next += 1
+        uid = f"uid-{self._next}"
+        self.lists.setdefault(entity_id, []).append(
+            {
+                "uid": uid,
+                "summary": summary,
+                "status": "completed" if completed else "needs_action",
+            }
+        )
+        return uid
+
+    def summaries(self, entity_id: str) -> list[str]:
+        """Summaries on a list, in order."""
+        return [i["summary"] for i in self.lists.get(entity_id, [])]
+
+    def status_of(self, entity_id: str, uid: str) -> str:
+        """Status of one item."""
+        return next(i["status"] for i in self.lists[entity_id] if i["uid"] == uid)
+
+    def _find(self, entity_id: str, key: str) -> dict[str, str]:
+        for item in self.lists.get(entity_id, []):
+            if key in (item["uid"], item["summary"]):
+                return item
+        raise ServiceValidationError(f"Unable to find to-do list item: {key}")
+
+    def _make(self, name: str) -> Callable[[ServiceCall], Any]:
+        async def handler(call: ServiceCall) -> Any:
+            data = dict(call.data)
+            self.calls.append((name, data))
+            entity_id = data["entity_id"]
+            if isinstance(entity_id, list):
+                entity_id = entity_id[0]
+            items = self.lists.setdefault(entity_id, [])
+            if name == "get_items":
+                return {entity_id: {"items": [dict(i) for i in items]}}
+            if name == "add_item":
+                self.seed(entity_id, data["item"])
+            elif name == "update_item":
+                item = self._find(entity_id, data["item"])
+                if "status" in data:
+                    item["status"] = data["status"]
+                if "rename" in data:
+                    item["summary"] = data["rename"]
+            elif name == "remove_item":
+                for key in data["item"]:
+                    items.remove(self._find(entity_id, key))
+            elif name == "remove_completed_items":
+                items[:] = [i for i in items if i["status"] != "completed"]
+            return None
+
+        return handler
+
+    def calls_to(self, service: str) -> list[dict[str, Any]]:
+        """Data of every call to todo.<service>."""
+        return [data for name, data in self.calls if name == service]
+
+
+@pytest.fixture
+def fake_todo(hass: HomeAssistant) -> FakeTodo:
+    """Fake todo.* services (the real todo integration is not set up in tests)."""
+    return FakeTodo(hass)

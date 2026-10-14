@@ -91,6 +91,66 @@
           "description": "ICA-listan som ska tas bort."
         }
       }
+    },
+    "add_item": {
+      "name": "Lägg till vara",
+      "description": "Lägg till en vara i en lista. Finns en öppen vara med samma namn läggs inget till om det inte bekräftas.",
+      "fields": {
+        "entity_id": {
+          "name": "Lista",
+          "description": "ICA-listan. Standard är den aktiva listan."
+        },
+        "item": {
+          "name": "Vara",
+          "description": "Text som “2 st gurka” eller “mjölk”."
+        },
+        "confirm_duplicate": {
+          "name": "Lägg till igen",
+          "description": "Lägg till varan även om den redan finns på listan."
+        }
+      }
+    },
+    "tick_item": {
+      "name": "Bocka av vara",
+      "description": "Bocka av (eller ta bort bocken på) en vara, givet id eller text.",
+      "fields": {
+        "entity_id": {
+          "name": "Lista",
+          "description": "ICA-listan. Standard är den aktiva listan."
+        },
+        "item": {
+          "name": "Vara",
+          "description": "Varans id eller text."
+        },
+        "ticked": {
+          "name": "Avbockad",
+          "description": "På bockar av varan, av tar bort bocken."
+        }
+      }
+    },
+    "remove_item": {
+      "name": "Ta bort vara",
+      "description": "Ta bort en vara, givet id eller text.",
+      "fields": {
+        "entity_id": {
+          "name": "Lista",
+          "description": "ICA-listan. Standard är den aktiva listan."
+        },
+        "item": {
+          "name": "Vara",
+          "description": "Varans id eller text."
+        }
+      }
+    },
+    "clear_ticked": {
+      "name": "Rensa avbockade",
+      "description": "Ta bort alla avbockade varor från en lista.",
+      "fields": {
+        "entity_id": {
+          "name": "Lista",
+          "description": "ICA-listan. Standard är den aktiva listan."
+        }
+      }
     }
   },
   "exceptions": {
@@ -117,6 +177,24 @@
     },
     "delete_timeout": {
       "message": "Listan \"{name}\" togs bort men Home Assistant hann inte uppdateras i tid. Kontrollera ICA-integrationen."
+    },
+    "no_list": {
+      "message": "Det finns ingen aktiv lista. Skapa en lista eller välj en först."
+    },
+    "empty_item": {
+      "message": "Varans text är tom."
+    },
+    "list_unavailable": {
+      "message": "Listan “{list}” är inte tillgänglig just nu (ICA kanske laddar om). Försök igen om en stund."
+    },
+    "item_not_found": {
+      "message": "Ingen vara som matchar “{item}” finns på listan."
+    },
+    "item_ambiguous": {
+      "message": "Flera varor matchar “{item}”: {matches}. Använd varans id istället."
+    },
+    "todo_failed": {
+      "message": "Listan {entity_id} kunde inte uppdateras: {error}"
     }
   }
 }

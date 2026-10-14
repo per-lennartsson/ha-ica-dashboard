@@ -91,6 +91,66 @@
           "description": "The ICA shopping list to delete."
         }
       }
+    },
+    "add_item": {
+      "name": "Add item",
+      "description": "Add an item to a list. If an open item with the same name exists, nothing is added unless confirmed.",
+      "fields": {
+        "entity_id": {
+          "name": "List",
+          "description": "The ICA list. Defaults to the active list."
+        },
+        "item": {
+          "name": "Item",
+          "description": "Text such as “2 st gurka” or “mjölk”."
+        },
+        "confirm_duplicate": {
+          "name": "Add again",
+          "description": "Add the item even if it is already on the list."
+        }
+      }
+    },
+    "tick_item": {
+      "name": "Tick item",
+      "description": "Tick (or untick) an item, given its id or text.",
+      "fields": {
+        "entity_id": {
+          "name": "List",
+          "description": "The ICA list. Defaults to the active list."
+        },
+        "item": {
+          "name": "Item",
+          "description": "Item id or text."
+        },
+        "ticked": {
+          "name": "Ticked",
+          "description": "On ticks the item, off unticks it."
+        }
+      }
+    },
+    "remove_item": {
+      "name": "Remove item",
+      "description": "Remove an item, given its id or text.",
+      "fields": {
+        "entity_id": {
+          "name": "List",
+          "description": "The ICA list. Defaults to the active list."
+        },
+        "item": {
+          "name": "Item",
+          "description": "Item id or text."
+        }
+      }
+    },
+    "clear_ticked": {
+      "name": "Clear ticked items",
+      "description": "Remove all ticked items from a list.",
+      "fields": {
+        "entity_id": {
+          "name": "List",
+          "description": "The ICA list. Defaults to the active list."
+        }
+      }
     }
   },
   "exceptions": {
@@ -117,6 +177,24 @@
     },
     "delete_timeout": {
       "message": "The list \"{name}\" was deleted, but Home Assistant did not finish updating in time. Check the ICA integration."
+    },
+    "no_list": {
+      "message": "There is no active list. Create a list or choose one first."
+    },
+    "empty_item": {
+      "message": "The item text is empty."
+    },
+    "list_unavailable": {
+      "message": "The list “{list}” is not available right now (ICA may be reloading). Try again in a moment."
+    },
+    "item_not_found": {
+      "message": "No item matching “{item}” on the list."
+    },
+    "item_ambiguous": {
+      "message": "More than one item matches “{item}”: {matches}. Use the item id instead."
+    },
+    "todo_failed": {
+      "message": "The list {entity_id} could not be updated: {error}"
     }
   }
 }

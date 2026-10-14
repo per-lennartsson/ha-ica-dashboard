@@ -52,6 +52,21 @@ Needs `ha-ica-todo` v0.10.0 or later. Use *Developer tools → Actions*. Use a t
 
 Record the results (and the reload time in step 1) in `plan.md`.
 
+## Manual check: items (plan step 1.4)
+
+Use a throwaway list that is the active list (see the list check above). Run the services from *Developer tools → Actions*, with "Perform action" and look at the response.
+
+1. **Add:** `inkop.add_item` with `item: 2 st gurka`. The item shows in the ICA app as quantity 2 st, name "gurka" (check that the quantity and unit were understood by ICA, not left in the name).
+2. **Duplicate:** `inkop.add_item` with `item: Gurka`. The response says `added: false`, `duplicate: true` and lists the existing item; nothing is added. Run it again with `confirm_duplicate: true`: the item is added.
+3. **Decimal/unit text:** add `1,5 l mjölk` and `500g nötfärs`; check quantity and unit in the ICA app.
+4. **Tick:** `inkop.tick_item` with the item text (`gurka`), then with `ticked: false`. The item is struck over in the ICA app and back. Then with an item id from the response.
+5. **Remove:** `inkop.remove_item` with an item text. It disappears from the ICA app.
+6. **Clear:** tick two items, run `inkop.clear_ticked`. Only the ticked ones are removed; the response lists them.
+7. **Ambiguous:** with two different open items containing "mjölk" (for example `1 l mjölk` and `2 st mjölk`), `inkop.remove_item` with `mjölk` should be refused and list both.
+8. **During a reload:** run `inkop.create_list` and, while the status is `creating`, try `inkop.add_item` on the list being reloaded. Expect a clear "not available right now" message, not a crash.
+
+Record anything surprising (especially how ICA treats the text) in `plan.md`.
+
 ## Rules for testing against the real ICA account
 
 - Automated tests never use a real ICA account. Mocks only.
