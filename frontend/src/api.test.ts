@@ -5,6 +5,7 @@ import {
   createList,
   deleteList,
   errorMessage,
+  extractItems,
   removeItem,
   responseOf,
   suggestListName,
@@ -229,5 +230,45 @@ describe("tickItem, removeItem and clearTicked", () => {
       false,
       false,
     );
+  });
+});
+
+describe("extractItems", () => {
+  it("sends the text and list and returns the suggestions", async () => {
+    const { hass, callService } = hassReturning({
+      context: {},
+      response: {
+        items: [
+          { item: "2 st gurka", on_list: false, existing: null, selected: true },
+          { item: "mjölk", on_list: true, existing: "1 l mjölk", selected: false },
+        ],
+      },
+    });
+
+    const result = await extractItems(hass, "todo.ica_a", "Gurksallad och mjölk");
+
+    expect(callService).toHaveBeenCalledWith(
+      "handla",
+      "ai_extract_items",
+      { entity_id: "todo.ica_a", text: "Gurksallad och mjölk" },
+      undefined,
+      false,
+      true,
+    );
+    expect(result.map((s) => [s.item, s.onList, s.selected])).toEqual([
+      ["2 st gurka", false, true],
+      ["mjölk", true, false],
+    ]);
+  });
+
+  it("gives nothing for an answer without items", async () => {
+    const { hass } = hassReturning({ context: {}, response: {} });
+    expect(await extractItems(hass, "todo.ica_a", "x")).toEqual([]);
+  });
+
+  it("turns a failed call into an Error with a readable message", async () => {
+    const callService = vi.fn().mockRejectedValue({ message: "The AI provider failed: credits" });
+    const hass: HomeAssistant = { language: "sv", states: {}, callService };
+    await expect(extractItems(hass, "todo.ica_a", "x")).rejects.toThrow("credits");
   });
 });

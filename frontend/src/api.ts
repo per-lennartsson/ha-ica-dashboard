@@ -1,5 +1,6 @@
 /** Calls to the Handla services. Errors are thrown as Error with a readable message. */
 
+import { parseSuggestions, type Suggestion } from "./ai";
 import type { HomeAssistant } from "./types";
 
 const DOMAIN = "handla";
@@ -116,4 +117,17 @@ export async function removeItem(
 
 export async function clearTicked(hass: HomeAssistant, entityId: string): Promise<void> {
   await call(hass, "clear_ticked", { entity_id: entityId });
+}
+
+/**
+ * Asks the AI to find shopping items in a pasted text (recipe, meal plan, message).
+ * Nothing is added; the items on `entityId` are only compared with the suggestions.
+ */
+export async function extractItems(
+  hass: HomeAssistant,
+  entityId: string,
+  text: string,
+): Promise<Suggestion[]> {
+  const response = await call(hass, "ai_extract_items", { entity_id: entityId, text }, true);
+  return parseSuggestions(response["items"]);
 }
