@@ -342,12 +342,31 @@ AI_ENTITY = "ai_task.fake_provider"
 
 
 class FakeAiProvider:
-    """A stand-in `ai_task` entity: only its state exists, which is all 2.1 reads."""
+    """A stand-in `ai_task` entity and its `ai_task.generate_data` service.
+
+    Set `answer` to what the model returns (the structured `data`), or `error` to
+    make the provider fail. Every call is recorded in `calls`.
+    """
 
     def __init__(self, hass: HomeAssistant, entity_id: str = AI_ENTITY) -> None:
         self.hass = hass
         self.entity_id = entity_id
+        self.calls: list[dict[str, Any]] = []
+        self.answer: Any = {"items": []}
+        self.error: Exception | None = None
         self.set_state("2026-10-14T12:00:00+00:00")
+        hass.services.async_register(
+            "ai_task",
+            "generate_data",
+            self._generate,
+            supports_response=SupportsResponse.ONLY,
+        )
+
+    async def _generate(self, call: ServiceCall) -> Any:
+        self.calls.append(dict(call.data))
+        if self.error is not None:
+            raise self.error
+        return {"conversation_id": "c1", "data": self.answer}
 
     def set_state(self, state: str) -> None:
         """ai_task entities report the time of their last use, or `unavailable`."""

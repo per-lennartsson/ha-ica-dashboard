@@ -7,6 +7,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
+from .ai import get_ai_config
 from .card import async_register_card, async_unregister_resource
 from .const import DOMAIN
 from .coordinator import HandlaConfigEntry, HandlaCoordinator
@@ -15,7 +16,7 @@ from .dependency import (
     create_dependency_issue,
     delete_dependency_issue,
 )
-from .services import async_register_services
+from .services import async_register_services, async_sync_ai_services
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 PLATFORMS = [Platform.SELECT, Platform.SENSOR]
@@ -48,11 +49,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: HandlaConfigEntry) -> bo
     await coordinator.async_start()
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    async_sync_ai_services(hass, get_ai_config(entry)[0])
+    entry.async_on_unload(entry.add_update_listener(_options_updated))
     return True
 
 
+async def _options_updated(hass: HomeAssistant, entry: HandlaConfigEntry) -> None:
+    """Add or remove the AI services when the AI switch changes."""
+    async_sync_ai_services(hass, get_ai_config(entry)[0])
+
+
 async def async_unload_entry(hass: HomeAssistant, entry: HandlaConfigEntry) -> bool:
-    """Unload the platforms."""
+    """Unload the platforms; the AI services go with the entry."""
+    async_sync_ai_services(hass, False)
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 

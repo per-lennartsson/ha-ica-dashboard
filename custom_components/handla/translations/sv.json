@@ -180,6 +180,20 @@
       "name": "Föreslå listnamn",
       "description": "Returnera standardnamnet för en ny lista, till exempel “Att handla 14 oktober”.",
       "fields": {}
+    },
+    "ai_extract_items": {
+      "name": "Föreslå varor från text (AI)",
+      "description": "Låt vald AI Task-entitet läsa en inklistrad text, till exempel ett recept eller en matsedel, och föreslå varor. Inget läggs till i listan. Finns bara när AI är påslaget i Handla-inställningarna.",
+      "fields": {
+        "text": {
+          "name": "Text",
+          "description": "Texten som ska läsas."
+        },
+        "entity_id": {
+          "name": "Lista",
+          "description": "Listan att jämföra med. Som standard den aktiva listan."
+        }
+      }
     }
   },
   "exceptions": {
@@ -224,6 +238,21 @@
     },
     "todo_failed": {
       "message": "Listan {entity_id} kunde inte uppdateras: {error}"
+    },
+    "ai_not_ready": {
+      "message": "AI är avstängt, eller den valda AI Task-entiteten är inte tillgänglig. Kontrollera Handla-inställningarna."
+    },
+    "ai_text_empty": {
+      "message": "Det finns ingen text att läsa."
+    },
+    "ai_text_too_long": {
+      "message": "Texten är för lång (högst {max} tecken)."
+    },
+    "ai_failed": {
+      "message": "AI-leverantören misslyckades: {error}"
+    },
+    "ai_bad_answer": {
+      "message": "AI-leverantören svarade på ett oväntat sätt. Försök igen."
     }
   },
   "options": {

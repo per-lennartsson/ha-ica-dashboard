@@ -180,6 +180,20 @@
       "name": "Suggest list name",
       "description": "Return the default name for a new list, such as “Att handla 14 oktober”.",
       "fields": {}
+    },
+    "ai_extract_items": {
+      "name": "Suggest items from text (AI)",
+      "description": "Let the chosen AI Task entity read a pasted text, such as a recipe or a meal plan, and suggest shopping items. Nothing is added to the list. Available only while AI is turned on in the Handla settings.",
+      "fields": {
+        "text": {
+          "name": "Text",
+          "description": "The text to read."
+        },
+        "entity_id": {
+          "name": "List",
+          "description": "The list to compare with. Defaults to the active list."
+        }
+      }
     }
   },
   "exceptions": {
@@ -224,6 +238,21 @@
     },
     "todo_failed": {
       "message": "The list {entity_id} could not be updated: {error}"
+    },
+    "ai_not_ready": {
+      "message": "AI is turned off, or the chosen AI Task entity is not available. Check the Handla settings."
+    },
+    "ai_text_empty": {
+      "message": "There is no text to read."
+    },
+    "ai_text_too_long": {
+      "message": "The text is too long (at most {max} characters)."
+    },
+    "ai_failed": {
+      "message": "The AI provider failed: {error}"
+    },
+    "ai_bad_answer": {
+      "message": "The AI provider answered in an unexpected way. Try again."
     }
   },
   "options": {

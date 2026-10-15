@@ -122,3 +122,20 @@ get_top_items:
 
 suggest_list_name:
   fields: {}
+
+ai_extract_items:
+  fields:
+    text:
+      required: true
+      selector:
+        text:
+          multiline: true
+    entity_id:
+      required: false
+      selector:
+        entity:
+          filter:
+            integration: ica
+            domain: todo
+          exclude_entities:
+            - todo.ica_favorite_articles

@@ -2,6 +2,12 @@
 
 from .ai import AiStatus, ai_choice_error, ai_status
 from .duplicates import find_duplicates, normalize_name
+from .extraction import (
+    MAX_TEXT_LENGTH,
+    build_instructions,
+    clean_suggestions,
+    suggestions_payload,
+)
 from .icons import DEFAULT_ICON, icon_for
 from .items import UNITS, ParsedItem, format_quantity, parse_item_text
 from .lists import (
@@ -38,6 +44,7 @@ from .usage import (
 from .versions import is_version_at_least, parse_version
 
 __all__ = [
+    "MAX_TEXT_LENGTH",
     "AiStatus",
     "MAX_LISTED",
     "DEFAULT_ICON",
@@ -52,7 +59,9 @@ __all__ = [
     "UsageEntry",
     "ai_choice_error",
     "ai_status",
+    "build_instructions",
     "build_message",
+    "clean_suggestions",
     "choose_notify_services",
     "default_list_name",
     "duplicate_items",
@@ -76,6 +85,7 @@ __all__ = [
     "resolve_items",
     "same_id",
     "title_from_name",
+    "suggestions_payload",
     "top_items",
     "top_payload",
     "unique_labels",

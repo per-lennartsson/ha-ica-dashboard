@@ -128,10 +128,12 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 - Decisions: (1) The options flow now opens with a menu (Notifications / AI); the old first step is `notifications`, so existing saved options are unaffected. (2) The status sensor, not an options attribute, is what the card reads. (3) No AI services exist yet; from 2.2 they must be registered only while AI is on.
 
 ### 2.2 Extraction service (L)
-- [ ] `handla.ai_extract_items`: pasted text in service data → structured output (short Swedish names, quantity first, merged duplicates, staples skipped).
-- [ ] Prompt and JSON schema in version control; set `max_tokens` explicitly so long lists aren't truncated (note: Anthropic-specific).
-- [ ] Mark items already on the list.
-- **Verify:** tests with mocked `ai_task` against fixture inputs (recipe, meal plan, message, very long text); prompt reviewed with real provider on a few samples.
+- [x] `handla.ai_extract_items`: pasted text in service data → structured output (short Swedish names, quantity first, merged duplicates, staples skipped). Registered only while AI is on.
+- [x] Prompt and output structure in version control (`domain/extraction.py`). **`max_tokens` cannot be set per call**: `ai_task.generate_data` has no such field (HA 2026.10). The limit belongs to the provider's own configuration (Anthropic: "Maximum tokens" on the conversation/AI Task subentry), so it is documented in 2.5 instead. Mitigations here: compact output (one short text per item), input capped at 20 000 characters, answer capped at 100 items.
+- [x] Mark items already on the list (`on_list`, `existing`; they start with `selected: false`).
+- **Verify (automated, done):** 411 Python tests, 100% coverage, ruff/mypy clean; mocked `ai_task` with fixtures for cleaning (bullets, staples, merged quantities, malformed answers), provider failure, empty/too long text, unavailable provider, and the service appearing and disappearing with the AI switch. Deliberate breakages (staples not skipped; existing items pre-selected) were each caught by 2 tests.
+- **Verify (Manual, real HA, not yet done):** prompt reviewed with the real provider on a few samples (recipe, meal plan, chat message, very long text); call `handla.ai_extract_items` from Developer tools → Actions.
+- Decisions: (1) The model returns one list of plain texts ("2 st gurka"), because that is what ha-ica-todo parses; the answer is cleaned and merged again in Python. (2) The service only suggests; nothing is added to the list (2.3 adds the selected ones through `handla.add_item`). (3) Truncated answers by a low provider token limit cannot be detected reliably, so a long list may be cut short silently; see 2.5 docs.
 
 ### 2.3 Card: paste, review, add (L)
 - [ ] Paste box, review list (edit, untick, already-on-list marked and unticked), add selected; failed items stay for retry.
@@ -167,6 +169,7 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 ## Progress log
 | Date | Step | Result |
 |------|------|--------|
+| 2026-10-15 | 2.2 | Extraction service done: `handla.ai_extract_items` (only while AI is on), `domain/extraction.py` (prompt, structure, cleaning, marking), mocked `ai_task` in tests; 411 tests, 100% coverage. `max_tokens` is not a service field (documented for 2.5). Manual check with a real provider pending. |
 | 2026-10-14 | 2.1 | AI switch done: options menu with AI step (on/off, `ai_task` entity, validated), `sensor.handla_ai`, `domain/ai.py`, `fake_ai` fixture; 379 tests, 100% coverage. Manual check on the real HA pending. |
 | 2026-10-14 | Phase 1 | Maintainer reports all manual checks for 1.x done on the real HA (steps 1.2–1.11). Phase 1 complete; Phase 2 awaits plan approval. |
 | 2026-10-13 | 0.1 (update) | ha-ica-todo changes made on branch `list-events-and-metadata` (`c2fe1f1`, v0.10.0): `ica_lists_changed`, `ica_list_items_changed`, list entity attributes, fork metadata. Contract and plan updated; minimum version now `>= v0.10.0`. Review notes: event fires also on reload failure; item-change event has no user; removed fields not reported. |
