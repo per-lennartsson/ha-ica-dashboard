@@ -6,7 +6,7 @@ from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from . import shopping
+from . import ai, shopping
 from .const import DOMAIN, QUICK_ADD_LIMIT
 from .coordinator import HandlaCoordinator
 from .schema import vol
@@ -38,6 +38,10 @@ REMOVE_ITEM_SCHEMA = vol.Schema(
     {vol.Optional("entity_id"): cv.entity_id, vol.Required("item"): cv.string}
 )
 CLEAR_TICKED_SCHEMA = vol.Schema({vol.Optional("entity_id"): cv.entity_id})
+AI_EXTRACT_ITEMS_SCHEMA = vol.Schema(
+    {vol.Optional("entity_id"): cv.entity_id, vol.Required("text"): cv.string}
+)
+AI_SERVICES = ("ai_extract_items",)
 GET_TOP_ITEMS_SCHEMA = vol.Schema(
     {
         vol.Optional("limit", default=QUICK_ADD_LIMIT): vol.All(
@@ -148,3 +152,26 @@ def async_register_services(hass: HomeAssistant) -> None:
         schema=DELETE_LIST_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )
+
+
+def async_sync_ai_services(hass: HomeAssistant, enabled: bool) -> None:
+    """Register the AI services while the AI module is on, remove them when off."""
+
+    async def ai_extract_items(call: ServiceCall) -> dict[str, Any]:
+        coordinator = _coordinator(hass)
+        target = coordinator.resolve_list(call.data.get("entity_id"))
+        return await ai.async_extract_items(
+            hass, coordinator.config_entry, target, call.data["text"], call.context
+        )
+
+    for name in AI_SERVICES:
+        if not enabled:
+            hass.services.async_remove(DOMAIN, name)
+        elif not hass.services.has_service(DOMAIN, name):
+            hass.services.async_register(
+                DOMAIN,
+                name,
+                ai_extract_items,
+                schema=AI_EXTRACT_ITEMS_SCHEMA,
+                supports_response=SupportsResponse.ONLY,
+            )
