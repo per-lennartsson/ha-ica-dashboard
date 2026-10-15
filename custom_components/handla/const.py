@@ -23,3 +23,8 @@ USAGE_SAVE_DELAY: Final = 10.0
 CONF_RECIPIENTS: Final = "recipients"  # {user_id: notify service name}
 EVENT_ITEM_ADDED: Final = "handla_item_added"
 NOTIFY_DELAY: Final = 20.0  # seconds: adds within this window become one message
+
+# Optional AI module (off by default)
+CONF_AI_ENABLED: Final = "ai_enabled"
+CONF_AI_ENTITY: Final = "ai_entity"  # entity id of the chosen ai_task entity
+AI_TASK_DOMAIN: Final = "ai_task"

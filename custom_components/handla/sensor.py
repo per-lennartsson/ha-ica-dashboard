@@ -7,12 +7,14 @@ from homeassistant.components.sensor import (
     SensorEntity,
     SensorStateClass,
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.const import EVENT_STATE_CHANGED
+from homeassistant.core import Event, EventStateChangedData, HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .ai import current_ai_status, get_ai_config
 from .const import QUICK_ADD_LIMIT
 from .coordinator import HandlaConfigEntry, HandlaCoordinator, Status
-from .domain import lists_payload, quick_add_payload
+from .domain import AiStatus, lists_payload, quick_add_payload
 from .entity import HandlaEntity
 
 
@@ -29,6 +31,7 @@ async def async_setup_entry(
             StatusSensor(coordinator),
             FrequentItemsSensor(coordinator),
             ListsSensor(coordinator),
+            AiStatusSensor(coordinator),
         ]
     )
 
@@ -123,3 +126,51 @@ class ListsSensor(SensorEntity, HandlaEntity):
             "lists": lists_payload(data.lists),
             "active_offline_id": data.active_offline_id,
         }
+
+
+class AiStatusSensor(SensorEntity, HandlaEntity):
+    """off / ready / unavailable: the card shows AI UI only when this is `ready`."""
+
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = [status.value for status in AiStatus]
+
+    def __init__(self, coordinator: HandlaCoordinator) -> None:
+        super().__init__(coordinator, "ai")
+
+    async def async_added_to_hass(self) -> None:
+        """Follow option changes and the chosen provider's state."""
+        await super().async_added_to_hass()
+        entry = self.coordinator.config_entry
+        self.async_on_remove(entry.add_update_listener(self._on_options_changed))
+        self.async_on_remove(
+            self.hass.bus.async_listen(
+                EVENT_STATE_CHANGED,
+                self._on_state_changed,
+                event_filter=self._is_provider_event,
+            )
+        )
+
+    async def _on_options_changed(
+        self, hass: HomeAssistant, entry: HandlaConfigEntry
+    ) -> None:
+        self.async_write_ha_state()
+
+    @callback
+    def _is_provider_event(self, event_data: EventStateChangedData) -> bool:
+        _enabled, entity_id = get_ai_config(self.coordinator.config_entry)
+        return entity_id is not None and event_data["entity_id"] == entity_id
+
+    @callback
+    def _on_state_changed(self, event: Event[EventStateChangedData]) -> None:
+        self.async_write_ha_state()
+
+    @property
+    def native_value(self) -> str:
+        """Current AI status."""
+        return current_ai_status(self.hass, self.coordinator.config_entry).value
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """The chosen provider, when AI is on."""
+        enabled, entity_id = get_ai_config(self.coordinator.config_entry)
+        return {"provider": entity_id} if enabled and entity_id else {}

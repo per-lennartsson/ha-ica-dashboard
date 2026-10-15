@@ -1,5 +1,6 @@
 """Pure domain logic for Handla. Must not import Home Assistant."""
 
+from .ai import AiStatus, ai_choice_error, ai_status
 from .duplicates import find_duplicates, normalize_name
 from .icons import DEFAULT_ICON, icon_for
 from .items import UNITS, ParsedItem, format_quantity, parse_item_text
@@ -37,6 +38,7 @@ from .usage import (
 from .versions import is_version_at_least, parse_version
 
 __all__ = [
+    "AiStatus",
     "MAX_LISTED",
     "DEFAULT_ICON",
     "DEFAULT_QUICK_ITEMS",
@@ -48,6 +50,8 @@ __all__ = [
     "ParsedItem",
     "TodoItem",
     "UsageEntry",
+    "ai_choice_error",
+    "ai_status",
     "build_message",
     "choose_notify_services",
     "default_list_name",

@@ -14,14 +14,24 @@ from homeassistant.config_entries import (
 )
 from homeassistant.core import callback
 from homeassistant.helpers.selector import (
+    BooleanSelector,
+    EntitySelector,
+    EntitySelectorConfig,
     SelectOptionDict,
     SelectSelector,
     SelectSelectorConfig,
 )
 
-from .const import CONF_RECIPIENTS, DOMAIN
+from .ai import get_ai_config
+from .const import (
+    AI_TASK_DOMAIN,
+    CONF_AI_ENABLED,
+    CONF_AI_ENTITY,
+    CONF_RECIPIENTS,
+    DOMAIN,
+)
 from .dependency import async_check_ica
-from .domain import choose_notify_services
+from .domain import ai_choice_error, choose_notify_services
 from .notify import get_recipients
 from .schema import vol
 
@@ -34,7 +44,7 @@ class HandlaConfigFlow(ConfigFlow, domain=DOMAIN):
     @staticmethod
     @callback
     def async_get_options_flow(config_entry: ConfigEntry) -> HandlaOptionsFlow:
-        """Options: who gets notified."""
+        """Options: who gets notified, and the optional AI module."""
         return HandlaOptionsFlow()
 
     async def async_step_user(
@@ -53,7 +63,7 @@ class HandlaConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class HandlaOptionsFlow(OptionsFlow):
-    """Pick the users to notify, then a notify service for each of them."""
+    """A menu: notifications (users, then a notify service each) and the AI module."""
 
     def __init__(self) -> None:
         self._queue: list[str] = []
@@ -73,6 +83,14 @@ class HandlaOptionsFlow(OptionsFlow):
         return self.async_create_entry(data=options)
 
     async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """What to configure."""
+        return self.async_show_menu(
+            step_id="init", menu_options=["notifications", "ai"]
+        )
+
+    async def async_step_notifications(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Choose which users are told about new items."""
@@ -101,7 +119,7 @@ class HandlaOptionsFlow(OptionsFlow):
                 )
             }
         )
-        return self.async_show_form(step_id="init", data_schema=schema)
+        return self.async_show_form(step_id="notifications", data_schema=schema)
 
     async def async_step_recipient(
         self, user_input: dict[str, Any] | None = None
@@ -133,3 +151,36 @@ class HandlaOptionsFlow(OptionsFlow):
             data_schema=schema,
             description_placeholders={"name": self._names.get(user_id, user_id)},
         )
+
+    async def async_step_ai(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Turn the optional AI module on or off and choose its ai_task entity."""
+        enabled, saved = get_ai_config(self.config_entry)
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            enabled = bool(user_input.get(CONF_AI_ENABLED))
+            chosen = user_input.get(CONF_AI_ENTITY) or None
+            exists = chosen is not None and self.hass.states.get(chosen) is not None
+            error = ai_choice_error(enabled, chosen, exists)
+            if error is None:
+                options = {
+                    **self.config_entry.options,
+                    CONF_AI_ENABLED: enabled,
+                    CONF_AI_ENTITY: chosen,
+                }
+                return self.async_create_entry(data=options)
+            errors["base"] = error
+            saved = chosen
+        entity_key = (
+            vol.Optional(CONF_AI_ENTITY, default=saved)
+            if saved
+            else vol.Optional(CONF_AI_ENTITY)
+        )
+        schema = vol.Schema(
+            {
+                vol.Required(CONF_AI_ENABLED, default=enabled): BooleanSelector(),
+                entity_key: EntitySelector(EntitySelectorConfig(domain=AI_TASK_DOMAIN)),
+            }
+        )
+        return self.async_show_form(step_id="ai", data_schema=schema, errors=errors)

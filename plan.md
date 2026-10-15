@@ -120,10 +120,12 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 ## Phase 2: Optional AI module
 
 ### 2.1 Enable switch and provider selection (M)
-- [ ] Add a mocked `ai_task` entity fixture to `tests/conftest.py` (dev environment now has HA 2026.10.1, which includes `ai_task`).
-- [ ] Options flow: AI off by default; when on, choose an `ai_task` entity; validate it exists.
-- [ ] Expose AI-enabled state so the card can hide all AI UI when off.
-- **Verify:** tests for off (no services registered, no UI) and on; Manual (real HA): toggle in the options flow.
+- [x] Add a mocked `ai_task` entity fixture to `tests/conftest.py` (`fake_ai`; dev environment has HA 2026.10.1, which includes `ai_task`).
+- [x] Options flow: AI off by default; when on, choose an `ai_task` entity; validate it exists.
+- [x] Expose AI-enabled state so the card can hide all AI UI when off (`sensor.handla_ai`: `off` / `ready` / `unavailable`).
+- **Verify (automated, done):** 379 Python tests, 100% coverage, ruff/mypy clean. Off by default; malformed options count as off; on needs an existing entity; turning off never fails; the status follows the provider (unavailable, back, removed) and ignores other entities; no AI services are registered. A deliberate breakage (default on) was caught by 3 tests.
+- **Verify (Manual, real HA, not yet done):** toggle AI in the options flow (Handla settings, menu: Notifications / AI), pick a real AI Task entity, check `sensor.handla_ai` shows `ready`, then turn it off.
+- Decisions: (1) The options flow now opens with a menu (Notifications / AI); the old first step is `notifications`, so existing saved options are unaffected. (2) The status sensor, not an options attribute, is what the card reads. (3) No AI services exist yet; from 2.2 they must be registered only while AI is on.
 
 ### 2.2 Extraction service (L)
 - [ ] `handla.ai_extract_items`: pasted text in service data → structured output (short Swedish names, quantity first, merged duplicates, staples skipped).
@@ -165,6 +167,7 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 ## Progress log
 | Date | Step | Result |
 |------|------|--------|
+| 2026-10-14 | 2.1 | AI switch done: options menu with AI step (on/off, `ai_task` entity, validated), `sensor.handla_ai`, `domain/ai.py`, `fake_ai` fixture; 379 tests, 100% coverage. Manual check on the real HA pending. |
 | 2026-10-14 | Phase 1 | Maintainer reports all manual checks for 1.x done on the real HA (steps 1.2–1.11). Phase 1 complete; Phase 2 awaits plan approval. |
 | 2026-10-13 | 0.1 (update) | ha-ica-todo changes made on branch `list-events-and-metadata` (`c2fe1f1`, v0.10.0): `ica_lists_changed`, `ica_list_items_changed`, list entity attributes, fork metadata. Contract and plan updated; minimum version now `>= v0.10.0`. Review notes: event fires also on reload failure; item-change event has no user; removed fields not reported. |
 | 2026-10-13 | env | Upgraded dev env to Python 3.14.8 (Homebrew) and HA 2026.10.1 / pytest-homeassistant-custom-component 0.13.372. Checks green. `ai_task` is now testable. |
