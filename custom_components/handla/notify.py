@@ -31,6 +31,24 @@ def get_recipients(entry: ConfigEntry) -> dict[str, str]:
     }
 
 
+async def async_notify_users(
+    hass: HomeAssistant, targets: Mapping[str, str], title: str, message: str
+) -> None:
+    """Send one message through each user's notify service; one failure stops no one."""
+    for user_id, service in targets.items():
+        try:
+            await hass.services.async_call(
+                "notify",
+                service,
+                {"title": title, "message": message, "data": {"tag": "handla"}},
+                blocking=True,
+            )
+        except HomeAssistantError as err:
+            _LOGGER.warning(
+                "Could not notify user %s through notify.%s: %s", user_id, service, err
+            )
+
+
 class AddNotifier:
     """Collects adds for a short while, then sends one message per adder and list."""
 
@@ -72,22 +90,7 @@ class AddNotifier:
             self._hass.config.language, adder_name, list_title, items
         )
         targets = recipients_to_notify(get_recipients(self._entry), adder_id)
-        for user_id, service in targets.items():
-            try:
-                await self._hass.services.async_call(
-                    "notify",
-                    service,
-                    {"title": title, "message": message, "data": {"tag": "handla"}},
-                    blocking=True,
-                )
-            except HomeAssistantError as err:
-                # One broken phone must not stop the others (or the add itself)
-                _LOGGER.warning(
-                    "Could not notify user %s through notify.%s: %s",
-                    user_id,
-                    service,
-                    err,
-                )
+        await async_notify_users(self._hass, targets, title, message)
 
     async def _user_name(self, user_id: str | None) -> str | None:
         if user_id is None:

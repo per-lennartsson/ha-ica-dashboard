@@ -286,11 +286,13 @@
         "description": "Låt AI göra om inklistrad text, till exempel ett recept, till varor. Av som standard; inget som rör AI visas eller körs medan det är av. Kräver en AI Task-entitet från en AI-leverantör som är konfigurerad i Home Assistant.",
         "data": {
           "ai_enabled": "Använd AI",
-          "ai_entity": "AI Task-entitet"
+          "ai_entity": "AI Task-entitet",
+          "ai_health_check": "Daglig kontroll"
         },
         "data_description": {
           "ai_enabled": "Stäng av för att dölja alla AI-funktioner.",
-          "ai_entity": "Leverantören som läser den inklistrade texten. Krävs när AI är på."
+          "ai_entity": "Leverantören som läser den inklistrade texten. Krävs när AI är på.",
+          "ai_health_check": "Skicka en liten testförfrågan till leverantören en gång om dagen och avisera användarna som valts under Aviseringar om den misslyckas. Kostar några få tokens per dag."
         }
       }
     },

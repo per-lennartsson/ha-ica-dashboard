@@ -12,6 +12,7 @@ from custom_components.handla.ai import get_ai_config
 from custom_components.handla.const import (
     CONF_AI_ENABLED,
     CONF_AI_ENTITY,
+    CONF_AI_HEALTH_CHECK,
     DOMAIN,
 )
 from tests.conftest import (
@@ -75,7 +76,10 @@ async def test_form_defaults_to_off(
     result = await _open_ai(hass, entry)
 
     assert result["step_id"] == "ai"
-    assert result["data_schema"]({}) == {CONF_AI_ENABLED: False}
+    assert result["data_schema"]({}) == {
+        CONF_AI_ENABLED: False,
+        CONF_AI_HEALTH_CHECK: False,
+    }
 
 
 async def test_turn_on_with_a_provider(
@@ -127,6 +131,7 @@ async def test_unknown_entity_is_refused(
     assert result["data_schema"]({CONF_AI_ENABLED: True}) == {
         CONF_AI_ENABLED: True,
         CONF_AI_ENTITY: "ai_task.nothing",
+        CONF_AI_HEALTH_CHECK: False,
     }  # the typed choice is kept in the form
     assert CONF_AI_ENABLED not in entry.options
 
@@ -150,6 +155,7 @@ async def test_turning_off_always_works(
     assert result["data_schema"]({}) == {
         CONF_AI_ENABLED: True,
         CONF_AI_ENTITY: AI_ENTITY,
+        CONF_AI_HEALTH_CHECK: False,
     }
     result = await _submit(hass, result, {CONF_AI_ENABLED: False})
     await hass.async_block_till_done()
@@ -216,3 +222,20 @@ async def test_malformed_options_mean_off(
 
     assert get_ai_config(entry) == (False, None)
     assert _ai_state(hass, entry).state == "off"
+
+
+async def test_the_daily_health_check_is_saved_with_the_choice(
+    hass: HomeAssistant,
+    ica_dependency: IcaConfigure,
+    fake_ica: FakeIca,
+    fake_ai: FakeAiProvider,
+) -> None:
+    entry = await _entry(hass, ica_dependency, fake_ica)
+    result = await _submit(
+        hass,
+        await _open_ai(hass, entry),
+        {CONF_AI_ENABLED: True, CONF_AI_ENTITY: AI_ENTITY, CONF_AI_HEALTH_CHECK: True},
+    )
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert entry.options[CONF_AI_HEALTH_CHECK] is True

@@ -1,6 +1,6 @@
 """The optional AI module's switch and provider, read from the config entry."""
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_UNAVAILABLE
@@ -8,7 +8,13 @@ from homeassistant.core import Context, HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 
 from . import todo_api
-from .const import AI_TASK_DOMAIN, CONF_AI_ENABLED, CONF_AI_ENTITY, DOMAIN
+from .const import (
+    AI_TASK_DOMAIN,
+    CONF_AI_ENABLED,
+    CONF_AI_ENTITY,
+    CONF_AI_HEALTH_CHECK,
+    DOMAIN,
+)
 from .domain import (
     MAX_TEXT_LENGTH,
     AiStatus,
@@ -20,6 +26,9 @@ from .domain import (
 )
 from .domain.extraction import ITEMS_KEY, STRUCTURE, TASK_NAME
 
+if TYPE_CHECKING:
+    from .ai_monitor import AiMonitor
+
 
 def get_ai_config(entry: ConfigEntry) -> tuple[bool, str | None]:
     """(enabled, ai_task entity id). Off unless explicitly on; bad data is off."""
@@ -28,6 +37,11 @@ def get_ai_config(entry: ConfigEntry) -> tuple[bool, str | None]:
     if not isinstance(entity_id, str) or not entity_id:
         return enabled, None
     return enabled, entity_id
+
+
+def get_health_check(entry: ConfigEntry) -> bool:
+    """Whether the daily health check is on (off unless explicitly on)."""
+    return entry.options.get(CONF_AI_HEALTH_CHECK) is True
 
 
 def provider_ready(hass: HomeAssistant, entity_id: str | None) -> bool:
@@ -63,10 +77,14 @@ def _answer_items(result: Any) -> Any:
 
 
 async def _ask_provider(
-    hass: HomeAssistant, entity_id: str, text: str, context: Context | None
+    hass: HomeAssistant,
+    monitor: AiMonitor,
+    entity_id: str,
+    text: str,
+    context: Context | None,
 ) -> Any:
     try:
-        return await hass.services.async_call(
+        result = await hass.services.async_call(
             AI_TASK_DOMAIN,
             "generate_data",
             {
@@ -80,16 +98,20 @@ async def _ask_provider(
             context=context,
         )
     except HomeAssistantError as err:
+        await monitor.async_record_failure(str(err))
         raise HomeAssistantError(
             translation_domain=DOMAIN,
             translation_key="ai_failed",
             translation_placeholders={"error": str(err)},
         ) from err
+    monitor.record_success()
+    return result
 
 
 async def async_extract_items(
     hass: HomeAssistant,
     entry: ConfigEntry,
+    monitor: AiMonitor,
     target: ListInfo,
     text: str,
     context: Context | None = None,
@@ -104,7 +126,7 @@ async def async_extract_items(
     if entity_id is None or current_ai_status(hass, entry) is not AiStatus.READY:
         raise _invalid("ai_not_ready")
 
-    result = await _ask_provider(hass, entity_id, text, context)
+    result = await _ask_provider(hass, monitor, entity_id, text, context)
     suggestions = clean_suggestions(_answer_items(result))
     on_list = await todo_api.async_get_items(hass, target.entity_id)
     items = suggestions_payload(suggestions, on_list)

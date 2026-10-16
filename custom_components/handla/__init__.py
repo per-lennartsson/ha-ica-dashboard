@@ -55,7 +55,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: HandlaConfigEntry) -> bo
 
 
 async def _options_updated(hass: HomeAssistant, entry: HandlaConfigEntry) -> None:
-    """Add or remove the AI services when the AI switch changes."""
+    """Add or remove the AI services and the health check when the AI options change."""
+    entry.runtime_data.ai_monitor.async_sync()
     async_sync_ai_services(hass, get_ai_config(entry)[0])
 
 

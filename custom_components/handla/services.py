@@ -161,7 +161,12 @@ def async_sync_ai_services(hass: HomeAssistant, enabled: bool) -> None:
         coordinator = _coordinator(hass)
         target = coordinator.resolve_list(call.data.get("entity_id"))
         return await ai.async_extract_items(
-            hass, coordinator.config_entry, target, call.data["text"], call.context
+            hass,
+            coordinator.config_entry,
+            coordinator.ai_monitor,
+            target,
+            call.data["text"],
+            call.context,
         )
 
     for name in AI_SERVICES:

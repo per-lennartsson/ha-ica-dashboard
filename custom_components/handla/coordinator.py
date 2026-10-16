@@ -13,6 +13,7 @@ from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
+from .ai_monitor import AiMonitor
 from .const import (
     DOMAIN,
     EVENT_ITEM_ADDED,
@@ -87,6 +88,7 @@ class HandlaCoordinator(DataUpdateCoordinator[HandlaData]):
         self._preferred: str | None = None
         self.usage = UsageTracker(hass)
         self.notifier = AddNotifier(hass, entry)
+        self.ai_monitor = AiMonitor(hass, entry)
         self.status = Status.IDLE
         self.status_detail: str | None = None
 
@@ -99,6 +101,8 @@ class HandlaCoordinator(DataUpdateCoordinator[HandlaData]):
         entry = self.config_entry
         entry.async_on_unload(self.usage.async_flush)
         entry.async_on_unload(self.notifier.async_flush)
+        entry.async_on_unload(self.ai_monitor.async_stop)
+        self.ai_monitor.async_sync()
         entry.async_on_unload(
             self.hass.bus.async_listen(
                 er.EVENT_ENTITY_REGISTRY_UPDATED, self._on_registry_event
