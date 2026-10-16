@@ -66,7 +66,7 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 * Templates using `integration_entities()` create no listeners, so `wait_template` and template sensors will not update. Do not rely on them; use events or coordinators.
 * Returning JSON from a template where a card expects a list can break cards. Return native lists.
 * Notifications must know who made a change using HA context (user ID), not heuristics.
-* `ai_task` default `max_tokens` (300) truncates structured output on long lists. Set it explicitly (Anthropic-specific; note it in docs).
+* `ai_task` default `max_tokens` (300 in some providers) can truncate structured output on long lists, and `ai_task.generate_data` has no field to set it per call. It is the provider's own setting (Anthropic: "Maximum tokens" on the AI Task entry): document it (`docs/ai.md`), keep answers compact, and cap input and output sizes.
 * There is no API for the remaining Anthropic credit balance. Detect failure by errors, not by balance.
 
 ## Rules
@@ -97,6 +97,7 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 │   ├── services.py, services.yaml   # set_active_list, create/delete_list, suggest_list_name, items, get_top_items
 │   ├── shopping.py          # add / tick / remove / clear items on a list
 │   ├── usage.py             # persistent add counts (quick-add data)
+│   ├── ai.py, ai_monitor.py # optional AI: switch, extraction service, failure push + daily check
 │   ├── notify.py            # batched "someone added items" notifications, handla_item_added event
 │   ├── schema.py            # probatio (HA 2026.10+) or voluptuous
 │   ├── card.py              # serves the built card and loads it in every dashboard
@@ -106,16 +107,16 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 │   ├── const.py
 │   └── domain/              # pure logic, no Home Assistant imports
 │       ├── items.py, duplicates.py, naming.py, lists.py, todo_items.py, usage.py, icons.py, notify.py, versions.py
+│       ├── ai.py, extraction.py, ai_health.py   # AI status, prompt and cleaning, failure de-duplication
 ├── tests/                   # pytest, mocked ICA and AI (conftest.py has FakeIca)
-├── docs/                    # ica-contract.md, dev.md, usage.md (cards, shortcut, badge), release.md, images/
+├── docs/                    # ica-contract.md, dev.md, usage.md, ai.md (cards, shortcut, badge), release.md, images/
 ├── .github/workflows/       # ci.yaml, release.yaml (builds card + handla.zip on a published release)
 ├── hacs.json, pyproject.toml, requirements_dev.txt, .env.example
-├── frontend/                # Lit card: src/ (index, handla-card, handla-items, handla-shortcut, lists, items, api, navigate, storage, i18n), dev/ (mock-data preview), tests next to sources
+├── frontend/                # Lit card: src/ (index, handla-card, handla-items, handla-shortcut, handla-ai, ai, lists, items, api, navigate, storage, i18n), dev/ (mock-data preview), tests next to sources
 ├── scripts/node.sh          # runs Node commands in Docker
 └── scripts/package-release.sh  # builds dist/handla.zip for a release (docs/release.md)
 ```
 
-> Later: `ai/` (Phase 2).
 
 ## Setup
 

@@ -50,5 +50,6 @@ Note the difference: the badge and `sensor.handla_items_to_buy` always follow th
 - `sensor.handla_frequent_items`: the quick-add buttons (most added first, topped up with staples).
 - `select.handla_active_list`: the household's active list.
 - Services (`handla.*`): `add_item`, `tick_item`, `remove_item`, `clear_ticked`, `create_list`, `delete_list`, `set_active_list`, `suggest_list_name`, `get_top_items`.
+- `sensor.handla_ai`: `off` / `ready` / `unavailable`; `handla.ai_extract_items` exists only while AI is on. See [ai.md](ai.md).
 - Event `handla_item_added`: fired for every added item (item, list, who added it).
 - Notifications: *Settings → Devices & services → Handla → Configure*.

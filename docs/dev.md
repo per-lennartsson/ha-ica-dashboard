@@ -136,6 +136,19 @@ Build the card, install as before, and add the shortcut to the **phone dashboard
 6. **Badge:** the entity badge shows the count with a cart icon and tapping it navigates to the same view.
 7. **Not running:** with the integration disabled the shortcut says "Handla körs inte".
 
+## Manual check: AI module (plan steps 2.1–2.4)
+
+Needs a real AI Task entity (any provider; Anthropic needs credits). Install the branch or release as before. Use a throwaway ICA list.
+
+1. **Off by default:** after a fresh install the card shows no AI button, `sensor.handla_ai` is `off`, and *Developer tools → Actions* has no `handla.ai_extract_items`.
+2. **Turn on:** *Configure → AI (optional)*: switching on without choosing an entity is refused; with your AI Task entity it saves. `sensor.handla_ai` becomes `ready` and the service appears (no restart needed). Reload the dashboard: the button is there.
+3. **Paste and review:** paste a recipe, a short meal plan and a chat message. Check: short Swedish names, quantity first, no salt/pepper/water, repeated items merged. An item already on the list is marked "finns redan" and unticked. Edit one text, untick one, add: only the chosen ones arrive, and the card shows "Lade till n varor".
+4. **Long text:** paste a week's meal plan (a few thousand characters). Does the list look complete? If it ends abruptly, raise *Maximum tokens* on the provider's AI Task entry (see `docs/ai.md`) and note the limit you needed.
+5. **Failure:** point the AI Task entity at a broken provider (wrong key, or disable the integration). The card shows the provider's error and keeps the text. One push arrives for each person chosen under Notifications; a second failed try does not send another.
+6. **Recovery:** fix the provider and paste again: it works. Break it again: a new push arrives.
+7. **Daily check:** turn on *Daily health check*, reload the integration with a wrong key and wait a day (or check the log after 24 h): one push, no repeat.
+8. **Turn off:** switch AI off: the button disappears (after a dashboard reload), `sensor.handla_ai` is `off`, the service is gone, and nothing else changed.
+
 ## Rules for testing against the real ICA account
 
 - Automated tests never use a real ICA account. Mocks only.

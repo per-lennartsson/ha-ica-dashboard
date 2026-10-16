@@ -150,8 +150,10 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 - Decisions: (1) The recipients are the ones already chosen for "someone added items" (one list of people, no second setting); everybody configured is told, including the user whose request failed. (2) The state (failing since, last notified) is kept in memory: after a restart a continuing outage notifies once more, which is acceptable. (3) Only errors from the provider call count; empty text, too-long text, an unavailable-provider refusal and malformed answers do not. (4) No "recovered" notification yet. (5) The daily check runs every 24 h from when the integration starts or the options change, not at a fixed time.
 
 ### 2.5 AI release (S)
-- [ ] Docs for AI setup (any provider, Anthropic notes: `max_tokens`, no balance API).
-- **Verify:** clean install with AI off shows no AI UI; with AI on, features 7–10 work end-to-end; tagged release.
+- [x] Docs for AI setup (any provider, Anthropic notes: `max_tokens`, no balance API): `docs/ai.md`, linked from both READMEs, `docs/usage.md`, manual checklist in `docs/dev.md`; CLAUDE.md structure and the `max_tokens` pitfall corrected.
+- **Verify (automated, done):** AI off equals Phase 1: no AI service registered, no `ai_task` call or timer, `sensor.handla_ai` is `off`, and the card renders nothing for off / unavailable / missing sensor (tests in 2.1–2.4). All doc links resolve.
+- **Verify (Manual, not yet done, needs the maintainer):** run "Manual check: AI module" in `docs/dev.md` with a real provider (including a long text and a deliberately failing provider), then tag a release (`docs/release.md`).
+- Decisions: (1) The AI guide is in English only; the Swedish README summarises it and links to it. (2) `max_tokens` is documented, not set, because the service has no such field.
 
 **Phase 2 done when:** features 7–10 work, AI off equals Phase 1 behaviour exactly, CI is green, release tagged.
 
@@ -173,6 +175,7 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 ## Progress log
 | Date | Step | Result |
 |------|------|--------|
+| 2026-10-16 | 2.5 | AI docs done (`docs/ai.md`, READMEs, usage, manual checklist); CLAUDE.md updated. Phase 2 is implemented; real-provider checks and the release are the maintainer's. |
 | 2026-10-16 | 2.4 | Provider monitoring done: failure push once per outage (reminder after 24 h), optional daily health check in the AI options; 433 tests, 100% coverage. Manual check with a failing provider pending. |
 | 2026-10-15 | 2.3 | Card AI helper done: `<handla-ai>` (paste, review, add, retry), hidden unless `sensor.handla_ai` is `ready`; 275 frontend tests, 100% line coverage; checked in a browser at phone width. Manual check with a real provider pending. |
 | 2026-10-15 | 2.2 | Extraction service done: `handla.ai_extract_items` (only while AI is on), `domain/extraction.py` (prompt, structure, cleaning, marking), mocked `ai_task` in tests; 411 tests, 100% coverage. `max_tokens` is not a service field (documented for 2.5). Manual check with a real provider pending. |
