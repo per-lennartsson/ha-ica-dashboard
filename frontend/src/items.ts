@@ -14,6 +14,8 @@ export interface QuickItem {
   name: string;
   icon: string;
   count: number;
+  /** Added by hand, so it always comes first. */
+  pinned: boolean;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -39,9 +41,8 @@ export function orderItems(items: TodoItem[]): TodoItem[] {
   return [...items.filter((item) => !item.completed), ...items.filter((item) => item.completed)];
 }
 
-/** Quick-add buttons from the integration, most added first. */
-export function readQuickItems(hass: HomeAssistant | undefined): QuickItem[] {
-  const raw = hass?.states[FREQUENT_ENTITY]?.attributes["items"];
+/** Quick items from a sensor attribute or a service response; malformed entries are skipped. */
+export function parseQuickItems(raw: unknown): QuickItem[] {
   if (!Array.isArray(raw)) return [];
   const result: QuickItem[] = [];
   for (const entry of raw) {
@@ -50,9 +51,15 @@ export function readQuickItems(hass: HomeAssistant | undefined): QuickItem[] {
       name: entry["name"],
       icon: typeof entry["icon"] === "string" ? entry["icon"] : "mdi:cart-outline",
       count: typeof entry["count"] === "number" ? entry["count"] : 0,
+      pinned: entry["pinned"] === true,
     });
   }
   return result;
+}
+
+/** Quick-add buttons from the integration, most added first. */
+export function readQuickItems(hass: HomeAssistant | undefined): QuickItem[] {
+  return parseQuickItems(hass?.states[FREQUENT_ENTITY]?.attributes["items"]);
 }
 
 /**

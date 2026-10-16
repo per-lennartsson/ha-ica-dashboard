@@ -15,7 +15,7 @@ Gemensamma inköpslistor i Home Assistant, ovanpå dina ICA-listor. Alla i hush�
 
 - **Gemensamma ICA-listor:** välj, skapa och ta bort listor. En ny lista får ett namn som "Att handla 14 oktober".
 - **Snabb inmatning:** skriv en vara och tryck Enter; fältet är redo för nästa. Mängder fungerar: `2 st gurka`, `1,5 l mjölk`, `500 g nötfärs`.
-- **Snabbknappar:** med ikoner, baserade på det ni faktiskt lägger till oftast.
+- **Snabbknappar:** med ikoner, baserade på det ni faktiskt lägger till oftast. Ta bort, slå ihop (”Tomat” + ”Tomater”) eller fäst egna med knappen *Hantera*.
 - **Dubblettkontroll:** "finns redan – lägga till igen?" innan något som redan står på listan läggs till.
 - **Bocka av, ta bort, rensa avbockade:** ändringar syns direkt på alla enheter, även när de görs i ICA-appen.
 - **Aviseringar:** en push till de du väljer när någon *annan* lägger till varor (flera snabba tillägg blir ett meddelande).

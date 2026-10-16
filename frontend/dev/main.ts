@@ -82,7 +82,7 @@ const state = {
   running: true,
   lists: initialLists(),
   items: initialItems(),
-  usage: new Map<string, { name: string; count: number }>(),
+  usage: new Map<string, { name: string; count: number; pinned?: boolean }>(),
   active: "A-1" as string | null,
   status: "idle",
   detail: "",
@@ -150,11 +150,11 @@ function makeHass(): HomeAssistant {
       state: state.status,
       attributes: state.detail ? { detail: state.detail } : {},
     };
-    const real = [...state.usage.values()].sort((a, b) => b.count - a.count).slice(0, 12);
-    const shown = real.map((u) => ({ name: u.name, count: u.count, icon: iconFor(u.name) }));
+    const shown = quickItems().slice(0, 12);
     for (const [name, icon] of STAPLES) {
       if (shown.length >= 8) break;
-      if (!shown.some((s) => s.name.toLowerCase() === name)) shown.push({ name, count: 0, icon });
+      if (!shown.some((s) => s.name.toLowerCase() === name))
+        shown.push({ name, count: 0, icon, pinned: false });
     }
     states["sensor.handla_frequent_items"] = {
       state: String(state.usage.size),
@@ -191,6 +191,39 @@ function makeHass(): HomeAssistant {
   };
 }
 
+/** The history as the integration reports it: pinned first, then most added. */
+function quickItems(): Array<{ name: string; count: number; icon: string; pinned: boolean }> {
+  return [...state.usage.values()]
+    .sort((a, b) => Number(b.pinned ?? false) - Number(a.pinned ?? false) || b.count - a.count)
+    .map((u) => ({
+      name: u.name,
+      count: u.count,
+      icon: iconFor(u.name),
+      pinned: u.pinned ?? false,
+    }));
+}
+
+/** Mock of the quick-item services; the key is the lower-case name, as in the integration. */
+function handleQuick(service: string, data: Record<string, unknown>): unknown {
+  const key = (name: unknown) => String(name).trim().toLowerCase();
+  if (service === "get_top_items") return { context: {}, response: { items: quickItems() } };
+  if (service === "remove_quick_item") state.usage.delete(key(data["item"]));
+  if (service === "add_quick_item") {
+    const name = String(data["item"]).trim();
+    const entry = state.usage.get(key(name)) ?? { name, count: 1 };
+    state.usage.set(key(name), { ...entry, pinned: true });
+  }
+  if (service === "merge_quick_items") {
+    const sources = (data["sources"] as string[]).map(key);
+    const target = String(data["target"]).trim();
+    const count = sources.reduce((sum, name) => sum + (state.usage.get(name)?.count ?? 0), 0);
+    sources.forEach((name) => state.usage.delete(name));
+    state.usage.set(key(target), { name: target, count });
+  }
+  refresh();
+  return { context: {}, response: {} };
+}
+
 function iconFor(name: string): string {
   return STAPLES.find(([n]) => name.toLowerCase().includes(n))?.[1] ?? "mdi:cart-outline";
 }
@@ -213,6 +246,13 @@ async function handle(service: string, data: Record<string, unknown>): Promise<u
     return handleItem(service, data);
   }
   if (service === "ai_extract_items") return extractMock(data);
+  if (
+    service.endsWith("_quick_item") ||
+    service.endsWith("_quick_items") ||
+    service === "get_top_items"
+  ) {
+    return handleQuick(service, data);
+  }
   if (state.status === "creating" || state.status === "deleting") {
     throw { message: "Another list operation is still running. Wait for it to finish." };
   }

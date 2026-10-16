@@ -84,6 +84,13 @@ Record anything surprising (especially how ICA treats the text) in `plan.md`.
 3. Restart Home Assistant. The counts are still there.
 4. Look at the icons for your most common groceries. Tell me which look wrong or are missing (the mapping is a small keyword list in `domain/icons.py`). The names are unverified against the Material Design Icons set until the card shows them (step 1.9).
 
+## Manual check: manage frequent items
+
+1. Add `tomat` and `tomater` a few times each through the card. Tap **Hantera**: both are listed with counts.
+2. Tick both, tap **Slå ihop**, keep "Tomater". One row remains with the summed count. Add `tomat` again: the count of "Tomater" goes up and no "Tomat" row appears.
+3. Remove an item with ✕; its button disappears from the quick-add row. Pin a new item (for example `diskmedel`): it is the first button.
+4. Close and reopen the card, then restart Home Assistant. Merges, removals and pins are still there. Open the card on a second phone: the same buttons.
+
 ## Manual check: notifications (plan step 1.6)
 
 Needs two Home Assistant users, each with the companion app on their phone (so `notify.mobile_app_<phone>` services exist).

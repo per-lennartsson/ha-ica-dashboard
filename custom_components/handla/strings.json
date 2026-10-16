@@ -194,6 +194,40 @@
           "description": "The list to compare with. Defaults to the active list."
         }
       }
+    },
+    "remove_quick_item": {
+      "name": "Remove quick-add item",
+      "description": "Forget an item, so it no longer appears among the quick-add buttons.",
+      "fields": {
+        "item": {
+          "name": "Item",
+          "description": "The item name."
+        }
+      }
+    },
+    "add_quick_item": {
+      "name": "Add quick-add item",
+      "description": "Pin an item to the quick-add buttons, even if it has not been added before.",
+      "fields": {
+        "item": {
+          "name": "Item",
+          "description": "The item name."
+        }
+      }
+    },
+    "merge_quick_items": {
+      "name": "Merge quick-add items",
+      "description": "Merge items into one, for example “Tomat” and “Tomater”. Counts are added together, and the merged names keep counting toward the target.",
+      "fields": {
+        "sources": {
+          "name": "Items",
+          "description": "The names to merge (a list)."
+        },
+        "target": {
+          "name": "Name",
+          "description": "The name to keep."
+        }
+      }
     }
   },
   "exceptions": {
@@ -253,6 +287,12 @@
     },
     "ai_bad_answer": {
       "message": "The AI provider answered in an unexpected way. Try again."
+    },
+    "quick_item_unknown": {
+      "message": "There is no such item among the frequent items."
+    },
+    "quick_item_blank": {
+      "message": "The item name is empty."
     }
   },
   "options": {

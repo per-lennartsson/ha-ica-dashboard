@@ -175,6 +175,7 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 ## Progress log
 | Date | Step | Result |
 |------|------|--------|
+| 2026-10-16 | quick items | Manage frequent items done on branch `quick-item-management`: remove, merge (aliases keep counting toward the target; you pick the name) and pinned manual adds; services `handla.remove_quick_item` / `add_quick_item` / `merge_quick_items`; `get_top_items` limit now up to 500; card `<handla-quick-manage>` behind a "Hantera" button; 455 Python + 288 frontend tests. Manual check ("Manual check: manage frequent items" in `docs/dev.md`) pending. |
 | 2026-10-16 | 2.5 | AI docs done (`docs/ai.md`, READMEs, usage, manual checklist); CLAUDE.md updated. Phase 2 is implemented; real-provider checks and the release are the maintainer's. |
 | 2026-10-16 | 2.4 | Provider monitoring done: failure push once per outage (reminder after 24 h), optional daily health check in the AI options; 433 tests, 100% coverage. Manual check with a failing provider pending. |
 | 2026-10-15 | 2.3 | Card AI helper done: `<handla-ai>` (paste, review, add, retry), hidden unless `sensor.handla_ai` is `ready`; 275 frontend tests, 100% line coverage; checked in a browser at phone width. Manual check with a real provider pending. |

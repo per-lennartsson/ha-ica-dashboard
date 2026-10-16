@@ -44,12 +44,22 @@ badges:
 
 Note the difference: the badge and `sensor.handla_items_to_buy` always follow the household's active list, while the shortcut card follows the list each person picked on their own device.
 
+## Managing the quick-add buttons
+
+Tap **Hantera** (Manage) after the quick-add buttons. The view lists everything Handla has counted, not only the buttons:
+
+- **Remove:** ✕ forgets an item. If you add it again later it starts counting from 1.
+- **Merge:** tick two or more items (for example "Tomat" and "Tomater"), tap **Slå ihop** and choose which name stays (the most used is preselected). The counts are added together, and from then on adding "Tomat" counts toward "Tomater". The merged-away names do not come back as buttons.
+- **Add:** type a name and tap **Lägg till** to pin it. Pinned items always come first, even if you have never added them.
+
+Changes are shared by everyone using the same Handla, like the counts themselves.
+
 ## Other entities and services
 
 - `sensor.handla_lists`: all lists with item counts. `sensor.handla_status`: idle / creating / deleting / error.
 - `sensor.handla_frequent_items`: the quick-add buttons (most added first, topped up with staples).
 - `select.handla_active_list`: the household's active list.
-- Services (`handla.*`): `add_item`, `tick_item`, `remove_item`, `clear_ticked`, `create_list`, `delete_list`, `set_active_list`, `suggest_list_name`, `get_top_items`.
+- Services (`handla.*`): `add_item`, `tick_item`, `remove_item`, `clear_ticked`, `create_list`, `delete_list`, `set_active_list`, `suggest_list_name`, `get_top_items`, `remove_quick_item`, `add_quick_item`, `merge_quick_items` (`sources`, `target`).
 - `sensor.handla_ai`: `off` / `ready` / `unavailable`; `handla.ai_extract_items` exists only while AI is on. See [ai.md](ai.md).
 - Event `handla_item_added`: fired for every added item (item, list, who added it).
 - Notifications: *Settings → Devices & services → Handla → Configure*.

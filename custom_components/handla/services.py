@@ -1,5 +1,6 @@
-"""Services: set_active_list, create_list, delete_list."""
+"""Services: lists, items, quick-add items and the optional AI helper."""
 
+from collections.abc import Callable
 from typing import Any
 
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
@@ -9,7 +10,9 @@ from homeassistant.helpers import config_validation as cv
 from . import ai, shopping
 from .const import DOMAIN, QUICK_ADD_LIMIT
 from .coordinator import HandlaCoordinator
+from .domain import MAX_TRACKED, UsageError
 from .schema import vol
+from .usage import UsageTracker
 
 SET_ACTIVE_LIST_SCHEMA = vol.Schema({vol.Required("entity_id"): cv.entity_id})
 CREATE_LIST_SCHEMA = vol.Schema(
@@ -45,8 +48,16 @@ AI_SERVICES = ("ai_extract_items",)
 GET_TOP_ITEMS_SCHEMA = vol.Schema(
     {
         vol.Optional("limit", default=QUICK_ADD_LIMIT): vol.All(
-            vol.Coerce(int), vol.Range(min=1, max=50)
+            vol.Coerce(int), vol.Range(min=1, max=MAX_TRACKED)
         )
+    }
+)
+REMOVE_QUICK_ITEM_SCHEMA = vol.Schema({vol.Required("item"): cv.string})
+ADD_QUICK_ITEM_SCHEMA = vol.Schema({vol.Required("item"): cv.string})
+MERGE_QUICK_ITEMS_SCHEMA = vol.Schema(
+    {
+        vol.Required("sources"): vol.All(cv.ensure_list, [cv.string]),
+        vol.Required("target"): cv.string,
     }
 )
 
@@ -59,6 +70,18 @@ def _coordinator(hass: HomeAssistant) -> HandlaCoordinator:
         )
     coordinator: HandlaCoordinator = entries[0].runtime_data
     return coordinator
+
+
+def _manage(hass: HomeAssistant, action: Callable[[UsageTracker], None]) -> None:
+    """Change the quick-add items; a rejected change becomes a readable error."""
+    coordinator = _coordinator(hass)
+    try:
+        action(coordinator.usage)
+    except UsageError as err:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key=err.key
+        ) from err
+    coordinator.async_update_listeners()
 
 
 def async_register_services(hass: HomeAssistant) -> None:
@@ -92,6 +115,18 @@ def async_register_services(hass: HomeAssistant) -> None:
 
     async def get_top_items(call: ServiceCall) -> dict[str, Any]:
         return {"items": _coordinator(hass).usage.top(call.data["limit"])}
+
+    async def remove_quick_item(call: ServiceCall) -> None:
+        _manage(hass, lambda usage: usage.remove(call.data["item"]))
+
+    async def add_quick_item(call: ServiceCall) -> None:
+        _manage(hass, lambda usage: usage.pin(call.data["item"]))
+
+    async def merge_quick_items(call: ServiceCall) -> None:
+        _manage(
+            hass,
+            lambda usage: usage.merge(call.data["sources"], call.data["target"]),
+        )
 
     async def tick_item(call: ServiceCall) -> dict[str, Any]:
         target = _coordinator(hass).resolve_list(call.data.get("entity_id"))
@@ -135,6 +170,14 @@ def async_register_services(hass: HomeAssistant) -> None:
         schema=GET_TOP_ITEMS_SCHEMA,
         supports_response=SupportsResponse.ONLY,
     )
+    for quick_name, quick_handler, quick_schema in (
+        ("remove_quick_item", remove_quick_item, REMOVE_QUICK_ITEM_SCHEMA),
+        ("add_quick_item", add_quick_item, ADD_QUICK_ITEM_SCHEMA),
+        ("merge_quick_items", merge_quick_items, MERGE_QUICK_ITEMS_SCHEMA),
+    ):
+        hass.services.async_register(
+            DOMAIN, quick_name, quick_handler, schema=quick_schema
+        )
     hass.services.async_register(
         DOMAIN, "set_active_list", set_active_list, schema=SET_ACTIVE_LIST_SCHEMA
     )

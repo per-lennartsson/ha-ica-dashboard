@@ -1,6 +1,7 @@
 import { LitElement, css, html, nothing } from "lit";
 import { addItem, clearTicked, errorMessage, removeItem, tickItem } from "./api";
 import { localize, type TranslationKey } from "./i18n";
+import "./handla-quick-manage";
 import { availabilityOf, orderItems, readQuickItems, subscribeItems, type TodoItem } from "./items";
 import type { ListInfo } from "./lists";
 import type { HomeAssistant } from "./types";
@@ -29,6 +30,7 @@ export class HandlaItems extends LitElement {
     _busyUids: { state: true },
     _clearing: { state: true },
     _actionError: { state: true },
+    _managing: { state: true },
   };
 
   static override styles = css`
@@ -198,6 +200,7 @@ export class HandlaItems extends LitElement {
   declare _busyUids: ReadonlySet<string>;
   declare _clearing: boolean;
   declare _actionError: string | null;
+  declare _managing: boolean;
 
   private _subscribedFor: string | null = null;
   private _stop: (() => void) | undefined;
@@ -207,6 +210,7 @@ export class HandlaItems extends LitElement {
   constructor() {
     super();
     this.locked = false;
+    this._managing = false;
     this._items = null;
     this._loadError = null;
     this._text = "";
@@ -450,8 +454,13 @@ export class HandlaItems extends LitElement {
   }
 
   private _renderQuickItems() {
+    if (this._managing) {
+      return html`<handla-quick-manage
+        .hass=${this.hass}
+        @close=${() => (this._managing = false)}
+      ></handla-quick-manage>`;
+    }
     const quick = readQuickItems(this.hass);
-    if (quick.length === 0) return nothing;
     const canAdd = this._canAdd;
     return html`
       <div class="chips" role="group" aria-label=${this._t("quick.label")}>
@@ -467,6 +476,9 @@ export class HandlaItems extends LitElement {
             </button>
           `,
         )}
+        <button class="chip manage" data-action="manage" @click=${() => (this._managing = true)}>
+          <ha-icon icon="mdi:pencil"></ha-icon><span>${this._t("quick.manage")}</span>
+        </button>
       </div>
     `;
   }
