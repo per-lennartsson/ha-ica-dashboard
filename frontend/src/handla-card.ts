@@ -1,4 +1,5 @@
 import { LitElement, css, html, nothing, type PropertyValues } from "lit";
+import "./handla-ai";
 import "./handla-items";
 import { createList, deleteList, errorMessage, suggestListName } from "./api";
 import { localize, type TranslationKey } from "./i18n";
@@ -303,7 +304,8 @@ export class HandlaCard extends LitElement {
       }
       ${
         this._mode === "list" && selected
-          ? html`<handla-items .hass=${this.hass} .list=${selected} .locked=${busy}></handla-items>`
+          ? html`<handla-ai .hass=${this.hass} .list=${selected} .locked=${busy}></handla-ai>
+              <handla-items .hass=${this.hass} .list=${selected} .locked=${busy}></handla-items>`
           : nothing
       }
     `;

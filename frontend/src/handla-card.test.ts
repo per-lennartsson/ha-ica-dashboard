@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { HandlaCard } from "./handla-card";
+import { AI_ENTITY } from "./ai";
+import type { HandlaAi } from "./handla-ai";
 import type { HandlaItems } from "./handla-items";
 import { LISTS_ENTITY, STATUS_ENTITY } from "./lists";
 import type { HomeAssistant } from "./types";
@@ -12,6 +14,8 @@ interface Scenario {
   status?: string;
   detail?: string;
   listsState?: string;
+  /** State of the AI sensor; omit for no AI sensor at all. */
+  ai?: string;
 }
 
 const BREAD = { id: "A-1", title: "Bröd", count: 2 };
@@ -49,6 +53,7 @@ function makeHass(scenario: Scenario = {}, callService: CallService = defaultCal
       attributes: scenario.detail ? { detail: scenario.detail } : {},
     };
   }
+  if (scenario.ai !== undefined) states[AI_ENTITY] = { state: scenario.ai, attributes: {} };
   const hass: HomeAssistant = { language: scenario.language ?? "sv", states, callService };
   return { hass, callService };
 }
@@ -588,5 +593,36 @@ describe("items view inside the card", () => {
     expect(itemsView(card)).toBeNull();
     await click(card, "cancel");
     expect(itemsView(card)).not.toBeNull();
+  });
+});
+
+describe("AI helper inside the card", () => {
+  const aiView = (card: HandlaCard) => root(card).querySelector("handla-ai") as HandlaAi | null;
+  const aiUi = (card: HandlaCard) =>
+    [...(aiView(card)?.shadowRoot?.children ?? [])].filter((child) => child.tagName !== "STYLE");
+
+  it("passes the selected list and shows the open button when AI is ready", async () => {
+    const card = await mount(makeHass({ lists: [BREAD, MILK], active: "B-2", ai: "ready" }).hass);
+    await settle(card);
+
+    expect(aiView(card)?.list?.offlineId).toBe("B-2");
+    expect(aiView(card)?.locked).toBe(false);
+    expect(aiView(card)?.shadowRoot?.querySelector('[data-action="ai-open"]')).not.toBeNull();
+  });
+
+  it.each([["off"], ["unavailable"], [undefined]])(
+    "shows no AI interface when the AI state is %s",
+    async (ai) => {
+      const card = await mount(makeHass({ lists: [BREAD], ai }).hass);
+      await settle(card);
+
+      expect(aiUi(card)).toHaveLength(0);
+      expect(text(card)).not.toContain("AI");
+    },
+  );
+
+  it("is locked together with the items while a list is created", async () => {
+    const card = await mount(makeHass({ lists: [BREAD], status: "creating", ai: "ready" }).hass);
+    expect(aiView(card)?.locked).toBe(true);
   });
 });

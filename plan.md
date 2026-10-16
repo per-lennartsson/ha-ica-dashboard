@@ -136,9 +136,11 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 - Decisions: (1) The model returns one list of plain texts ("2 st gurka"), because that is what ha-ica-todo parses; the answer is cleaned and merged again in Python. (2) The service only suggests; nothing is added to the list (2.3 adds the selected ones through `handla.add_item`). (3) Truncated answers by a low provider token limit cannot be detected reliably, so a long list may be cut short silently; see 2.5 docs.
 
 ### 2.3 Card: paste, review, add (L)
-- [ ] Paste box, review list (edit, untick, already-on-list marked and unticked), add selected; failed items stay for retry.
-- [ ] Hidden entirely when AI is off or no provider.
-- **Verify:** component tests incl. partial failure and retry; manual with a real provider.
+- [x] Paste box, review list (edit, untick, already-on-list marked and unticked), add selected; failed items stay for retry (`<handla-ai>`, `src/ai.ts`, `extractItems` in `api.ts`).
+- [x] Hidden entirely when AI is off or no provider: the element renders nothing unless `sensor.handla_ai` is `ready` (also nothing when the sensor is missing).
+- **Verify (automated, done):** 275 frontend tests (27 for the AI element, 14 for `ai.ts`, card integration), 100% line coverage, lint/format/types/build clean (one 68 kB file, 17.5 kB gzipped). Covered: hidden for off/unavailable/unknown/no sensor and when turned off while open; reading state locks the form and ignores a second tap; nothing found; provider error keeps the text; edit/untick/tick items; items already on the list start unticked; partial failure keeps the failed rows with their message and retries only those; a refused add counts as a failure; locked while adding or while a list is created. Two deliberate breakages (AI shown unless unavailable; existing items pre-selected) were caught by 11 and 1 tests. Browser check on the preview at phone width: open, paste, read (loading text), review with "finns redan" notes, add two items, and the UI vanished when AI was switched off.
+- **Verify (Manual, real HA, not yet done):** with a real AI Task entity: paste a recipe, review, add; turn AI off in the options and check the card shows no AI button after a reload.
+- Decisions: (1) Items the user ticks in the review are added with `confirm_duplicate: true`, because the review already told them it exists. (2) The AI button sits above the add field, not below a long list. (3) The pasted text is kept when closing or on errors, and cleared after a successful add. (4) The preview page has "AI: på/av" and "AI: otillgänglig" buttons and a mock extractor (splits on commas and lines).
 
 ### 2.4 Provider monitoring (M)
 - [ ] Push notification on provider failure (e.g. credits exhausted), de-duplicated.
@@ -169,6 +171,7 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 ## Progress log
 | Date | Step | Result |
 |------|------|--------|
+| 2026-10-15 | 2.3 | Card AI helper done: `<handla-ai>` (paste, review, add, retry), hidden unless `sensor.handla_ai` is `ready`; 275 frontend tests, 100% line coverage; checked in a browser at phone width. Manual check with a real provider pending. |
 | 2026-10-15 | 2.2 | Extraction service done: `handla.ai_extract_items` (only while AI is on), `domain/extraction.py` (prompt, structure, cleaning, marking), mocked `ai_task` in tests; 411 tests, 100% coverage. `max_tokens` is not a service field (documented for 2.5). Manual check with a real provider pending. |
 | 2026-10-14 | 2.1 | AI switch done: options menu with AI step (on/off, `ai_task` entity, validated), `sensor.handla_ai`, `domain/ai.py`, `fake_ai` fixture; 379 tests, 100% coverage. Manual check on the real HA pending. |
 | 2026-10-14 | Phase 1 | Maintainer reports all manual checks for 1.x done on the real HA (steps 1.2–1.11). Phase 1 complete; Phase 2 awaits plan approval. |

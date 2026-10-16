@@ -88,6 +88,8 @@ const state = {
   detail: "",
   failNext: false,
   unavailableItems: false,
+  /** State of sensor.handla_ai: off / ready / unavailable. */
+  ai: "ready",
   counter: 0,
   uid: 100,
 };
@@ -143,6 +145,7 @@ function makeHass(): HomeAssistant {
         active_offline_id: state.active,
       },
     };
+    states["sensor.handla_ai"] = { state: state.ai, attributes: {} };
     states["sensor.handla_status"] = {
       state: state.status,
       attributes: state.detail ? { detail: state.detail } : {},
@@ -209,6 +212,7 @@ async function handle(service: string, data: Record<string, unknown>): Promise<u
     }
     return handleItem(service, data);
   }
+  if (service === "ai_extract_items") return extractMock(data);
   if (state.status === "creating" || state.status === "deleting") {
     throw { message: "Another list operation is still running. Wait for it to finish." };
   }
@@ -241,6 +245,31 @@ async function handle(service: string, data: Record<string, unknown>): Promise<u
     return { context: {}, response: {} };
   }
   throw { message: `Unknown service ${service}` };
+}
+
+/** Stands in for the AI: every comma or line in the text becomes an item (after 1.5 s). */
+async function extractMock(data: Record<string, unknown>): Promise<unknown> {
+  await sleep(1500);
+  if (state.failNext) {
+    state.failNext = false;
+    throw { message: "The AI provider failed: credit balance is too low" };
+  }
+  const list = listOf(data["entity_id"]);
+  const onList = open(state.items[list.id] ?? []);
+  const items = String(data["text"])
+    .split(/[\n,]/)
+    .map((part) => part.trim())
+    .filter((part) => part !== "")
+    .map((item) => {
+      const existing = onList.find((entry) => nameOf(entry.summary) === nameOf(item));
+      return {
+        item,
+        on_list: !!existing,
+        existing: existing?.summary ?? null,
+        selected: !existing,
+      };
+    });
+  return { context: {}, response: { items, count: items.length } };
 }
 
 function handleItem(service: string, data: Record<string, unknown>): unknown {
@@ -327,6 +356,11 @@ function addControl(label: string, onClick: () => void): void {
 addControl("Svenska", () => (state.language = "sv"));
 addControl("English", () => (state.language = "en"));
 addControl("Handla körs inte", () => (state.running = !state.running));
+addControl("AI: på/av", () => (state.ai = state.ai === "ready" ? "off" : "ready"));
+addControl(
+  "AI: otillgänglig",
+  () => (state.ai = state.ai === "unavailable" ? "ready" : "unavailable"),
+);
 addControl("Nästa åtgärd misslyckas", () => (state.failNext = true));
 addControl("Listan otillgänglig", () => (state.unavailableItems = !state.unavailableItems));
 addControl("Återställ", () => {
@@ -339,5 +373,6 @@ addControl("Återställ", () => {
   state.running = true;
   state.failNext = false;
   state.unavailableItems = false;
+  state.ai = "ready";
 });
 refresh();
