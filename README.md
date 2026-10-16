@@ -15,7 +15,7 @@ Shared shopping lists for Home Assistant, on top of your ICA lists. Everyone in 
 
 - **Shared ICA lists:** choose, create and delete lists. A new list gets a name like "Att handla 14 oktober".
 - **Fast adding:** type an item and press Enter; the field stays ready for the next one. Quantities work: `2 st gurka`, `1,5 l mjölk`, `500 g nötfärs`.
-- **Quick-add buttons:** with icons, based on what you actually add most.
+- **Quick-add buttons:** with icons, based on what you actually add most. Remove, merge ("Tomat" + "Tomater") or pin your own from the *Manage* button.
 - **Duplicate check:** "finns redan – lägga till igen?" before adding something that is already on the list.
 - **Tick off, remove, clear ticked:** changes show up live on every device, also when made in the ICA app.
 - **Notifications:** a push to the people you choose when someone *else* adds items (several quick adds become one message).

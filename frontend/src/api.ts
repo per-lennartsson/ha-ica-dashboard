@@ -1,6 +1,7 @@
 /** Calls to the Handla services. Errors are thrown as Error with a readable message. */
 
 import { parseSuggestions, type Suggestion } from "./ai";
+import { parseQuickItems, type QuickItem } from "./items";
 import type { HomeAssistant } from "./types";
 
 const DOMAIN = "handla";
@@ -130,4 +131,31 @@ export async function extractItems(
 ): Promise<Suggestion[]> {
   const response = await call(hass, "ai_extract_items", { entity_id: entityId, text }, true);
   return parseSuggestions(response["items"]);
+}
+
+/** Most items the integration tracks; asking for this many returns the whole history. */
+const ALL_QUICK_ITEMS = 500;
+
+/** Every tracked quick-add item (not only the buttons shown), pinned first, then most added. */
+export async function getQuickItems(hass: HomeAssistant): Promise<QuickItem[]> {
+  const response = await call(hass, "get_top_items", { limit: ALL_QUICK_ITEMS }, true);
+  return parseQuickItems(response["items"]);
+}
+
+export async function removeQuickItem(hass: HomeAssistant, item: string): Promise<void> {
+  await call(hass, "remove_quick_item", { item });
+}
+
+/** Pins an item to the quick-add buttons, even if it was never added before. */
+export async function addQuickItem(hass: HomeAssistant, item: string): Promise<void> {
+  await call(hass, "add_quick_item", { item });
+}
+
+/** Merges items into one called `target`; the merged names keep counting toward it. */
+export async function mergeQuickItems(
+  hass: HomeAssistant,
+  sources: string[],
+  target: string,
+): Promise<void> {
+  await call(hass, "merge_quick_items", { sources, target });
 }

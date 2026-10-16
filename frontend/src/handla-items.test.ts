@@ -736,16 +736,32 @@ describe("quick-add buttons", () => {
   it("shows a button with an icon for each frequent item", async () => {
     const el = await mount(makeEnv({ quick: QUICK }).build());
 
-    const chips = [...root(el).querySelectorAll<HTMLElement>(".chip")];
+    const chips = [...root(el).querySelectorAll<HTMLElement>(".chip[data-quick]")];
     expect(chips.map((chip) => chip.dataset["quick"])).toEqual(["mjölk", "ägg"]);
     expect(chips[0]?.querySelector("ha-icon")?.getAttribute("icon")).toBe("mdi:cow");
     expect(chips[0]?.textContent?.trim()).toBe("mjölk");
   });
 
-  it("shows nothing when there are none", async () => {
+  it("shows only the manage button when there are none", async () => {
     const el = await mount(makeEnv().build());
 
+    expect(root(el).querySelectorAll(".chip[data-quick]")).toHaveLength(0);
+    expect(root(el).querySelector('[data-action="manage"]')).not.toBeNull();
+  });
+
+  it("swaps the buttons for the manage view and back", async () => {
+    const env = makeEnv({ quick: QUICK });
+    const el = await mount(env.build());
+
+    root(el).querySelector<HTMLButtonElement>('[data-action="manage"]')?.click();
+    await settle(el);
+    expect(root(el).querySelector("handla-quick-manage")).not.toBeNull();
     expect(root(el).querySelector(".chips")).toBeNull();
+
+    root(el).querySelector("handla-quick-manage")?.dispatchEvent(new CustomEvent("close"));
+    await settle(el);
+    expect(root(el).querySelector("handla-quick-manage")).toBeNull();
+    expect(root(el).querySelectorAll(".chip[data-quick]")).toHaveLength(2);
   });
 
   it("adds the item when tapped", async () => {
@@ -777,11 +793,11 @@ describe("quick-add buttons", () => {
 
   it("is disabled while the list is locked or unavailable", async () => {
     const locked = await mount(makeEnv({ quick: QUICK }).build(), LIST_A, true);
-    expect(root(locked).querySelector<HTMLButtonElement>(".chip")?.disabled).toBe(true);
+    expect(root(locked).querySelector<HTMLButtonElement>(".chip[data-quick]")?.disabled).toBe(true);
 
     const env = makeEnv({ quick: QUICK, entities: { [LIST_A.entityId]: "unavailable" } });
     const unavailable = await mount(env.build());
-    root(unavailable).querySelector<HTMLButtonElement>(".chip")?.click();
+    root(unavailable).querySelector<HTMLButtonElement>(".chip[data-quick]")?.click();
     await settle(unavailable);
     expect(callsTo(env.callService, "add_item")).toHaveLength(0);
   });

@@ -194,6 +194,40 @@
           "description": "Listan att jämföra med. Som standard den aktiva listan."
         }
       }
+    },
+    "remove_quick_item": {
+      "name": "Ta bort snabbval",
+      "description": "Glöm en vara så att den inte längre visas bland snabbknapparna.",
+      "fields": {
+        "item": {
+          "name": "Vara",
+          "description": "Varans namn."
+        }
+      }
+    },
+    "add_quick_item": {
+      "name": "Lägg till snabbval",
+      "description": "Fäst en vara bland snabbknapparna, även om den aldrig lagts till förut.",
+      "fields": {
+        "item": {
+          "name": "Vara",
+          "description": "Varans namn."
+        }
+      }
+    },
+    "merge_quick_items": {
+      "name": "Slå ihop snabbval",
+      "description": "Slå ihop varor till en, till exempel ”Tomat” och ”Tomater”. Antalen läggs ihop och de hopslagna namnen räknas fortsättningsvis på målet.",
+      "fields": {
+        "sources": {
+          "name": "Varor",
+          "description": "Namnen som ska slås ihop (en lista)."
+        },
+        "target": {
+          "name": "Namn",
+          "description": "Namnet som ska behållas."
+        }
+      }
     }
   },
   "exceptions": {
@@ -253,6 +287,12 @@
     },
     "ai_bad_answer": {
       "message": "AI-leverantören svarade på ett oväntat sätt. Försök igen."
+    },
+    "quick_item_unknown": {
+      "message": "Varan finns inte bland de vanliga varorna."
+    },
+    "quick_item_blank": {
+      "message": "Varans namn är tomt."
     }
   },
   "options": {

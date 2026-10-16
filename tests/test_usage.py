@@ -65,8 +65,8 @@ async def test_adds_are_counted_by_name(hass: HomeAssistant, active_list: str) -
     await _add(hass, "1 l mjölk")
 
     assert await _top(hass) == [
-        {"name": "Gurka", "count": 2, "icon": "mdi:leaf"},
-        {"name": "mjölk", "count": 1, "icon": "mdi:cow"},
+        {"name": "Gurka", "count": 2, "icon": "mdi:leaf", "pinned": False},
+        {"name": "mjölk", "count": 1, "icon": "mdi:cow", "pinned": False},
     ]
 
 
@@ -180,7 +180,9 @@ async def test_counts_are_saved_when_unloading_and_restored(
 
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    assert await _top(hass) == [{"name": "mjölk", "count": 2, "icon": "mdi:cow"}]
+    assert await _top(hass) == [
+        {"name": "mjölk", "count": 2, "icon": "mdi:cow", "pinned": False}
+    ]
 
 
 async def test_counts_are_restored_from_storage(
@@ -198,7 +200,9 @@ async def test_counts_are_restored_from_storage(
     }
     await setup_handla(hass)
 
-    assert await _top(hass) == [{"name": "Ost", "count": 7, "icon": "mdi:cheese"}]
+    assert await _top(hass) == [
+        {"name": "Ost", "count": 7, "icon": "mdi:cheese", "pinned": False}
+    ]
 
 
 async def test_corrupt_storage_starts_empty(
@@ -222,3 +226,93 @@ async def test_get_top_items_needs_a_set_up_integration(hass: HomeAssistant) -> 
         await _top(hass)
 
     assert err.value.translation_key == "not_set_up"
+
+
+# --- managing the quick-add items ---
+
+
+async def _manage(hass: HomeAssistant, service: str, **data: Any) -> None:
+    await hass.services.async_call(DOMAIN, service, data, blocking=True)
+
+
+async def test_remove_quick_item_updates_service_and_sensor(
+    hass: HomeAssistant, active_list: str
+) -> None:
+    entry = await setup_handla(hass)
+    await _add(hass, "Gurka")
+    await _manage(hass, "remove_quick_item", item="gurka")
+
+    assert await _top(hass) == []
+    assert _sensor(hass, entry.entry_id).state == "0"
+
+
+async def test_merge_quick_items_sums_and_keeps_counting_the_target(
+    hass: HomeAssistant, active_list: str
+) -> None:
+    await setup_handla(hass)
+    await _add(hass, "tomat")
+    await _add(hass, "tomater")
+    await _add(hass, "tomater", confirm_duplicate=True)
+    await _manage(
+        hass, "merge_quick_items", sources=["tomat", "tomater"], target="Tomater"
+    )
+
+    top = await _top(hass)
+    assert [(i["name"], i["count"]) for i in top] == [("Tomater", 3)]
+
+    await _add(hass, "Tomat", confirm_duplicate=True)
+    top = await _top(hass)
+    assert [(i["name"], i["count"]) for i in top] == [("Tomater", 4)]
+
+
+async def test_add_quick_item_is_pinned_first(
+    hass: HomeAssistant, active_list: str
+) -> None:
+    await setup_handla(hass)
+    await _add(hass, "mjölk")
+    await _add(hass, "mjölk", confirm_duplicate=True)
+    await _manage(hass, "add_quick_item", item="Toalettpapper")
+
+    top = await _top(hass)
+    assert [(i["name"], i["pinned"]) for i in top] == [
+        ("Toalettpapper", True),
+        ("mjölk", False),
+    ]
+
+
+@pytest.mark.parametrize(
+    ("service", "data"),
+    [
+        ("remove_quick_item", {"item": "smör"}),
+        ("merge_quick_items", {"sources": ["smör"], "target": "Smör"}),
+        ("merge_quick_items", {"sources": ["smör"], "target": " "}),
+        ("add_quick_item", {"item": "  "}),
+    ],
+)
+async def test_invalid_manage_calls_raise_a_readable_error(
+    hass: HomeAssistant, active_list: str, service: str, data: dict[str, Any]
+) -> None:
+    await setup_handla(hass)
+    with pytest.raises(ServiceValidationError):
+        await _manage(hass, service, **data)
+
+
+async def test_manage_changes_and_aliases_are_saved(
+    hass: HomeAssistant, active_list: str, hass_storage: dict[str, Any]
+) -> None:
+    entry = await setup_handla(hass)
+    await _add(hass, "tomat")
+    await _add(hass, "tomater")
+    await _manage(
+        hass, "merge_quick_items", sources=["tomat", "tomater"], target="Tomater"
+    )
+    await _manage(hass, "add_quick_item", item="Disktrasa")
+
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    data = hass_storage[STORE_KEY]["data"]
+    assert data["aliases"] == {"tomat": "tomater"}
+    assert data["entries"]["disktrasa"]["pinned"] is True
+
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert [i["name"] for i in await _top(hass)] == ["Disktrasa", "Tomater"]

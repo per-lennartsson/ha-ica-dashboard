@@ -93,9 +93,16 @@ describe("readQuickItems", () => {
       },
     });
     expect(readQuickItems(hass)).toEqual([
-      { name: "mjölk", icon: "mdi:cow", count: 5 },
-      { name: "ägg", icon: "mdi:egg", count: 0 },
+      { name: "mjölk", icon: "mdi:cow", count: 5, pinned: false },
+      { name: "ägg", icon: "mdi:egg", count: 0, pinned: false },
     ]);
+  });
+
+  it("reads the pinned flag", () => {
+    const hass = hassWith({
+      [FREQUENT_ENTITY]: { state: "1", attributes: { items: [{ name: "x", pinned: true }] } },
+    });
+    expect(readQuickItems(hass)[0]?.pinned).toBe(true);
   });
 
   it("falls back to a cart icon and count 0, and skips nameless entries", () => {
@@ -105,7 +112,9 @@ describe("readQuickItems", () => {
         attributes: { items: [{ name: "x" }, { name: "" }, { icon: "mdi:cow" }, null, 7] },
       },
     });
-    expect(readQuickItems(hass)).toEqual([{ name: "x", icon: "mdi:cart-outline", count: 0 }]);
+    expect(readQuickItems(hass)).toEqual([
+      { name: "x", icon: "mdi:cart-outline", count: 0, pinned: false },
+    ]);
   });
 
   it.each([
