@@ -1,6 +1,13 @@
 """Pure domain logic for Handla. Must not import Home Assistant."""
 
 from .ai import AiStatus, ai_choice_error, ai_status
+from .ai_health import (
+    RENOTIFY_AFTER,
+    AiHealth,
+    build_failure_message,
+    record_failure,
+    record_success,
+)
 from .duplicates import find_duplicates, normalize_name
 from .extraction import (
     MAX_TEXT_LENGTH,
@@ -44,6 +51,8 @@ from .usage import (
 from .versions import is_version_at_least, parse_version
 
 __all__ = [
+    "RENOTIFY_AFTER",
+    "AiHealth",
     "MAX_TEXT_LENGTH",
     "AiStatus",
     "MAX_LISTED",
@@ -60,6 +69,7 @@ __all__ = [
     "ai_choice_error",
     "ai_status",
     "build_instructions",
+    "build_failure_message",
     "build_message",
     "clean_suggestions",
     "choose_notify_services",
@@ -85,6 +95,8 @@ __all__ = [
     "resolve_items",
     "same_id",
     "title_from_name",
+    "record_failure",
+    "record_success",
     "suggestions_payload",
     "top_items",
     "top_payload",

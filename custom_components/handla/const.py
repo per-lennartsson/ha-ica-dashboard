@@ -1,5 +1,6 @@
 """Constants for the Handla integration."""
 
+from datetime import timedelta
 from typing import Final
 
 DOMAIN: Final = "handla"
@@ -28,3 +29,5 @@ NOTIFY_DELAY: Final = 20.0  # seconds: adds within this window become one messag
 CONF_AI_ENABLED: Final = "ai_enabled"
 CONF_AI_ENTITY: Final = "ai_entity"  # entity id of the chosen ai_task entity
 AI_TASK_DOMAIN: Final = "ai_task"
+CONF_AI_HEALTH_CHECK: Final = "ai_health_check"  # bool: tiny daily test call
+AI_HEALTH_INTERVAL: Final = timedelta(days=1)

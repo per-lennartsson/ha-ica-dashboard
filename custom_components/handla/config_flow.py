@@ -22,11 +22,12 @@ from homeassistant.helpers.selector import (
     SelectSelectorConfig,
 )
 
-from .ai import get_ai_config
+from .ai import get_ai_config, get_health_check
 from .const import (
     AI_TASK_DOMAIN,
     CONF_AI_ENABLED,
     CONF_AI_ENTITY,
+    CONF_AI_HEALTH_CHECK,
     CONF_RECIPIENTS,
     DOMAIN,
 )
@@ -157,10 +158,12 @@ class HandlaOptionsFlow(OptionsFlow):
     ) -> ConfigFlowResult:
         """Turn the optional AI module on or off and choose its ai_task entity."""
         enabled, saved = get_ai_config(self.config_entry)
+        health_check = get_health_check(self.config_entry)
         errors: dict[str, str] = {}
         if user_input is not None:
             enabled = bool(user_input.get(CONF_AI_ENABLED))
             chosen = user_input.get(CONF_AI_ENTITY) or None
+            health_check = bool(user_input.get(CONF_AI_HEALTH_CHECK))
             exists = chosen is not None and self.hass.states.get(chosen) is not None
             error = ai_choice_error(enabled, chosen, exists)
             if error is None:
@@ -168,6 +171,7 @@ class HandlaOptionsFlow(OptionsFlow):
                     **self.config_entry.options,
                     CONF_AI_ENABLED: enabled,
                     CONF_AI_ENTITY: chosen,
+                    CONF_AI_HEALTH_CHECK: health_check,
                 }
                 return self.async_create_entry(data=options)
             errors["base"] = error
@@ -181,6 +185,9 @@ class HandlaOptionsFlow(OptionsFlow):
             {
                 vol.Required(CONF_AI_ENABLED, default=enabled): BooleanSelector(),
                 entity_key: EntitySelector(EntitySelectorConfig(domain=AI_TASK_DOMAIN)),
+                vol.Required(
+                    CONF_AI_HEALTH_CHECK, default=health_check
+                ): BooleanSelector(),
             }
         )
         return self.async_show_form(step_id="ai", data_schema=schema, errors=errors)

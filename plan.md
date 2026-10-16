@@ -143,9 +143,11 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 - Decisions: (1) Items the user ticks in the review are added with `confirm_duplicate: true`, because the review already told them it exists. (2) The AI button sits above the add field, not below a long list. (3) The pasted text is kept when closing or on errors, and cleared after a successful add. (4) The preview page has "AI: på/av" and "AI: otillgänglig" buttons and a mock extractor (splits on commas and lines).
 
 ### 2.4 Provider monitoring (M)
-- [ ] Push notification on provider failure (e.g. credits exhausted), de-duplicated.
-- [ ] Optional daily health check (tiny `ai_task` call) toggled in the options flow.
-- **Verify:** tests simulating provider errors; manual by pointing at an invalid key or disabled entity.
+- [x] Push notification on provider failure (e.g. credits exhausted), de-duplicated (`ai_monitor.py`, pure rules in `domain/ai_health.py`).
+- [x] Optional daily health check (tiny `ai_task` call) toggled in the options flow ("Daily health check" on the AI step; off by default).
+- **Verify (automated, done):** 433 Python tests, 100% coverage, ruff/mypy clean. A failed provider call during extraction notifies the users chosen under Notifications; the same outage notifies once, again after a recovery, and as a reminder after 24 h; no recipients means a log warning only; a broken phone does not stop the others or hide the error from the caller; invalid input and bad answers are not provider failures; the daily check does nothing by default, sends one tiny request (no structure), follows the options (on, off, AI off, unload) and recovers. A deliberate breakage (always notify) was caught by 4 tests.
+- **Verify (Manual, real HA, not yet done):** switch the AI Task entity to a disabled or invalid-key provider (or remove the Anthropic credit), run `handla.ai_extract_items`, check one push arrives and a second failure stays quiet; turn on the daily check and call it once by waiting a day or reloading the integration with a wrong key.
+- Decisions: (1) The recipients are the ones already chosen for "someone added items" (one list of people, no second setting); everybody configured is told, including the user whose request failed. (2) The state (failing since, last notified) is kept in memory: after a restart a continuing outage notifies once more, which is acceptable. (3) Only errors from the provider call count; empty text, too-long text, an unavailable-provider refusal and malformed answers do not. (4) No "recovered" notification yet. (5) The daily check runs every 24 h from when the integration starts or the options change, not at a fixed time.
 
 ### 2.5 AI release (S)
 - [ ] Docs for AI setup (any provider, Anthropic notes: `max_tokens`, no balance API).
@@ -171,6 +173,7 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 ## Progress log
 | Date | Step | Result |
 |------|------|--------|
+| 2026-10-16 | 2.4 | Provider monitoring done: failure push once per outage (reminder after 24 h), optional daily health check in the AI options; 433 tests, 100% coverage. Manual check with a failing provider pending. |
 | 2026-10-15 | 2.3 | Card AI helper done: `<handla-ai>` (paste, review, add, retry), hidden unless `sensor.handla_ai` is `ready`; 275 frontend tests, 100% line coverage; checked in a browser at phone width. Manual check with a real provider pending. |
 | 2026-10-15 | 2.2 | Extraction service done: `handla.ai_extract_items` (only while AI is on), `domain/extraction.py` (prompt, structure, cleaning, marking), mocked `ai_task` in tests; 411 tests, 100% coverage. `max_tokens` is not a service field (documented for 2.5). Manual check with a real provider pending. |
 | 2026-10-14 | 2.1 | AI switch done: options menu with AI step (on/off, `ai_task` entity, validated), `sensor.handla_ai`, `domain/ai.py`, `fake_ai` fixture; 379 tests, 100% coverage. Manual check on the real HA pending. |

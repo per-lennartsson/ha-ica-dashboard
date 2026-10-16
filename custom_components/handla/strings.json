@@ -286,11 +286,13 @@
         "description": "Let AI turn pasted text, such as a recipe, into shopping items. Off by default; nothing AI-related is shown or run while it is off. Needs an AI Task entity from an AI provider set up in Home Assistant.",
         "data": {
           "ai_enabled": "Use AI",
-          "ai_entity": "AI Task entity"
+          "ai_entity": "AI Task entity",
+          "ai_health_check": "Daily health check"
         },
         "data_description": {
           "ai_enabled": "Turn off to hide all AI features.",
-          "ai_entity": "The provider that reads the pasted text. Required when AI is on."
+          "ai_entity": "The provider that reads the pasted text. Required when AI is on.",
+          "ai_health_check": "Once a day, send a tiny test request to the provider and notify the users chosen under Notifications if it fails. Uses a few tokens a day."
         }
       }
     },
