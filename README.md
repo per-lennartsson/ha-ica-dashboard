@@ -20,6 +20,7 @@ Shared shopping lists for Home Assistant, on top of your ICA lists. Everyone in 
 - **Tick off, remove, clear ticked:** changes show up live on every device, also when made in the ICA app.
 - **Notifications:** a push to the people you choose when someone *else* adds items (several quick adds become one message).
 - **Phone shortcut:** a small card (or a badge) with the number of items left, that opens the shopping view.
+- **AI (optional, off by default):** paste a recipe or a meal plan and review the suggested items before adding them, with any AI provider Home Assistant supports. See [docs/ai.md](docs/ai.md).
 - **Swedish and English.**
 
 ## Requirements
@@ -34,6 +35,8 @@ Shared shopping lists for Home Assistant, on top of your ICA lists. Everyone in 
 2. **Install Handla** the same way: add `https://github.com/per-lennartsson/ha-ica-dashboard` as a custom repository (type *Integration*), download the latest release and restart Home Assistant.
 3. *Settings → Devices & services → Add integration → **Handla**.* That is all; no dashboard resource has to be added by hand.
 4. *(Optional)* **Notifications:** *Devices & services → Handla → Configure*. Choose who is told, and which `mobile_app_...` service reaches their phone.
+
+5. *(Optional)* **AI:** *Devices & services → Handla → Configure → AI (optional)*. Needs an *AI Task* entity from an AI provider in Home Assistant. Off until you turn it on; see [docs/ai.md](docs/ai.md).
 
 ## Dashboard
 
@@ -57,6 +60,7 @@ Everything about the cards, the badge option, entities, services and events is i
 - Creating or deleting a list makes the ICA integration reload, which takes a few seconds. The card shows progress and locks itself meanwhile, so nobody taps twice.
 - The quick-add buttons are based on items added **through Handla**. Items added directly in the ICA app are not counted (they do show up in the list).
 - Notifications are sent for items added through Handla, not for items added in the ICA app, and tapping a notification does not open the card yet.
+- With AI on, the pasted text goes to the AI provider you chose. The provider's token limit can cut long lists short; see [docs/ai.md](docs/ai.md).
 - ICA ignores an empty unit, so renaming an item cannot remove its unit.
 - Icons are Material Design Icons picked by a small list of Swedish grocery words; unknown items get a cart.
 

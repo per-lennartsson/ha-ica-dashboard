@@ -20,6 +20,7 @@ Gemensamma inköpslistor i Home Assistant, ovanpå dina ICA-listor. Alla i hush�
 - **Bocka av, ta bort, rensa avbockade:** ändringar syns direkt på alla enheter, även när de görs i ICA-appen.
 - **Aviseringar:** en push till de du väljer när någon *annan* lägger till varor (flera snabba tillägg blir ett meddelande).
 - **Genväg på telefonen:** ett litet kort (eller en bricka) med antalet varor kvar, som öppnar inköpsvyn.
+- **AI (valfritt, av som standard):** klistra in ett recept eller en matsedel och granska de föreslagna varorna innan de läggs till, med valfri AI-leverantör som Home Assistant stöder. Se [docs/ai.md](docs/ai.md) (på engelska).
 - **Svenska och engelska.**
 
 ## Krav
@@ -34,6 +35,8 @@ Gemensamma inköpslistor i Home Assistant, ovanpå dina ICA-listor. Alla i hush�
 2. **Installera Handla** på samma sätt: lägg till `https://github.com/per-lennartsson/ha-ica-dashboard` som anpassad databas (typ *Integration*), ladda ner den senaste utgåvan och starta om Home Assistant.
 3. *Inställningar → Enheter och tjänster → Lägg till integration → **Handla**.* Det är allt; ingen dashboard-resurs behöver läggas till för hand.
 4. *(Valfritt)* **Aviseringar:** *Enheter och tjänster → Handla → Konfigurera*. Välj vem som ska få veta, och vilken `mobile_app_...`-tjänst som når deras telefon.
+
+5. *(Valfritt)* **AI:** *Enheter och tjänster → Handla → Konfigurera → AI (valfritt)*. Kräver en *AI Task*-entitet från en AI-leverantör i Home Assistant. Av tills du slår på det; se [docs/ai.md](docs/ai.md).
 
 ## Dashboard
 
@@ -57,6 +60,7 @@ Allt om korten, bricka-alternativet, entiteter, tjänster och händelser finns i
 - När en lista skapas eller tas bort laddar ICA-integrationen om sig, vilket tar några sekunder. Kortet visar förloppet och låser sig under tiden, så ingen trycker två gånger.
 - Snabbknapparna bygger på varor som lagts till **via Handla**. Varor som läggs till direkt i ICA-appen räknas inte (men de syns i listan).
 - Aviseringar skickas för varor som läggs till via Handla, inte för varor som läggs till i ICA-appen, och ett tryck på en avisering öppnar inte kortet än.
+- Med AI på skickas den inklistrade texten till den AI-leverantör du valt. Leverantörens gräns för antal tokens kan korta av långa listor; se [docs/ai.md](docs/ai.md).
 - ICA ignorerar en tom enhet, så att byta namn på en vara kan inte ta bort dess enhet.
 - Ikonerna är Material Design Icons som väljs med en liten lista över svenska matvaror; okända varor får en kundvagn.
 
