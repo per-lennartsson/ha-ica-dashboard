@@ -34,13 +34,12 @@ export function parseSuggestions(raw: unknown): Suggestion[] {
     if (typeof entry !== "object" || entry === null) continue;
     const { item, on_list: onList, existing, selected } = entry as Record<string, unknown>;
     if (typeof item !== "string" || item.trim() === "") continue;
-    const isOnList = onList === true;
     result.push({
       item: item.trim(),
-      onList: isOnList,
+      onList: onList === true,
       existing: typeof existing === "string" ? existing : null,
-      // Items already on the list start unticked, whatever the answer says
-      selected: !isOnList && selected !== false,
+      // The integration sends selected=false for items already on the list
+      selected: selected !== false,
     });
   }
   return result;

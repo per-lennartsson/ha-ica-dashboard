@@ -1,16 +1,11 @@
 import { LitElement, css, html, nothing } from "lit";
-import { addItem, clearTicked, errorMessage, removeItem, tickItem } from "./api";
+import { AddQueue, type QueuedAdd } from "./add-queue";
+import { clearTicked, errorMessage, removeItem, tickItem } from "./api";
 import { localize, type TranslationKey } from "./i18n";
 import "./handla-quick-manage";
 import { availabilityOf, orderItems, readQuickItems, subscribeItems, type TodoItem } from "./items";
 import type { ListInfo } from "./lists";
 import type { HomeAssistant } from "./types";
-
-/** An item the user has entered that has not reached the list yet. */
-interface QueuedAdd {
-  text: string;
-  entityId: string;
-}
 
 /**
  * The items of one list: add (Enter adds and the field keeps focus), quick-add buttons,
@@ -24,9 +19,6 @@ export class HandlaItems extends LitElement {
     _items: { state: true },
     _loadError: { state: true },
     _text: { state: true },
-    _queue: { state: true },
-    _duplicate: { state: true },
-    _addFailure: { state: true },
     _busyUids: { state: true },
     _clearing: { state: true },
     _actionError: { state: true },
@@ -194,9 +186,6 @@ export class HandlaItems extends LitElement {
   declare _items: TodoItem[] | null;
   declare _loadError: string | null;
   declare _text: string;
-  declare _queue: QueuedAdd[];
-  declare _duplicate: { text: string } | null;
-  declare _addFailure: { text: string; message: string } | null;
   declare _busyUids: ReadonlySet<string>;
   declare _clearing: boolean;
   declare _actionError: string | null;
@@ -205,7 +194,10 @@ export class HandlaItems extends LitElement {
   private _subscribedFor: string | null = null;
   private _stop: (() => void) | undefined;
   private _generation = 0;
-  private _processing = false;
+  private readonly _adds = new AddQueue(
+    () => this.hass,
+    () => this.requestUpdate(),
+  );
 
   constructor() {
     super();
@@ -214,9 +206,6 @@ export class HandlaItems extends LitElement {
     this._items = null;
     this._loadError = null;
     this._text = "";
-    this._queue = [];
-    this._duplicate = null;
-    this._addFailure = null;
     this._busyUids = new Set();
     this._clearing = false;
     this._actionError = null;
@@ -296,77 +285,13 @@ export class HandlaItems extends LitElement {
     this._text = "";
     const field = this.renderRoot.querySelector<HTMLInputElement>("input[type=text]");
     if (field) field.value = "";
-    this._enqueue(text, entityId);
+    this._adds.enqueue(text, entityId);
     this._focusInput();
-  }
-
-  private _enqueue(text: string, entityId: string): void {
-    this._queue = [...this._queue, { text, entityId }];
-    void this._process();
   }
 
   private _quickAdd(name: string): void {
     const entityId = this.list?.entityId;
-    if (entityId && this._canAdd) this._enqueue(name, entityId);
-  }
-
-  /** Adds queued items one at a time; stops to ask about a duplicate or after a failure. */
-  private async _process(): Promise<void> {
-    if (this._processing) return;
-    this._processing = true;
-    try {
-      while (this._queue.length > 0 && this._duplicate === null && this._addFailure === null) {
-        await this._attempt(false);
-      }
-    } finally {
-      this._processing = false;
-    }
-  }
-
-  private async _attempt(confirmDuplicate: boolean): Promise<void> {
-    const head = this._queue[0];
-    const hass = this.hass;
-    if (!head || !hass) {
-      this._queue = [];
-      return;
-    }
-    try {
-      const result = await addItem(hass, head.entityId, head.text, confirmDuplicate);
-      if (result.added) this._queue = this._queue.slice(1);
-      else if (result.duplicate) this._duplicate = { text: head.text };
-      else this._addFailure = { text: head.text, message: errorMessage(null, this.hass?.language) };
-    } catch (err) {
-      this._addFailure = { text: head.text, message: errorMessage(err, this.hass?.language) };
-    }
-  }
-
-  private async _confirmDuplicate(): Promise<void> {
-    if (this._processing) return;
-    this._duplicate = null;
-    this._processing = true;
-    try {
-      await this._attempt(true);
-    } finally {
-      this._processing = false;
-    }
-    void this._process();
-  }
-
-  private _skipDuplicate(): void {
-    this._queue = this._queue.slice(1);
-    this._duplicate = null;
-    void this._process();
-  }
-
-  private _retryAdd(): void {
-    this._addFailure = null;
-    void this._process();
-  }
-
-  private _skipFailedAdd(): void {
-    this._queue = this._queue.slice(1);
-    this._addFailure = null;
-    void this._process();
+    if (entityId && this._canAdd) this._adds.enqueue(name, entityId);
   }
 
   // --- tick, remove, clear -------------------------------------------------
@@ -487,19 +412,19 @@ export class HandlaItems extends LitElement {
   private _renderNotices() {
     return html`
       ${
-        this._duplicate
+        this._adds.duplicate
           ? html`
               <div class="notice" role="alertdialog" data-testid="duplicate">
-                ${this._t("duplicate.prompt", { item: this._duplicate.text })}
+                ${this._t("duplicate.prompt", { item: this._adds.duplicate.text })}
                 <div class="row">
                   <button
                     class="primary"
                     data-action="duplicate-add"
-                    @click=${() => void this._confirmDuplicate()}
+                    @click=${() => void this._adds.confirmDuplicate()}
                   >
                     ${this._t("duplicate.add")}
                   </button>
-                  <button data-action="duplicate-skip" @click=${() => this._skipDuplicate()}>
+                  <button data-action="duplicate-skip" @click=${() => this._adds.skipDuplicate()}>
                     ${this._t("duplicate.skip")}
                   </button>
                 </div>
@@ -508,18 +433,22 @@ export class HandlaItems extends LitElement {
           : nothing
       }
       ${
-        this._addFailure
+        this._adds.failure
           ? html`
               <div class="notice error" role="alert" data-testid="add-failed">
                 ${this._t("add.failed", {
-                  item: this._addFailure.text,
-                  message: this._addFailure.message,
+                  item: this._adds.failure.text,
+                  message: this._adds.failure.message,
                 })}
                 <div class="row">
-                  <button class="primary" data-action="add-retry" @click=${() => this._retryAdd()}>
+                  <button
+                    class="primary"
+                    data-action="add-retry"
+                    @click=${() => this._adds.retry()}
+                  >
                     ${this._t("add.retry")}
                   </button>
-                  <button data-action="add-skip" @click=${() => this._skipFailedAdd()}>
+                  <button data-action="add-skip" @click=${() => this._adds.skipFailed()}>
                     ${this._t("add.skip")}
                   </button>
                 </div>
@@ -550,7 +479,7 @@ export class HandlaItems extends LitElement {
         ${this._t("items.load_error", { message: this._loadError })}
       </div>`;
     }
-    const pending = this._queue.filter((entry) => entry.entityId === list.entityId);
+    const pending = this._adds.items.filter((entry) => entry.entityId === list.entityId);
     if (this._items === null) {
       return pending.length === 0
         ? html`<p class="muted" data-testid="loading">${this._t("items.loading")}</p>`

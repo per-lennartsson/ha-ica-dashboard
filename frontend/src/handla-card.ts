@@ -8,6 +8,7 @@ import {
   readLists,
   readStatus,
   resolveSelected,
+  sameListId,
   type ListInfo,
   type Status,
 } from "./lists";
@@ -249,7 +250,7 @@ export class HandlaCard extends LitElement {
     if (!hass || this._pending) return;
     await this._run(async () => {
       await deleteList(hass, entityId);
-      if (this._selected?.toLowerCase() === offlineId.toLowerCase()) {
+      if (sameListId(this._selected, offlineId)) {
         this._selected = null;
         saveSelectedList(null);
       }

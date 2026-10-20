@@ -6,6 +6,7 @@ import {
   readLists,
   readStatus,
   resolveSelected,
+  sameListId,
   type ListInfo,
 } from "./lists";
 import type { HomeAssistant } from "./types";
@@ -141,5 +142,18 @@ describe("listLabel", () => {
     expect(listLabel(list("A", "Bröd", 3))).toBe("Bröd (3)");
     expect(listLabel(list("A", "Bröd", 0))).toBe("Bröd (0)");
     expect(listLabel(list("A", "Bröd", null))).toBe("Bröd");
+  });
+});
+
+describe("sameListId", () => {
+  it("ignores case", () => {
+    expect(sameListId("abc-1", "ABC-1")).toBe(true);
+    expect(sameListId("abc-1", "abc-2")).toBe(false);
+  });
+
+  it.each([null, undefined])("is false when one side is %s", (missing) => {
+    expect(sameListId(missing, "abc")).toBe(false);
+    expect(sameListId("abc", missing)).toBe(false);
+    expect(sameListId(missing, missing)).toBe(false);
   });
 });

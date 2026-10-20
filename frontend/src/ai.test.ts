@@ -24,9 +24,9 @@ describe("isAiReady", () => {
 });
 
 describe("parseSuggestions", () => {
-  it("reads items and starts ones already on the list unticked", () => {
+  it("reads items and keeps the integration's choice of what starts ticked", () => {
     const result = parseSuggestions([
-      { item: "2 l mjölk", on_list: true, existing: "1 l Mjölk", selected: true },
+      { item: "2 l mjölk", on_list: true, existing: "1 l Mjölk", selected: false },
       { item: " ost ", on_list: false, existing: null, selected: true },
       { item: "ägg" },
       { item: "smör", on_list: false, selected: false },
