@@ -25,7 +25,7 @@ Limits: at most 20 000 characters of text, and at most 100 suggested items.
 
 ## What is sent where
 
-The pasted text is sent to **the AI provider you chose** (and nothing else: no list contents, no names). Check the provider's own terms if the texts are private. The text is not stored by Handla.
+The pasted text is sent to **the AI provider you chose** (and nothing else: no list contents, no names). Check the provider's own terms if the texts are private. The text is not stored by Handla. Text from untrusted sources (mail, web pages) could contain instructions aimed at the model; Handla tells the model to treat the text as material only and cleans the answer, and you review every suggestion before anything is added.
 
 ## Monitoring
 

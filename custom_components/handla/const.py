@@ -16,6 +16,11 @@ LISTS_CHANGED_TIMEOUT: Final = 30.0
 
 STORAGE_VERSION: Final = 1
 
+# Longest texts accepted by the services (the AI text has its own, larger limit)
+MAX_ITEM_LENGTH: Final = 100
+MAX_LIST_TITLE_LENGTH: Final = 100
+MAX_COMMENT_LENGTH: Final = 500
+
 # Frequent items shown as quick-add buttons
 QUICK_ADD_LIMIT: Final = 12
 USAGE_SAVE_DELAY: Final = 10.0
