@@ -1,5 +1,7 @@
 # Plan: åtgärda arkitekturgranskningen (version 2)
 
+**Läge:** steg 1–6 är genomförda och mergade till `main` (tester, `options.py`, översatta notistexter, I/O-lager, slimmad koordinator, `event_filter` och dokumentation). Kvar är steg 7 (frontend). Koordinatorn blev 200 rader (målet var ca 150), och `usage`, `notifier` och `ai_monitor` ägs fortfarande av koordinatorn.
+
 Bygger på [architecture-review.md](architecture-review.md), uppdaterad mot `main` 96ae4e8. Godkänd av maintainern i första versionen. Ändringarna jämfört med den finns längst ned.
 
 ## Ramar

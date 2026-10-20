@@ -47,6 +47,7 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 * Naming: `snake_case` for Python functions and variables, `PascalCase` for classes; `camelCase` in TypeScript, `kebab-case` for custom element names.
 * Follow Home Assistant integration conventions (config flow, options flow, `DataUpdateCoordinator`, `strings.json` and translations).
 * All user-visible strings go through translations. Never hard-code Swedish text in logic.
+  * Documented exceptions: the default list name "Att handla <dag> <månad>" (`domain/naming.py`) is always Swedish, as specified. The AI prompt and the health-check instruction (`domain/extraction.py`, `ai_monitor.py`) are Swedish, version-controlled constants, not UI text.
 * Commit messages: short, imperative.
 
 ## Architecture
@@ -58,6 +59,8 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 * Functions do one thing. If a function needs a comment to explain what it does, split it.
 * No global state. Pass configuration as arguments.
 * All external calls need explicit error handling. Never swallow exceptions, and surface failures to the user with a clear message.
+  * Documented exceptions: after an item is already on the list, a failure while counting, announcing or notifying is logged (`_LOGGER.exception`) and not raised (`item_announcer.py`, `notify.py`), because reporting it as a failed add would make people add the item twice. A failed push to one phone never stops the others (`notify_api.py`).
+* All service calls to `todo.*`, `ica.*`, `ai_task.*` and `notify.*` live in the I/O modules (`*_api.py`). Nothing else calls those services.
 * Tests are written alongside implementation, not after.
 
 **Known Home Assistant pitfalls to design around**
@@ -67,6 +70,7 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 * Returning JSON from a template where a card expects a list can break cards. Return native lists.
 * Notifications must know who made a change using HA context (user ID), not heuristics.
 * `ai_task` default `max_tokens` (300 in some providers) can truncate structured output on long lists, and `ai_task.generate_data` has no field to set it per call. It is the provider's own setting (Anthropic: "Maximum tokens" on the AI Task entry): document it (`docs/ai.md`), keep answers compact, and cap input and output sizes.
+* Adding an item reads the list, checks for a duplicate and then adds. This is not atomic: two people adding the same item at the same moment can both pass the check, because ICA has no atomic add. Accepted; the duplicate prompt is a convenience, not a guarantee.
 * There is no API for the remaining Anthropic credit balance. Detect failure by errors, not by balance.
 
 ## Rules
@@ -92,7 +96,10 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 │   ├── __init__.py          # setup, services registration
 │   ├── config_flow.py       # setup flow (ICA dependency check) + options flow (who is notified)
 │   ├── dependency.py        # checks ha-ica-todo (installed, version, loaded), repair issue
-│   ├── coordinator.py       # event-driven: ICA lists, active list, create/delete flows
+│   ├── coordinator.py       # event-driven: derives the lists, wires the parts below together
+│   ├── lists_registry.py    # reads the ICA lists from HA, stores the active list
+│   ├── list_operations.py   # create/delete list flows and their status
+│   ├── item_announcer.py    # after an add: count it, fire handla_item_added, queue the push
 │   ├── events.py            # collects ica_lists_changed events
 │   ├── services.py, services.yaml   # set_active_list, create/delete_list, suggest_list_name, items, get_top_items
 │   ├── shopping.py          # add / tick / remove / clear items on a list
@@ -102,7 +109,10 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 │   ├── schema.py            # probatio (HA 2026.10+) or voluptuous
 │   ├── card.py              # serves the built card and loads it in every dashboard
 │   ├── www/                 # built card (git-ignored): handla-card.js
-│   ├── todo_api.py          # thin wrappers around Home Assistant's todo.* services
+│   ├── todo_api.py, ica_api.py, ai_api.py, notify_api.py   # the I/O layer: all service calls to todo.*, ica.*, ai_task.*, notify.*
+│   ├── options.py           # reads the config entry's options (AI, notification recipients)
+│   ├── texts.py             # translated message templates for notifications (strings.json "exceptions")
+│   ├── errors.py            # builds translated errors
 │   ├── entity.py, select.py, sensor.py
 │   ├── const.py
 │   └── domain/              # pure logic, no Home Assistant imports
