@@ -13,14 +13,15 @@ from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.setup import async_setup_component
 
 from custom_components.handla.const import DOMAIN
-from custom_components.handla.coordinator import HandlaCoordinator, Status
+from custom_components.handla.coordinator import HandlaCoordinator
+from custom_components.handla.list_operations import Status
 from tests.conftest import ICA_ENTRY_ID, FakeIca, IcaConfigure, setup_handla
 
 
 @pytest.fixture(autouse=True)
 def fixed_today() -> Iterator[None]:
     with patch(
-        "custom_components.handla.coordinator.dt_util.now",
+        "custom_components.handla.list_operations.dt_util.now",
         return_value=datetime(2026, 10, 14, 12, 0, tzinfo=UTC),
     ):
         yield
@@ -28,7 +29,7 @@ def fixed_today() -> Iterator[None]:
 
 @pytest.fixture
 def short_timeout() -> Iterator[None]:
-    with patch("custom_components.handla.coordinator.LISTS_CHANGED_TIMEOUT", 0.05):
+    with patch("custom_components.handla.list_operations.LISTS_CHANGED_TIMEOUT", 0.05):
         yield
 
 

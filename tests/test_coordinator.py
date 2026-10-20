@@ -251,7 +251,9 @@ async def test_a_failing_save_still_changes_the_active_list_and_is_logged(
     entry = await setup_handla(hass)
     coordinator = entry.runtime_data
 
-    with patch.object(coordinator._store, "async_save", side_effect=OSError("full")):
+    with patch.object(
+        coordinator._active._store, "async_save", side_effect=OSError("full")
+    ):
         await hass.services.async_call(
             DOMAIN, "set_active_list", {"entity_id": second}, blocking=True
         )
