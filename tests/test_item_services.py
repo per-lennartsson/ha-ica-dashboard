@@ -6,7 +6,14 @@ import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 
-from custom_components.handla.const import DOMAIN
+from custom_components.handla.const import (
+    DOMAIN,
+    MAX_COMMENT_LENGTH,
+    MAX_ITEM_LENGTH,
+    MAX_LIST_TITLE_LENGTH,
+)
+from custom_components.handla.domain import MAX_TRACKED
+from custom_components.handla.schema import vol
 from tests.conftest import FakeIca, FakeTodo, IcaConfigure, setup_handla
 
 
@@ -325,3 +332,32 @@ async def test_clear_ticked_on_an_explicit_list(
 
     assert fake_todo.summaries(other) == []
     assert fake_todo.summaries(milk_list) == ["mjölk"]
+
+
+# --- length limits --------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("service", "data"),
+    [
+        ("add_item", {"item": "a" * (MAX_ITEM_LENGTH + 1)}),
+        ("tick_item", {"item": "a" * (MAX_ITEM_LENGTH + 1)}),
+        ("remove_item", {"item": "a" * (MAX_ITEM_LENGTH + 1)}),
+        ("add_quick_item", {"item": "a" * (MAX_ITEM_LENGTH + 1)}),
+        ("remove_quick_item", {"item": "a" * (MAX_ITEM_LENGTH + 1)}),
+        ("merge_quick_items", {"sources": ["mjölk"], "target": "a" * 101}),
+        ("merge_quick_items", {"sources": ["a"] * (MAX_TRACKED + 1), "target": "x"}),
+        ("create_list", {"title": "a" * (MAX_LIST_TITLE_LENGTH + 1)}),
+        ("create_list", {"comment": "a" * (MAX_COMMENT_LENGTH + 1)}),
+    ],
+)
+async def test_too_long_service_data_is_refused(
+    hass: HomeAssistant,
+    milk_list: str,
+    fake_todo: FakeTodo,
+    service: str,
+    data: dict[str, Any],
+) -> None:
+    with pytest.raises(vol.Invalid):
+        await hass.services.async_call(DOMAIN, service, data, blocking=True)
+    assert not any(name == "add_item" for name, _ in fake_todo.calls)

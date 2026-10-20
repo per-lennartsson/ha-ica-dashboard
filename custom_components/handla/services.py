@@ -8,17 +8,29 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from . import ai, shopping
-from .const import DOMAIN, QUICK_ADD_LIMIT
+from .const import (
+    DOMAIN,
+    MAX_COMMENT_LENGTH,
+    MAX_ITEM_LENGTH,
+    MAX_LIST_TITLE_LENGTH,
+    QUICK_ADD_LIMIT,
+)
 from .coordinator import HandlaCoordinator
 from .domain import MAX_TRACKED, UsageError
 from .schema import vol
 from .usage import UsageTracker
 
+ITEM_TEXT = vol.All(cv.string, vol.Length(max=MAX_ITEM_LENGTH))
+
 SET_ACTIVE_LIST_SCHEMA = vol.Schema({vol.Required("entity_id"): cv.entity_id})
 CREATE_LIST_SCHEMA = vol.Schema(
     {
-        vol.Optional("title"): cv.string,
-        vol.Optional("comment", default=""): cv.string,
+        vol.Optional("title"): vol.All(
+            cv.string, vol.Length(max=MAX_LIST_TITLE_LENGTH)
+        ),
+        vol.Optional("comment", default=""): vol.All(
+            cv.string, vol.Length(max=MAX_COMMENT_LENGTH)
+        ),
         vol.Optional("set_active", default=True): cv.boolean,
     }
 )
@@ -26,19 +38,19 @@ DELETE_LIST_SCHEMA = vol.Schema({vol.Required("entity_id"): cv.entity_id})
 ADD_ITEM_SCHEMA = vol.Schema(
     {
         vol.Optional("entity_id"): cv.entity_id,
-        vol.Required("item"): cv.string,
+        vol.Required("item"): ITEM_TEXT,
         vol.Optional("confirm_duplicate", default=False): cv.boolean,
     }
 )
 TICK_ITEM_SCHEMA = vol.Schema(
     {
         vol.Optional("entity_id"): cv.entity_id,
-        vol.Required("item"): cv.string,
+        vol.Required("item"): ITEM_TEXT,
         vol.Optional("ticked", default=True): cv.boolean,
     }
 )
 REMOVE_ITEM_SCHEMA = vol.Schema(
-    {vol.Optional("entity_id"): cv.entity_id, vol.Required("item"): cv.string}
+    {vol.Optional("entity_id"): cv.entity_id, vol.Required("item"): ITEM_TEXT}
 )
 CLEAR_TICKED_SCHEMA = vol.Schema({vol.Optional("entity_id"): cv.entity_id})
 AI_EXTRACT_ITEMS_SCHEMA = vol.Schema(
@@ -52,12 +64,14 @@ GET_TOP_ITEMS_SCHEMA = vol.Schema(
         )
     }
 )
-REMOVE_QUICK_ITEM_SCHEMA = vol.Schema({vol.Required("item"): cv.string})
-ADD_QUICK_ITEM_SCHEMA = vol.Schema({vol.Required("item"): cv.string})
+REMOVE_QUICK_ITEM_SCHEMA = vol.Schema({vol.Required("item"): ITEM_TEXT})
+ADD_QUICK_ITEM_SCHEMA = vol.Schema({vol.Required("item"): ITEM_TEXT})
 MERGE_QUICK_ITEMS_SCHEMA = vol.Schema(
     {
-        vol.Required("sources"): vol.All(cv.ensure_list, [cv.string]),
-        vol.Required("target"): cv.string,
+        vol.Required("sources"): vol.All(
+            cv.ensure_list, [ITEM_TEXT], vol.Length(min=1, max=MAX_TRACKED)
+        ),
+        vol.Required("target"): ITEM_TEXT,
     }
 )
 
