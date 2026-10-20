@@ -12,6 +12,11 @@ from custom_components.handla.domain import (
 
 T0 = datetime(2026, 10, 15, 8, 0, tzinfo=UTC)
 
+TEMPLATES = {
+    "ai_failure_title": "AI down",
+    "ai_failure_message": "Error: {error} Fix it.",
+}
+
 
 def test_the_first_failure_notifies() -> None:
     health, notify = record_failure(AiHealth(), T0)
@@ -54,17 +59,14 @@ def test_success_resets_so_the_next_failure_notifies() -> None:
     assert notify is True
 
 
-def test_message_in_swedish_and_english() -> None:
-    title, text = build_failure_message("sv", "credit balance is too low")
-    assert title == "Handla: AI fungerar inte"
-    assert "credit balance is too low" in text
-    title, text = build_failure_message("en-GB", "credit balance is too low")
-    assert title == "Handla: AI is not working"
-    assert "credit balance is too low" in text
+def test_message_uses_the_templates() -> None:
+    title, text = build_failure_message(TEMPLATES, "credit balance is too low")
+    assert title == "AI down"
+    assert text == "Error: credit balance is too low Fix it."
 
 
 def test_long_and_messy_errors_are_tidied() -> None:
-    _, text = build_failure_message("en", "line one\n\n  line   two " + "x" * 500)
+    _, text = build_failure_message(TEMPLATES, "line one\n\n  line   two " + "x" * 500)
 
     assert "line one line two" in text
     assert "\n" not in text

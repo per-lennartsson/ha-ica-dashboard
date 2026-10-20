@@ -6,6 +6,13 @@ from typing import Any
 from .duplicates import normalize_name
 
 MAX_LISTED = 5
+NOTIFY_TITLE = "Handla"
+
+# Translation keys (under `exceptions` in strings.json) of the message templates
+NOTIFY_ADDED_BY = "notify_added_by"
+NOTIFY_ADDED = "notify_added"
+NOTIFY_MORE = "notify_more"
+NOTIFY_KEYS = (NOTIFY_ADDED_BY, NOTIFY_ADDED, NOTIFY_MORE)
 
 
 def recipients_to_notify(
@@ -34,26 +41,23 @@ def merge_items(existing: Iterable[str], new: Iterable[str]) -> list[str]:
     return merged
 
 
-def _swedish(language: str) -> bool:
-    return language.casefold().startswith("sv")
-
-
 def build_message(
-    language: str, adder_name: str | None, list_title: str, items: list[str]
+    templates: Mapping[str, str],
+    adder_name: str | None,
+    list_title: str,
+    items: list[str],
 ) -> tuple[str, str]:
-    """Title and text of the notification, in Swedish or English."""
-    swedish = _swedish(language)
+    """Title and text of the notification, from translated `templates`.
+
+    Templates use {name}, {items}, {list} and {count}; see NOTIFY_KEYS.
+    """
     listed = ", ".join(items[:MAX_LISTED])
     extra = len(items) - MAX_LISTED
     if extra > 0:
-        listed += f" +{extra} till" if swedish else f" +{extra} more"
-    if swedish:
-        if adder_name:
-            return "Handla", f"{adder_name} lade till {listed} i {list_title}"
-        return "Handla", f"Nytt på {list_title}: {listed}"
-    if adder_name:
-        return "Handla", f"{adder_name} added {listed} to {list_title}"
-    return "Handla", f"New on {list_title}: {listed}"
+        listed += " " + templates[NOTIFY_MORE].format(count=extra)
+    key = NOTIFY_ADDED_BY if adder_name else NOTIFY_ADDED
+    text = templates[key].format(name=adder_name, items=listed, list=list_title)
+    return NOTIFY_TITLE, text
 
 
 def choose_notify_services(names: Iterable[str]) -> list[str]:

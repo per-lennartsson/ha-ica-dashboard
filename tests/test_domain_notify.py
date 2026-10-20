@@ -10,6 +10,11 @@ from custom_components.handla.domain import (
     recipients_to_notify,
 )
 
+TEMPLATES = {
+    "notify_added_by": "{name} added {items} to {list}",
+    "notify_added": "New on {list}: {items}",
+    "notify_more": "+{count} more",
+}
 RECIPIENTS = {"u-per": "mobile_app_per", "u-embla": "mobile_app_embla"}
 
 
@@ -44,36 +49,35 @@ def test_merge_does_not_change_its_input() -> None:
 
 
 @pytest.mark.parametrize(
-    ("language", "name", "expected"),
+    ("name", "expected"),
     [
-        ("sv", "Embla", "Embla lade till mjölk, ägg i Veckan"),
-        ("sv-SE", "Embla", "Embla lade till mjölk, ägg i Veckan"),
-        ("sv", None, "Nytt på Veckan: mjölk, ägg"),
-        ("en", "Embla", "Embla added mjölk, ägg to Veckan"),
-        ("en-GB", None, "New on Veckan: mjölk, ägg"),
-        ("de", "Embla", "Embla added mjölk, ägg to Veckan"),
+        ("Embla", "Embla added mjölk, ägg to Veckan"),
+        (None, "New on Veckan: mjölk, ägg"),
     ],
 )
-def test_message_language_and_adder(
-    language: str, name: str | None, expected: str
+def test_message_depends_on_whether_the_adder_is_known(
+    name: str | None, expected: str
 ) -> None:
-    title, message = build_message(language, name, "Veckan", ["mjölk", "ägg"])
+    title, message = build_message(TEMPLATES, name, "Veckan", ["mjölk", "ägg"])
     assert title == "Handla"
     assert message == expected
 
 
 def test_long_lists_are_cut_off() -> None:
     items = [f"vara {n}" for n in range(MAX_LISTED + 3)]
-    _, sv = build_message("sv", "A", "L", items)
-    _, en = build_message("en", "A", "L", items)
-    assert sv.endswith("vara 4 +3 till i L")
-    assert en.endswith("vara 4 +3 more to L")
-    assert "vara 5" not in sv
+    _, text = build_message(TEMPLATES, "A", "L", items)
+    assert text.endswith("vara 4 +3 more to L")
+    assert "vara 5" not in text
 
 
 def test_exactly_the_limit_is_not_cut() -> None:
     items = [f"v{n}" for n in range(MAX_LISTED)]
-    assert "+" not in build_message("sv", "A", "L", items)[1]
+    assert "+" not in build_message(TEMPLATES, "A", "L", items)[1]
+
+
+def test_braces_in_names_are_kept_as_they_are() -> None:
+    _, text = build_message(TEMPLATES, "{A}", "{list}", ["{items}"])
+    assert text == "{A} added {items} to {list}"
 
 
 def test_companion_app_services_are_preferred() -> None:
