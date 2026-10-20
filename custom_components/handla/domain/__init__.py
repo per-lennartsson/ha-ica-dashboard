@@ -32,6 +32,7 @@ from .notify import (
     MAX_LISTED,
     build_message,
     choose_notify_services,
+    event_data,
     merge_items,
     recipients_to_notify,
 )
@@ -88,6 +89,7 @@ __all__ = [
     "entity_for",
     "entries_from_json",
     "entries_to_json",
+    "event_data",
     "event_mentions",
     "find_duplicates",
     "format_quantity",

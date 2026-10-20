@@ -11,11 +11,12 @@ from homeassistant.const import EVENT_STATE_CHANGED
 from homeassistant.core import Event, EventStateChangedData, HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .ai import current_ai_status, get_ai_config
+from .ai import current_ai_status
 from .const import QUICK_ADD_LIMIT
 from .coordinator import HandlaConfigEntry, HandlaCoordinator, Status
 from .domain import AiStatus, lists_payload, quick_add_payload
 from .entity import HandlaEntity
+from .options import get_ai_config
 
 
 async def async_setup_entry(

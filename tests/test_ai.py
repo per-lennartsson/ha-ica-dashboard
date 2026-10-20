@@ -8,13 +8,13 @@ from homeassistant.data_entry_flow import FlowResult, FlowResultType
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.handla.ai import get_ai_config
 from custom_components.handla.const import (
     CONF_AI_ENABLED,
     CONF_AI_ENTITY,
     CONF_AI_HEALTH_CHECK,
     DOMAIN,
 )
+from custom_components.handla.options import get_ai_config
 from tests.conftest import (
     AI_ENTITY,
     FakeAiProvider,

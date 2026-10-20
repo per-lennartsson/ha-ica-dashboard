@@ -7,7 +7,6 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
-from .ai import get_ai_config
 from .card import async_register_card, async_unregister_resource
 from .const import DOMAIN
 from .coordinator import HandlaConfigEntry, HandlaCoordinator
@@ -16,6 +15,7 @@ from .dependency import (
     create_dependency_issue,
     delete_dependency_issue,
 )
+from .options import get_ai_config
 from .services import async_register_services, async_sync_ai_services
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)

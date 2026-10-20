@@ -1,6 +1,7 @@
 """Pure logic for "someone added items" notifications."""
 
 from collections.abc import Iterable, Mapping
+from typing import Any
 
 from .duplicates import normalize_name
 
@@ -63,3 +64,20 @@ def choose_notify_services(names: Iterable[str]) -> list[str]:
     candidates = sorted(name for name in names if name != "send_message")
     phones = [name for name in candidates if name.startswith("mobile_app_")]
     return phones or candidates
+
+
+def event_data(
+    list_entity_id: str,
+    list_title: str,
+    item: str,
+    user_id: str | None,
+    user_name: str | None,
+) -> dict[str, Any]:
+    """Payload of the `handla_item_added` event."""
+    return {
+        "entity_id": list_entity_id,
+        "list_title": list_title,
+        "item": item,
+        "user_id": user_id,
+        "user_name": user_name,
+    }

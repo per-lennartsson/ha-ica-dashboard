@@ -9,10 +9,10 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.util import dt as dt_util
 
-from .ai import get_ai_config, get_health_check
 from .const import AI_HEALTH_INTERVAL, AI_TASK_DOMAIN
 from .domain import AiHealth, build_failure_message, record_failure, record_success
-from .notify import async_notify_users, get_recipients
+from .notify import async_notify_users
+from .options import get_ai_config, get_health_check, get_recipients
 
 _LOGGER = logging.getLogger(__name__)
 
