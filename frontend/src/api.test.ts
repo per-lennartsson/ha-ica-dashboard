@@ -42,7 +42,12 @@ describe("errorMessage", () => {
     [null, "Unknown error"],
     ["", "Unknown error"],
   ])("%j -> %s", (err, expected) => {
-    expect(errorMessage(err)).toBe(expected);
+    expect(errorMessage(err, "en")).toBe(expected);
+  });
+
+  it("falls back to Swedish when no language is given", () => {
+    expect(errorMessage(null)).toBe("Okänt fel");
+    expect(errorMessage(null, "sv")).toBe("Okänt fel");
   });
 });
 

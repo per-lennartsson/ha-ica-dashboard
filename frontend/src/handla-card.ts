@@ -210,8 +210,9 @@ export class HandlaCard extends LitElement {
       const suggestion = await suggestListName(hass);
       // Do not overwrite what the user has already started typing
       if (this._mode === "create" && this._name === "") this._name = suggestion;
-    } catch {
-      // No suggestion: the user types a name themselves
+    } catch (err) {
+      // No suggestion is not an error for the user, who types a name themselves
+      console.warn("Handla: could not fetch a list name suggestion", err);
     }
   }
 
@@ -264,7 +265,7 @@ export class HandlaCard extends LitElement {
     try {
       await action();
     } catch (err) {
-      this._error = this._t("error.generic", { message: errorMessage(err) });
+      this._error = this._t("error.generic", { message: errorMessage(err, this.hass?.language) });
     } finally {
       this._pending = false;
     }

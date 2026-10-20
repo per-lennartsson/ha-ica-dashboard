@@ -335,3 +335,32 @@ async def test_one_timer_serves_a_whole_batch(
 
     assert timer.call_count == 1
     assert len(phones.messages("mobile_app_embla")) == 1
+
+
+async def test_one_failing_message_does_not_lose_the_others(
+    hass: HomeAssistant,
+    household: str,
+    phones: Phones,
+    per: User,
+    embla: User,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    await _add(hass, "mjölk", per)
+    await _add(hass, "ägg", embla)
+    notifier = hass.config_entries.async_entries(DOMAIN)[0].runtime_data.notifier
+    real_send = notifier._send
+    calls = 0
+
+    async def flaky_send(*args: Any) -> None:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise RuntimeError("no such user")
+        await real_send(*args)
+
+    with patch.object(notifier, "_send", flaky_send):
+        await _settle(hass)
+
+    assert calls == 2
+    assert "Could not notify about the items" in caplog.text
+    assert len(phones.calls) == 1

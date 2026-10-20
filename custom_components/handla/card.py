@@ -45,13 +45,13 @@ async def _async_register_resource(hass: HomeAssistant, url: str) -> bool:
     resources = _storage_resources(hass)
     if resources is None:
         return False
-    action = plan_resource(await _async_load_resources(resources), CARD_URL, url)
     try:
+        action = plan_resource(await _async_load_resources(resources), CARD_URL, url)
         if action.kind == "create":
             await resources.async_create_item({"res_type": "module", "url": url})
         elif action.kind == "update" and action.item_id is not None:
             await resources.async_update_item(action.item_id, {"url": url})
-    except HomeAssistantError as err:
+    except (HomeAssistantError, OSError) as err:
         _LOGGER.warning("Could not register the Handla card as a resource: %s", err)
         return False
     return True
@@ -62,11 +62,12 @@ async def async_unregister_resource(hass: HomeAssistant) -> None:
     resources = _storage_resources(hass)
     if resources is None:
         return
-    for item in find_resources(await _async_load_resources(resources), CARD_URL):
-        try:
+    try:
+        items = find_resources(await _async_load_resources(resources), CARD_URL)
+        for item in items:
             await resources.async_delete_item(str(item["id"]))
-        except HomeAssistantError as err:
-            _LOGGER.warning("Could not remove the Handla card resource: %s", err)
+    except (HomeAssistantError, OSError) as err:
+        _LOGGER.warning("Could not remove the Handla card resource: %s", err)
 
 
 async def async_register_card(hass: HomeAssistant, version: str) -> bool:

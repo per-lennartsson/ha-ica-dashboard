@@ -1,6 +1,7 @@
 """Tests for add_item, tick_item, remove_item and clear_ticked."""
 
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 from homeassistant.core import HomeAssistant
@@ -361,3 +362,23 @@ async def test_too_long_service_data_is_refused(
     with pytest.raises(vol.Invalid):
         await hass.services.async_call(DOMAIN, service, data, blocking=True)
     assert not any(name == "add_item" for name, _ in fake_todo.calls)
+
+
+# --- the item is on the list even if announcing it fails ---------------------
+
+
+async def test_add_item_succeeds_when_announcing_fails(
+    hass: HomeAssistant,
+    milk_list: str,
+    fake_todo: FakeTodo,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    entry = hass.config_entries.async_entries(DOMAIN)[0]
+    with patch.object(
+        entry.runtime_data.usage, "record", side_effect=RuntimeError("boom")
+    ):
+        result = await _call(hass, "add_item", item="mjölk")
+
+    assert result["added"] is True
+    assert fake_todo.summaries(milk_list) == ["mjölk"]
+    assert "was added, but counting or announcing it failed" in caplog.text

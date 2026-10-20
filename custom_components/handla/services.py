@@ -1,6 +1,8 @@
 """Services: lists, items, quick-add items and the optional AI helper."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Coroutine, Iterator
+from contextlib import contextmanager
+from dataclasses import dataclass
 from typing import Any
 
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
@@ -16,7 +18,7 @@ from .const import (
     QUICK_ADD_LIMIT,
 )
 from .coordinator import HandlaCoordinator
-from .domain import MAX_TRACKED, UsageError
+from .domain import MAX_TRACKED, ListInfo, UsageError
 from .schema import vol
 from .usage import UsageTracker
 
@@ -56,7 +58,6 @@ CLEAR_TICKED_SCHEMA = vol.Schema({vol.Optional("entity_id"): cv.entity_id})
 AI_EXTRACT_ITEMS_SCHEMA = vol.Schema(
     {vol.Optional("entity_id"): cv.entity_id, vol.Required("text"): cv.string}
 )
-AI_SERVICES = ("ai_extract_items",)
 GET_TOP_ITEMS_SCHEMA = vol.Schema(
     {
         vol.Optional("limit", default=QUICK_ADD_LIMIT): vol.All(
@@ -76,6 +77,19 @@ MERGE_QUICK_ITEMS_SCHEMA = vol.Schema(
 )
 
 
+type Handler = Callable[[ServiceCall], Coroutine[Any, Any, Any]]
+
+
+@dataclass(frozen=True)
+class ServiceSpec:
+    """One service: its name, handler, input schema and kind of response."""
+
+    name: str
+    handler: Handler
+    schema: Any
+    response: SupportsResponse = SupportsResponse.NONE
+
+
 def _coordinator(hass: HomeAssistant) -> HandlaCoordinator:
     entries = hass.config_entries.async_loaded_entries(DOMAIN)
     if not entries:
@@ -86,11 +100,17 @@ def _coordinator(hass: HomeAssistant) -> HandlaCoordinator:
     return coordinator
 
 
-def _manage(hass: HomeAssistant, action: Callable[[UsageTracker], None]) -> None:
+def _target_list(call: ServiceCall) -> ListInfo:
+    """The list a call refers to: its `entity_id`, else the active list."""
+    return _coordinator(call.hass).resolve_list(call.data.get("entity_id"))
+
+
+@contextmanager
+def _quick_items(hass: HomeAssistant) -> Iterator[UsageTracker]:
     """Change the quick-add items; a rejected change becomes a readable error."""
     coordinator = _coordinator(hass)
     try:
-        action(coordinator.usage)
+        yield coordinator.usage
     except UsageError as err:
         raise ServiceValidationError(
             translation_domain=DOMAIN, translation_key=err.key
@@ -98,142 +118,134 @@ def _manage(hass: HomeAssistant, action: Callable[[UsageTracker], None]) -> None
     coordinator.async_update_listeners()
 
 
+# --- lists ---------------------------------------------------------------------
+
+
+async def _set_active_list(call: ServiceCall) -> None:
+    await _coordinator(call.hass).async_set_active(call.data["entity_id"])
+
+
+async def _create_list(call: ServiceCall) -> dict[str, Any]:
+    return await _coordinator(call.hass).async_create_list(
+        call.data.get("title"), call.data["comment"], call.data["set_active"]
+    )
+
+
+async def _delete_list(call: ServiceCall) -> dict[str, Any]:
+    return await _coordinator(call.hass).async_delete_list(call.data["entity_id"])
+
+
+async def _suggest_list_name(call: ServiceCall) -> dict[str, Any]:
+    return {"name": _coordinator(call.hass).suggest_list_name()}
+
+
+# --- items ---------------------------------------------------------------------
+
+
+async def _add_item(call: ServiceCall) -> dict[str, Any]:
+    return await _coordinator(call.hass).async_add_item(
+        call.data.get("entity_id"),
+        call.data["item"],
+        call.data["confirm_duplicate"],
+        call.context,
+    )
+
+
+async def _tick_item(call: ServiceCall) -> dict[str, Any]:
+    return await shopping.async_tick_item(
+        call.hass, _target_list(call), call.data["item"], call.data["ticked"]
+    )
+
+
+async def _remove_item(call: ServiceCall) -> dict[str, Any]:
+    return await shopping.async_remove_item(
+        call.hass, _target_list(call), call.data["item"]
+    )
+
+
+async def _clear_ticked(call: ServiceCall) -> dict[str, Any]:
+    return await shopping.async_clear_ticked(call.hass, _target_list(call))
+
+
+# --- quick-add items -----------------------------------------------------------
+
+
+async def _get_top_items(call: ServiceCall) -> dict[str, Any]:
+    return {"items": _coordinator(call.hass).usage.top(call.data["limit"])}
+
+
+async def _remove_quick_item(call: ServiceCall) -> None:
+    with _quick_items(call.hass) as usage:
+        usage.remove(call.data["item"])
+
+
+async def _add_quick_item(call: ServiceCall) -> None:
+    with _quick_items(call.hass) as usage:
+        usage.pin(call.data["item"])
+
+
+async def _merge_quick_items(call: ServiceCall) -> None:
+    with _quick_items(call.hass) as usage:
+        usage.merge(call.data["sources"], call.data["target"])
+
+
+# --- ai ------------------------------------------------------------------------
+
+
+async def _ai_extract_items(call: ServiceCall) -> dict[str, Any]:
+    coordinator = _coordinator(call.hass)
+    return await ai.async_extract_items(
+        call.hass,
+        coordinator.config_entry,
+        coordinator.ai_monitor,
+        _target_list(call),
+        call.data["text"],
+        call.context,
+    )
+
+
+_OPTIONAL = SupportsResponse.OPTIONAL
+_ONLY = SupportsResponse.ONLY
+
+SERVICES = (
+    ServiceSpec("set_active_list", _set_active_list, SET_ACTIVE_LIST_SCHEMA),
+    ServiceSpec("create_list", _create_list, CREATE_LIST_SCHEMA, _OPTIONAL),
+    ServiceSpec("delete_list", _delete_list, DELETE_LIST_SCHEMA, _OPTIONAL),
+    ServiceSpec("suggest_list_name", _suggest_list_name, vol.Schema({}), _ONLY),
+    ServiceSpec("add_item", _add_item, ADD_ITEM_SCHEMA, _OPTIONAL),
+    ServiceSpec("tick_item", _tick_item, TICK_ITEM_SCHEMA, _OPTIONAL),
+    ServiceSpec("remove_item", _remove_item, REMOVE_ITEM_SCHEMA, _OPTIONAL),
+    ServiceSpec("clear_ticked", _clear_ticked, CLEAR_TICKED_SCHEMA, _OPTIONAL),
+    ServiceSpec("get_top_items", _get_top_items, GET_TOP_ITEMS_SCHEMA, _ONLY),
+    ServiceSpec("remove_quick_item", _remove_quick_item, REMOVE_QUICK_ITEM_SCHEMA),
+    ServiceSpec("add_quick_item", _add_quick_item, ADD_QUICK_ITEM_SCHEMA),
+    ServiceSpec("merge_quick_items", _merge_quick_items, MERGE_QUICK_ITEMS_SCHEMA),
+)
+AI_SERVICES = (
+    ServiceSpec("ai_extract_items", _ai_extract_items, AI_EXTRACT_ITEMS_SCHEMA, _ONLY),
+)
+
+
+def _register(hass: HomeAssistant, spec: ServiceSpec) -> None:
+    hass.services.async_register(
+        DOMAIN,
+        spec.name,
+        spec.handler,
+        schema=spec.schema,
+        supports_response=spec.response,
+    )
+
+
 def async_register_services(hass: HomeAssistant) -> None:
     """Register the Handla services (available once an entry is loaded)."""
-
-    async def set_active_list(call: ServiceCall) -> None:
-        await _coordinator(hass).async_set_active(call.data["entity_id"])
-
-    async def create_list(call: ServiceCall) -> dict[str, Any]:
-        return await _coordinator(hass).async_create_list(
-            call.data.get("title"), call.data["comment"], call.data["set_active"]
-        )
-
-    async def delete_list(call: ServiceCall) -> dict[str, Any]:
-        return await _coordinator(hass).async_delete_list(call.data["entity_id"])
-
-    async def add_item(call: ServiceCall) -> dict[str, Any]:
-        coordinator = _coordinator(hass)
-        target = coordinator.resolve_list(call.data.get("entity_id"))
-        result = await shopping.async_add_item(
-            hass, target, call.data["item"], call.data["confirm_duplicate"]
-        )
-        if result["added"]:
-            await coordinator.async_item_added(
-                result, call.context.user_id, call.context
-            )
-        return result
-
-    async def suggest_list_name(call: ServiceCall) -> dict[str, Any]:
-        return {"name": _coordinator(hass).suggest_list_name()}
-
-    async def get_top_items(call: ServiceCall) -> dict[str, Any]:
-        return {"items": _coordinator(hass).usage.top(call.data["limit"])}
-
-    async def remove_quick_item(call: ServiceCall) -> None:
-        _manage(hass, lambda usage: usage.remove(call.data["item"]))
-
-    async def add_quick_item(call: ServiceCall) -> None:
-        _manage(hass, lambda usage: usage.pin(call.data["item"]))
-
-    async def merge_quick_items(call: ServiceCall) -> None:
-        _manage(
-            hass,
-            lambda usage: usage.merge(call.data["sources"], call.data["target"]),
-        )
-
-    async def tick_item(call: ServiceCall) -> dict[str, Any]:
-        target = _coordinator(hass).resolve_list(call.data.get("entity_id"))
-        return await shopping.async_tick_item(
-            hass, target, call.data["item"], call.data["ticked"]
-        )
-
-    async def remove_item(call: ServiceCall) -> dict[str, Any]:
-        target = _coordinator(hass).resolve_list(call.data.get("entity_id"))
-        return await shopping.async_remove_item(hass, target, call.data["item"])
-
-    async def clear_ticked(call: ServiceCall) -> dict[str, Any]:
-        target = _coordinator(hass).resolve_list(call.data.get("entity_id"))
-        return await shopping.async_clear_ticked(hass, target)
-
-    for name, handler, schema in (
-        ("add_item", add_item, ADD_ITEM_SCHEMA),
-        ("tick_item", tick_item, TICK_ITEM_SCHEMA),
-        ("remove_item", remove_item, REMOVE_ITEM_SCHEMA),
-        ("clear_ticked", clear_ticked, CLEAR_TICKED_SCHEMA),
-    ):
-        hass.services.async_register(
-            DOMAIN,
-            name,
-            handler,
-            schema=schema,
-            supports_response=SupportsResponse.OPTIONAL,
-        )
-
-    hass.services.async_register(
-        DOMAIN,
-        "suggest_list_name",
-        suggest_list_name,
-        schema=vol.Schema({}),
-        supports_response=SupportsResponse.ONLY,
-    )
-    hass.services.async_register(
-        DOMAIN,
-        "get_top_items",
-        get_top_items,
-        schema=GET_TOP_ITEMS_SCHEMA,
-        supports_response=SupportsResponse.ONLY,
-    )
-    for quick_name, quick_handler, quick_schema in (
-        ("remove_quick_item", remove_quick_item, REMOVE_QUICK_ITEM_SCHEMA),
-        ("add_quick_item", add_quick_item, ADD_QUICK_ITEM_SCHEMA),
-        ("merge_quick_items", merge_quick_items, MERGE_QUICK_ITEMS_SCHEMA),
-    ):
-        hass.services.async_register(
-            DOMAIN, quick_name, quick_handler, schema=quick_schema
-        )
-    hass.services.async_register(
-        DOMAIN, "set_active_list", set_active_list, schema=SET_ACTIVE_LIST_SCHEMA
-    )
-    hass.services.async_register(
-        DOMAIN,
-        "create_list",
-        create_list,
-        schema=CREATE_LIST_SCHEMA,
-        supports_response=SupportsResponse.OPTIONAL,
-    )
-    hass.services.async_register(
-        DOMAIN,
-        "delete_list",
-        delete_list,
-        schema=DELETE_LIST_SCHEMA,
-        supports_response=SupportsResponse.OPTIONAL,
-    )
+    for spec in SERVICES:
+        _register(hass, spec)
 
 
 def async_sync_ai_services(hass: HomeAssistant, enabled: bool) -> None:
     """Register the AI services while the AI module is on, remove them when off."""
-
-    async def ai_extract_items(call: ServiceCall) -> dict[str, Any]:
-        coordinator = _coordinator(hass)
-        target = coordinator.resolve_list(call.data.get("entity_id"))
-        return await ai.async_extract_items(
-            hass,
-            coordinator.config_entry,
-            coordinator.ai_monitor,
-            target,
-            call.data["text"],
-            call.context,
-        )
-
-    for name in AI_SERVICES:
+    for spec in AI_SERVICES:
         if not enabled:
-            hass.services.async_remove(DOMAIN, name)
-        elif not hass.services.has_service(DOMAIN, name):
-            hass.services.async_register(
-                DOMAIN,
-                name,
-                ai_extract_items,
-                schema=AI_EXTRACT_ITEMS_SCHEMA,
-                supports_response=SupportsResponse.ONLY,
-            )
+            hass.services.async_remove(DOMAIN, spec.name)
+        elif not hass.services.has_service(DOMAIN, spec.name):
+            _register(hass, spec)

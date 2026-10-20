@@ -13,6 +13,7 @@ from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
+from . import shopping
 from .ai_monitor import AiMonitor
 from .const import (
     DOMAIN,
@@ -182,10 +183,41 @@ class HandlaCoordinator(DataUpdateCoordinator[HandlaData]):
 
     # --- usage statistics ----------------------------------------------------
 
+    async def async_add_item(
+        self,
+        entity_id: str | None,
+        text: str,
+        confirm_duplicate: bool,
+        context: Context,
+    ) -> dict[str, Any]:
+        """Add an item to a list (the active one by default) and announce it."""
+        target = self.resolve_list(entity_id)
+        result = await shopping.async_add_item(
+            self.hass, target, text, confirm_duplicate
+        )
+        if result["added"]:
+            await self.async_item_added(result, context.user_id, context)
+        return result
+
     async def async_item_added(
         self, result: dict[str, str], user_id: str | None, context: Context
     ) -> None:
-        """An item was added through Handla: count it, announce it, notify others."""
+        """An item was added through Handla: count it, announce it, notify others.
+
+        The item is already on the list, so a failure here is logged and never
+        raised: reporting it as a failed add would make people add the item twice.
+        """
+        try:
+            await self._announce_item(result, user_id, context)
+        except Exception:
+            _LOGGER.exception(
+                "The item %r was added, but counting or announcing it failed",
+                result.get("item"),
+            )
+
+    async def _announce_item(
+        self, result: dict[str, str], user_id: str | None, context: Context
+    ) -> None:
         item = result["item"]
         self.usage.record(parse_item_text(item).name)
         self.async_update_listeners()
@@ -223,8 +255,12 @@ class HandlaCoordinator(DataUpdateCoordinator[HandlaData]):
         await self._set_preferred(offline_id)
 
     async def _set_preferred(self, offline_id: str) -> None:
+        """Use this list now; if it cannot be saved it is forgotten at a restart."""
         self._preferred = offline_id
-        await self._store.async_save({"offline_id": offline_id})
+        try:
+            await self._store.async_save({"offline_id": offline_id})
+        except OSError as err:
+            _LOGGER.warning("Could not save the active list: %s", err)
         self._recompute()
 
     def resolve_list(self, entity_id: str | None) -> ListInfo:

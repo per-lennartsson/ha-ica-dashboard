@@ -1,6 +1,7 @@
 """Tests for how the coordinator derives lists and keeps the active list."""
 
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 from homeassistant.core import HomeAssistant
@@ -236,3 +237,25 @@ async def test_manual_refresh_recomputes(
     await coordinator.async_refresh()
 
     assert [i.offline_id for i in coordinator.data.lists] == ["M-1"]
+
+
+async def test_a_failing_save_still_changes_the_active_list_and_is_logged(
+    hass: HomeAssistant,
+    ica_dependency: IcaConfigure,
+    fake_ica: FakeIca,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    ica_dependency()
+    fake_ica.add_list("Veckan", "L-1")
+    second = fake_ica.add_list("Helgen", "L-2")
+    entry = await setup_handla(hass)
+    coordinator = entry.runtime_data
+
+    with patch.object(coordinator._store, "async_save", side_effect=OSError("full")):
+        await hass.services.async_call(
+            DOMAIN, "set_active_list", {"entity_id": second}, blocking=True
+        )
+
+    assert coordinator.data.active is not None
+    assert coordinator.data.active.entity_id == second
+    assert "Could not save the active list: full" in caplog.text

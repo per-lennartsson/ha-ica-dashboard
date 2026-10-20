@@ -264,7 +264,8 @@ export class HandlaItems extends LitElement {
         else stop();
       })
       .catch((err: unknown) => {
-        if (generation === this._generation) this._loadError = errorMessage(err);
+        if (generation === this._generation)
+          this._loadError = errorMessage(err, this.hass?.language);
       });
   }
 
@@ -333,9 +334,9 @@ export class HandlaItems extends LitElement {
       const result = await addItem(hass, head.entityId, head.text, confirmDuplicate);
       if (result.added) this._queue = this._queue.slice(1);
       else if (result.duplicate) this._duplicate = { text: head.text };
-      else this._addFailure = { text: head.text, message: errorMessage(null) };
+      else this._addFailure = { text: head.text, message: errorMessage(null, this.hass?.language) };
     } catch (err) {
-      this._addFailure = { text: head.text, message: errorMessage(err) };
+      this._addFailure = { text: head.text, message: errorMessage(err, this.hass?.language) };
     }
   }
 
@@ -377,7 +378,7 @@ export class HandlaItems extends LitElement {
     try {
       await action();
     } catch (err) {
-      this._actionError = errorMessage(err);
+      this._actionError = errorMessage(err, this.hass?.language);
     } finally {
       const rest = new Set(this._busyUids);
       rest.delete(uid);
@@ -407,7 +408,7 @@ export class HandlaItems extends LitElement {
     try {
       await clearTicked(hass, list.entityId);
     } catch (err) {
-      this._actionError = errorMessage(err);
+      this._actionError = errorMessage(err, this.hass?.language);
     } finally {
       this._clearing = false;
     }

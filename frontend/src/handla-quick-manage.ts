@@ -177,7 +177,7 @@ export class HandlaQuickManage extends LitElement {
       this._loadError = null;
       this._selected = new Set([...this._selected].filter((name) => names.has(name)));
     } catch (err) {
-      this._loadError = errorMessage(err);
+      this._loadError = errorMessage(err, this.hass?.language);
     }
   }
 
@@ -191,7 +191,7 @@ export class HandlaQuickManage extends LitElement {
       await this._load();
       return true;
     } catch (err) {
-      this._error = errorMessage(err);
+      this._error = errorMessage(err, this.hass?.language);
       return false;
     } finally {
       this._busy = false;

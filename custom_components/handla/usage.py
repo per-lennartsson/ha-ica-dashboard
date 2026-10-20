@@ -1,5 +1,6 @@
 """Persistent usage statistics (the Home Assistant side of domain/usage.py)."""
 
+import logging
 from typing import Any
 
 from homeassistant.core import HomeAssistant
@@ -19,6 +20,8 @@ from .domain import (
     remove_entry,
     top_payload,
 )
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class UsageTracker:
@@ -65,7 +68,10 @@ class UsageTracker:
 
     async def async_flush(self) -> None:
         """Write the counts now (used when the integration unloads)."""
-        await self._store.async_save(self._data())
+        try:
+            await self._store.async_save(self._data())
+        except OSError as err:
+            _LOGGER.warning("Could not save the usage counts: %s", err)
 
     def top(self, limit: int) -> list[dict[str, Any]]:
         """The most added items as dicts with name, count and icon."""
