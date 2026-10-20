@@ -14,7 +14,7 @@ Grundarkitekturen följer principerna. Domänlogiken är ren Python, all kommuni
 
 ## Läge efter genomförda åtgärder
 
-Punkterna 1, 2, 3, 5, 7 (filtret) och 10 är åtgärdade, och undantagen i 4 och 7 (dubblettracen) är dokumenterade i CLAUDE.md. Punkt 9 (frontend) återstår, liksom 6 och 8, som är accepterade.
+Punkterna 1, 2, 3, 5, 7 (filtret) och 10 är åtgärdade, och undantagen i 4 och 7 (dubblettracen) är dokumenterade i CLAUDE.md. Punkt 9 (frontend) är åtgärdad i branchen `frontend-cleanup`: `AddQueue` är utbruten, ID-jämförelsen är en funktion och `selected` litar på integrationen. Punkterna 6 och 8 är accepterade.
 
 ## Status efter att `main` flyttade sig (läget före åtgärderna)
 

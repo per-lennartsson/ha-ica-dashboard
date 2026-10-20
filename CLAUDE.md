@@ -122,7 +122,7 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 ├── docs/                    # ica-contract.md, dev.md, usage.md, ai.md (cards, shortcut, badge), release.md, images/
 ├── .github/workflows/       # ci.yaml, release.yaml (builds card + handla.zip on a published release)
 ├── hacs.json, pyproject.toml, requirements_dev.txt, .env.example
-├── frontend/                # Lit card: src/ (index, handla-card, handla-items, handla-shortcut, handla-ai, ai, lists, items, api, navigate, storage, i18n), dev/ (mock-data preview), tests next to sources
+├── frontend/                # Lit card: src/ (index, handla-card, handla-items, add-queue, handla-shortcut, handla-ai, ai, lists, items, api, navigate, storage, i18n), dev/ (mock-data preview), tests next to sources
 ├── scripts/node.sh          # runs Node commands in Docker
 └── scripts/package-release.sh  # builds dist/handla.zip for a release (docs/release.md)
 ```
