@@ -7,12 +7,9 @@ from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.core import Context, HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 
-from . import todo_api
+from . import ai_api, todo_api
 from .ai_monitor import AiMonitor
-from .const import (
-    AI_TASK_DOMAIN,
-    DOMAIN,
-)
+from .const import DOMAIN
 from .domain import (
     MAX_TEXT_LENGTH,
     AiStatus,
@@ -66,17 +63,12 @@ async def _ask_provider(
     context: Context | None,
 ) -> Any:
     try:
-        result = await hass.services.async_call(
-            AI_TASK_DOMAIN,
-            "generate_data",
-            {
-                "entity_id": entity_id,
-                "task_name": TASK_NAME,
-                "instructions": build_instructions(text),
-                "structure": STRUCTURE,
-            },
-            blocking=True,
-            return_response=True,
+        result = await ai_api.async_generate_data(
+            hass,
+            entity_id,
+            TASK_NAME,
+            build_instructions(text),
+            structure=STRUCTURE,
             context=context,
         )
     except HomeAssistantError as err:

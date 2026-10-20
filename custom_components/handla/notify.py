@@ -1,12 +1,10 @@
 """Tell the other users when someone adds items (batched, never the adder)."""
 
 import logging
-from collections.abc import Mapping
 from datetime import datetime
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.event import async_call_later
 
 from .const import NOTIFY_DELAY
@@ -16,6 +14,7 @@ from .domain import (
     merge_items,
     recipients_to_notify,
 )
+from .notify_api import async_notify_users
 from .options import get_recipients
 from .texts import async_get_templates
 
@@ -23,24 +22,6 @@ _LOGGER = logging.getLogger(__name__)
 
 # (list entity id, list title, user id of the adder)
 type _Key = tuple[str, str, str | None]
-
-
-async def async_notify_users(
-    hass: HomeAssistant, targets: Mapping[str, str], title: str, message: str
-) -> None:
-    """Send one message through each user's notify service; one failure stops no one."""
-    for user_id, service in targets.items():
-        try:
-            await hass.services.async_call(
-                "notify",
-                service,
-                {"title": title, "message": message, "data": {"tag": "handla"}},
-                blocking=True,
-            )
-        except HomeAssistantError as err:
-            _LOGGER.warning(
-                "Could not notify user %s through notify.%s: %s", user_id, service, err
-            )
 
 
 class AddNotifier:
