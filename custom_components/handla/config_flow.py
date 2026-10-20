@@ -22,7 +22,6 @@ from homeassistant.helpers.selector import (
     SelectSelectorConfig,
 )
 
-from .ai import get_ai_config, get_health_check
 from .const import (
     AI_TASK_DOMAIN,
     CONF_AI_ENABLED,
@@ -33,7 +32,7 @@ from .const import (
 )
 from .dependency import async_check_ica
 from .domain import ai_choice_error, choose_notify_services
-from .notify import get_recipients
+from .options import get_ai_config, get_health_check, get_recipients
 from .schema import vol
 
 

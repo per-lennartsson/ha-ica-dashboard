@@ -27,6 +27,7 @@ from .domain import (
     ListInfo,
     default_list_name,
     entity_for,
+    event_data,
     event_mentions,
     parse_item_text,
     pick_active,
@@ -34,7 +35,7 @@ from .domain import (
     title_from_name,
 )
 from .events import ListsChangedWaiter
-from .notify import AddNotifier, event_data
+from .notify import AddNotifier
 from .usage import UsageTracker
 
 _LOGGER = logging.getLogger(__name__)

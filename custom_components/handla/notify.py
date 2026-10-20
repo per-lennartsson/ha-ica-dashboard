@@ -3,32 +3,20 @@
 import logging
 from collections.abc import Mapping
 from datetime import datetime
-from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.event import async_call_later
 
-from .const import CONF_RECIPIENTS, NOTIFY_DELAY
+from .const import NOTIFY_DELAY
 from .domain import build_message, merge_items, recipients_to_notify
+from .options import get_recipients
 
 _LOGGER = logging.getLogger(__name__)
 
 # (list entity id, list title, user id of the adder)
 type _Key = tuple[str, str, str | None]
-
-
-def get_recipients(entry: ConfigEntry) -> dict[str, str]:
-    """The configured {user_id: notify service}; malformed options are ignored."""
-    raw = entry.options.get(CONF_RECIPIENTS)
-    if not isinstance(raw, Mapping):
-        return {}
-    return {
-        str(user_id): service
-        for user_id, service in raw.items()
-        if isinstance(service, str) and service
-    }
 
 
 async def async_notify_users(
@@ -102,20 +90,3 @@ class AddNotifier:
             return None
         user = await self._hass.auth.async_get_user(user_id)
         return user.name if user else None
-
-
-def event_data(
-    list_entity_id: str,
-    list_title: str,
-    item: str,
-    user_id: str | None,
-    user_name: str | None,
-) -> dict[str, Any]:
-    """Payload of the `handla_item_added` event."""
-    return {
-        "entity_id": list_entity_id,
-        "list_title": list_title,
-        "item": item,
-        "user_id": user_id,
-        "user_name": user_name,
-    }

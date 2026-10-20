@@ -1,6 +1,6 @@
 """The optional AI module's switch and provider, read from the config entry."""
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_UNAVAILABLE
@@ -8,11 +8,9 @@ from homeassistant.core import Context, HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 
 from . import todo_api
+from .ai_monitor import AiMonitor
 from .const import (
     AI_TASK_DOMAIN,
-    CONF_AI_ENABLED,
-    CONF_AI_ENTITY,
-    CONF_AI_HEALTH_CHECK,
     DOMAIN,
 )
 from .domain import (
@@ -25,23 +23,7 @@ from .domain import (
     suggestions_payload,
 )
 from .domain.extraction import ITEMS_KEY, STRUCTURE, TASK_NAME
-
-if TYPE_CHECKING:
-    from .ai_monitor import AiMonitor
-
-
-def get_ai_config(entry: ConfigEntry) -> tuple[bool, str | None]:
-    """(enabled, ai_task entity id). Off unless explicitly on; bad data is off."""
-    enabled = entry.options.get(CONF_AI_ENABLED) is True
-    entity_id = entry.options.get(CONF_AI_ENTITY)
-    if not isinstance(entity_id, str) or not entity_id:
-        return enabled, None
-    return enabled, entity_id
-
-
-def get_health_check(entry: ConfigEntry) -> bool:
-    """Whether the daily health check is on (off unless explicitly on)."""
-    return entry.options.get(CONF_AI_HEALTH_CHECK) is True
+from .options import get_ai_config
 
 
 def provider_ready(hass: HomeAssistant, entity_id: str | None) -> bool:
