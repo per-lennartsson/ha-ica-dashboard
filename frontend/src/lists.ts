@@ -64,7 +64,8 @@ export function readStatus(hass: HomeAssistant | undefined): StatusState {
   return { status, detail: typeof detail === "string" && detail !== "" ? detail : null };
 }
 
-const same = (a: string | null | undefined, b: string | null | undefined): boolean =>
+/** ICA returns list IDs in upper case; compare them case-insensitively. */
+export const sameListId = (a: string | null | undefined, b: string | null | undefined): boolean =>
   a != null && b != null && a.toLowerCase() === b.toLowerCase();
 
 /**
@@ -77,7 +78,7 @@ export function resolveSelected(
   active: string | null,
 ): ListInfo | null {
   for (const wanted of [stored, active]) {
-    const found = lists.find((item) => same(item.offlineId, wanted));
+    const found = lists.find((item) => sameListId(item.offlineId, wanted));
     if (found) return found;
   }
   return lists[0] ?? null;
