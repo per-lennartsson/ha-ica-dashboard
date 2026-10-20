@@ -9,7 +9,8 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.util import dt as dt_util
 
-from .const import AI_HEALTH_INTERVAL, AI_TASK_DOMAIN
+from . import ai_api
+from .const import AI_HEALTH_INTERVAL
 from .domain import (
     AI_FAILURE_KEYS,
     AiHealth,
@@ -17,7 +18,7 @@ from .domain import (
     record_failure,
     record_success,
 )
-from .notify import async_notify_users
+from .notify_api import async_notify_users
 from .options import get_ai_config, get_health_check, get_recipients
 from .texts import async_get_templates
 
@@ -84,16 +85,8 @@ class AiMonitor:
         if entity_id is None:
             return False
         try:
-            await self._hass.services.async_call(
-                AI_TASK_DOMAIN,
-                "generate_data",
-                {
-                    "entity_id": entity_id,
-                    "task_name": HEALTH_TASK_NAME,
-                    "instructions": HEALTH_INSTRUCTIONS,
-                },
-                blocking=True,
-                return_response=True,
+            await ai_api.async_generate_data(
+                self._hass, entity_id, HEALTH_TASK_NAME, HEALTH_INSTRUCTIONS
             )
         except HomeAssistantError as err:
             await self.async_record_failure(str(err))

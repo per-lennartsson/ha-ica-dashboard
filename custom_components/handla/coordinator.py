@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any
 
-from homeassistant.config_entries import ConfigEntry, ConfigEntryState
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Context, Event, HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import entity_registry as er
@@ -13,7 +13,7 @@ from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
-from . import shopping
+from . import ica_api, shopping
 from .ai_monitor import AiMonitor
 from .const import (
     DOMAIN,
@@ -34,6 +34,7 @@ from .domain import (
     same_id,
     title_from_name,
 )
+from .errors import failure
 from .events import ListsChangedWaiter
 from .notify import AddNotifier
 from .usage import UsageTracker
@@ -287,14 +288,6 @@ class HandlaCoordinator(DataUpdateCoordinator[HandlaData]):
 
     # --- create / delete -----------------------------------------------------
 
-    def _ica_entry_id(self) -> str:
-        for entry in self.hass.config_entries.async_entries(ICA_DOMAIN):
-            if entry.state is ConfigEntryState.LOADED:
-                return entry.entry_id
-        raise HomeAssistantError(
-            translation_domain=DOMAIN, translation_key="ica_unavailable"
-        )
-
     def _begin(self, status: Status) -> None:
         """Mark busy, or refuse so nobody can start two operations at once."""
         if self.status in (Status.CREATING, Status.DELETING):
@@ -320,19 +313,21 @@ class HandlaCoordinator(DataUpdateCoordinator[HandlaData]):
         """Create an ICA list, wait for it to appear, optionally make it active."""
         self._begin(Status.CREATING)
         try:
-            ica_entry_id = self._ica_entry_id()
+            ica_entry_id = ica_api.loaded_entry_id(self.hass)
             name = (title or "").strip() or self.suggest_list_name()
             async with ListsChangedWaiter(self.hass) as waiter:
-                offline_id = await self._call_create(ica_entry_id, name, comment)
+                offline_id = await ica_api.async_create_list(
+                    self.hass, ica_entry_id, name, comment
+                )
                 event = await waiter.wait_for(
                     lambda e: event_mentions(e, "created", offline_id),
                     LISTS_CHANGED_TIMEOUT,
                 )
             entity_id = entity_for(event, offline_id) if event else None
             if event is None:
-                raise _failure("create_timeout", name=name)
+                raise failure("create_timeout", name=name)
             if entity_id is None:
-                raise _failure("create_failed", name=name, error="list did not appear")
+                raise failure("create_failed", name=name, error="list did not appear")
             self._recompute()
             created = self._list_by_entity(entity_id)
             if set_active:
@@ -347,61 +342,22 @@ class HandlaCoordinator(DataUpdateCoordinator[HandlaData]):
             "title": created.title,
         }
 
-    async def _call_create(self, ica_entry_id: str, name: str, comment: str) -> str:
-        try:
-            response = await self.hass.services.async_call(
-                ICA_DOMAIN,
-                "create_shopping_list",
-                {
-                    "integration": [ica_entry_id],
-                    "title": name,
-                    "comment": comment,
-                    "track": True,
-                },
-                blocking=True,
-                return_response=True,
-            )
-        except HomeAssistantError as err:
-            raise _failure("create_failed", name=name, error=str(err)) from err
-        offline_id = (response or {}).get("offline_id")
-        if not offline_id:
-            raise _failure("create_failed", name=name, error="no list id returned")
-        return str(offline_id)
-
     async def async_delete_list(self, entity_id: str) -> dict[str, str]:
         """Delete an ICA list and wait until ha-ica-todo has reloaded."""
         target = self._list_by_entity(entity_id)
         self._begin(Status.DELETING)
         try:
             async with ListsChangedWaiter(self.hass) as waiter:
-                try:
-                    await self.hass.services.async_call(
-                        ICA_DOMAIN,
-                        "delete_shopping_list",
-                        {"entity_id": entity_id},
-                        blocking=True,
-                    )
-                except HomeAssistantError as err:
-                    raise _failure(
-                        "delete_failed", name=target.title, error=str(err)
-                    ) from err
+                await ica_api.async_delete_list(self.hass, entity_id, target.title)
                 event = await waiter.wait_for(
                     lambda e: event_mentions(e, "deleted", target.offline_id),
                     LISTS_CHANGED_TIMEOUT,
                 )
             if event is None:
-                raise _failure("delete_timeout", name=target.title)
+                raise failure("delete_timeout", name=target.title)
             self._recompute()
         except HomeAssistantError as err:
             self._set_status(Status.ERROR, str(err))
             raise
         self._set_status(Status.IDLE)
         return {"entity_id": entity_id, "offline_id": target.offline_id}
-
-
-def _failure(key: str, **placeholders: str) -> HomeAssistantError:
-    return HomeAssistantError(
-        translation_domain=DOMAIN,
-        translation_key=key,
-        translation_placeholders=placeholders,
-    )
