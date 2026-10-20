@@ -213,7 +213,7 @@ export class HandlaAi extends LitElement {
       this._error = suggestions.length === 0 ? "none" : null;
       this._phase = suggestions.length === 0 ? "paste" : "review";
     } catch (err) {
-      this._error = errorMessage(err);
+      this._error = errorMessage(err, this.hass?.language);
       this._phase = "paste";
     }
   }
@@ -249,11 +249,11 @@ export class HandlaAi extends LitElement {
       try {
         // The user has reviewed the item, so an existing one is added again on purpose
         const result = await addItem(hass, list.entityId, row.text.trim(), true);
-        if (!result.added) throw new Error(errorMessage(null));
+        if (!result.added) throw new Error(errorMessage(null, this.hass?.language));
         this._rows = this._rows.filter((other) => other.id !== row.id);
         added += 1;
       } catch (err) {
-        this._update(row.id, { error: errorMessage(err) });
+        this._update(row.id, { error: errorMessage(err, this.hass?.language) });
       }
     }
     this._finishAdding(added);

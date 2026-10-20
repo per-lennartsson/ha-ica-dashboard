@@ -234,3 +234,33 @@ async def test_a_failing_resource_delete_is_logged(
         await async_unregister_resource(hass)
 
     assert "locked" in caplog.text
+
+
+async def test_unreadable_resources_fall_back_to_the_extra_script(
+    hass: HomeAssistant,
+    card_file: Path,
+    web_server: MagicMock,
+    extra_js: MagicMock,
+    lovelace: ResourceStorageCollection,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    with patch.object(lovelace, "async_get_info", side_effect=OSError("unreadable")):
+        assert await _register(hass, card_file, "0.1.0")
+
+    assert "unreadable" in caplog.text
+    extra_js.assert_called_once_with(hass, f"{CARD_URL}?v=0.1.0")
+
+
+async def test_unreadable_resources_do_not_stop_removal(
+    hass: HomeAssistant,
+    card_file: Path,
+    web_server: MagicMock,
+    extra_js: MagicMock,
+    lovelace: ResourceStorageCollection,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    await _register(hass, card_file, "0.1.0")
+    with patch.object(lovelace, "async_get_info", side_effect=OSError("unreadable")):
+        await async_unregister_resource(hass)
+
+    assert "Could not remove the Handla card resource" in caplog.text

@@ -723,7 +723,7 @@ describe("when adding fails", () => {
 
     await add(el, "ananas");
 
-    expect(testid(el, "add-failed")?.textContent).toContain("Unknown error");
+    expect(testid(el, "add-failed")?.textContent).toContain("Okänt fel");
   });
 });
 

@@ -1,6 +1,7 @@
 """Tests for usage statistics in the integration: counting, storage, sensor, service."""
 
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 from homeassistant.core import HomeAssistant, State
@@ -316,3 +317,14 @@ async def test_manage_changes_and_aliases_are_saved(
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     assert [i["name"] for i in await _top(hass)] == ["Disktrasa", "Tomater"]
+
+
+async def test_a_failing_save_when_unloading_is_logged(
+    hass: HomeAssistant, active_list: str, caplog: pytest.LogCaptureFixture
+) -> None:
+    entry = await setup_handla(hass)
+    tracker = entry.runtime_data.usage
+    with patch.object(tracker._store, "async_save", side_effect=OSError("disk full")):
+        await tracker.async_flush()
+
+    assert "Could not save the usage counts: disk full" in caplog.text

@@ -80,7 +80,12 @@ class AddNotifier:
             self._cancel = None
         pending, self._pending = self._pending, {}
         for (_entity_id, list_title, adder_id), items in pending.items():
-            await self._send(list_title, adder_id, items)
+            try:
+                await self._send(list_title, adder_id, items)
+            except Exception:
+                _LOGGER.exception(
+                    "Could not notify about the items %s added to %s", items, list_title
+                )
 
     async def _send(
         self, list_title: str, adder_id: str | None, items: list[str]

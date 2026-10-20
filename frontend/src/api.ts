@@ -1,6 +1,7 @@
 /** Calls to the Handla services. Errors are thrown as Error with a readable message. */
 
 import { parseSuggestions, type Suggestion } from "./ai";
+import { localize } from "./i18n";
 import { parseQuickItems, type QuickItem } from "./items";
 import type { HomeAssistant } from "./types";
 
@@ -17,13 +18,14 @@ export function responseOf(result: unknown): Record<string, unknown> {
   return {};
 }
 
-export function errorMessage(err: unknown): string {
+/** A readable message for any thrown value; `language` picks the fallback's language. */
+export function errorMessage(err: unknown, language?: string): string {
   if (err instanceof Error && err.message) return err.message;
   if (typeof err === "object" && err !== null && "message" in err) {
     const message = (err as { message: unknown }).message;
     if (typeof message === "string" && message) return message;
   }
-  return typeof err === "string" && err ? err : "Unknown error";
+  return typeof err === "string" && err ? err : localize(language, "error.unknown");
 }
 
 async function call(
