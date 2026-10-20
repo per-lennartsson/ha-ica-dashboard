@@ -4,7 +4,14 @@ import logging
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import Context, Event, HomeAssistant, callback
+from homeassistant.const import EVENT_STATE_CHANGED
+from homeassistant.core import (
+    Context,
+    Event,
+    EventStateChangedData,
+    HomeAssistant,
+    callback,
+)
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -69,7 +76,11 @@ class HandlaCoordinator(DataUpdateCoordinator[HandlaData]):
             )
         )
         entry.async_on_unload(
-            self.hass.bus.async_listen("state_changed", self._on_state_event)
+            self.hass.bus.async_listen(
+                EVENT_STATE_CHANGED,
+                self._on_state_event,
+                event_filter=self._is_todo_event,
+            )
         )
         entry.async_on_unload(
             self.hass.bus.async_listen(ICA_LISTS_CHANGED, self._on_lists_changed)
@@ -100,12 +111,15 @@ class HandlaCoordinator(DataUpdateCoordinator[HandlaData]):
         if str(event.data.get("entity_id", "")).startswith("todo."):
             self.recompute()
 
+    @staticmethod
     @callback
-    def _on_state_event(self, event: Event) -> None:
-        entity_id: str = event.data["entity_id"]
-        if not entity_id.startswith("todo."):
-            return
-        entry = er.async_get(self.hass).async_get(entity_id)
+    def _is_todo_event(event_data: EventStateChangedData) -> bool:
+        """Only todo entities matter; this keeps other state changes out of the loop."""
+        return event_data["entity_id"].startswith("todo.")
+
+    @callback
+    def _on_state_event(self, event: Event[EventStateChangedData]) -> None:
+        entry = er.async_get(self.hass).async_get(event.data["entity_id"])
         if entry is not None and entry.platform == ICA_DOMAIN:
             self.recompute()
 

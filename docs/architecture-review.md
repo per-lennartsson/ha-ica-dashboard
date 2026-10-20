@@ -12,7 +12,11 @@ Grundarkitekturen följer principerna. Domänlogiken är ren Python, all kommuni
 3. `HandlaCoordinator` har för många ansvar.
 4. Några felhanteringar loggar eller sväljer fel i stället för att visa dem för användaren.
 
-## Status efter att `main` flyttade sig
+## Läge efter genomförda åtgärder
+
+Punkterna 1, 2, 3, 5, 7 (filtret) och 10 är åtgärdade, och undantagen i 4 och 7 (dubblettracen) är dokumenterade i CLAUDE.md. Punkt 9 (frontend) återstår, liksom 6 och 8, som är accepterade.
+
+## Status efter att `main` flyttade sig (läget före åtgärderna)
 
 Granskningen skrevs mot `main` 670cdc3. Därefter mergades `7c8181b` (indatagränser, AI-prompt) och `444f7c5` (felhantering efter bieffekter, slimmade tjänster). Så här ser läget ut nu:
 
