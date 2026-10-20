@@ -13,9 +13,10 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .ai import current_ai_status
 from .const import QUICK_ADD_LIMIT
-from .coordinator import HandlaConfigEntry, HandlaCoordinator, Status
+from .coordinator import HandlaConfigEntry, HandlaCoordinator
 from .domain import AiStatus, lists_payload, quick_add_payload
 from .entity import HandlaEntity
+from .list_operations import Status
 from .options import get_ai_config
 
 

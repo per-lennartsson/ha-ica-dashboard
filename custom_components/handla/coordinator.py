@@ -1,35 +1,28 @@
 """Event-driven coordinator: ICA lists, the active list and create/delete flows."""
 
 import logging
-from enum import StrEnum
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Context, Event, HomeAssistant, callback
-from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from homeassistant.util import dt as dt_util
 
-from . import ica_api, shopping
+from . import shopping
 from .ai_monitor import AiMonitor
 from .const import (
     DOMAIN,
     ICA_DOMAIN,
     ICA_LISTS_CHANGED,
-    LISTS_CHANGED_TIMEOUT,
 )
 from .domain import (
     ListInfo,
-    default_list_name,
-    entity_for,
-    event_mentions,
     pick_active,
     same_id,
 )
-from .errors import failure
-from .events import ListsChangedWaiter
 from .item_announcer import ItemAnnouncer
+from .list_operations import ListOperations, Status
 from .lists_registry import ActiveListStore, HandlaData, read_lists
 from .notify import AddNotifier
 from .usage import UsageTracker
@@ -37,15 +30,6 @@ from .usage import UsageTracker
 _LOGGER = logging.getLogger(__name__)
 
 type HandlaConfigEntry = ConfigEntry[HandlaCoordinator]
-
-
-class Status(StrEnum):
-    """What the integration is doing; shown by the status sensor."""
-
-    IDLE = "idle"
-    CREATING = "creating"
-    DELETING = "deleting"
-    ERROR = "error"
 
 
 class HandlaCoordinator(DataUpdateCoordinator[HandlaData]):
@@ -67,8 +51,7 @@ class HandlaCoordinator(DataUpdateCoordinator[HandlaData]):
         self._announcer = ItemAnnouncer(
             hass, self.usage, self.notifier, self.async_update_listeners
         )
-        self.status = Status.IDLE
-        self.status_detail: str | None = None
+        self._operations = ListOperations(self)
 
     async def async_start(self) -> None:
         """Load the saved active list, compute data and start listening."""
@@ -107,7 +90,7 @@ class HandlaCoordinator(DataUpdateCoordinator[HandlaData]):
         return HandlaData(tuple(lists), active)
 
     @callback
-    def _recompute(self) -> None:
+    def recompute(self) -> None:
         data = self._compute()
         if data != self.data:
             self.async_set_updated_data(data)
@@ -115,7 +98,7 @@ class HandlaCoordinator(DataUpdateCoordinator[HandlaData]):
     @callback
     def _on_registry_event(self, event: Event[Any]) -> None:
         if str(event.data.get("entity_id", "")).startswith("todo."):
-            self._recompute()
+            self.recompute()
 
     @callback
     def _on_state_event(self, event: Event) -> None:
@@ -124,11 +107,11 @@ class HandlaCoordinator(DataUpdateCoordinator[HandlaData]):
             return
         entry = er.async_get(self.hass).async_get(entity_id)
         if entry is not None and entry.platform == ICA_DOMAIN:
-            self._recompute()
+            self.recompute()
 
     @callback
     def _on_lists_changed(self, event: Event) -> None:
-        self._recompute()
+        self.recompute()
 
     # --- items ---------------------------------------------------------------
 
@@ -152,8 +135,8 @@ class HandlaCoordinator(DataUpdateCoordinator[HandlaData]):
 
     async def async_set_active(self, entity_id: str) -> None:
         """Make the list behind `entity_id` the household's active list."""
-        target = self._list_by_entity(entity_id)
-        await self._set_preferred(target.offline_id)
+        target = self.list_by_entity(entity_id)
+        await self.async_set_preferred(target.offline_id)
 
     async def async_set_active_by_offline_id(self, offline_id: str) -> None:
         """Make the list with this ICA ID the active list (must exist)."""
@@ -163,16 +146,16 @@ class HandlaCoordinator(DataUpdateCoordinator[HandlaData]):
                 translation_key="unknown_list",
                 translation_placeholders={"entity_id": offline_id},
             )
-        await self._set_preferred(offline_id)
+        await self.async_set_preferred(offline_id)
 
-    async def _set_preferred(self, offline_id: str) -> None:
+    async def async_set_preferred(self, offline_id: str) -> None:
         await self._active.async_save(offline_id)
-        self._recompute()
+        self.recompute()
 
     def resolve_list(self, entity_id: str | None) -> ListInfo:
         """The list a service call refers to: the given one, else the active one."""
         if entity_id:
-            return self._list_by_entity(entity_id)
+            return self.list_by_entity(entity_id)
         active = self.data.active
         if active is None:
             raise ServiceValidationError(
@@ -180,7 +163,7 @@ class HandlaCoordinator(DataUpdateCoordinator[HandlaData]):
             )
         return active
 
-    def _list_by_entity(self, entity_id: str) -> ListInfo:
+    def list_by_entity(self, entity_id: str) -> ListInfo:
         for item in self.data.lists:
             if item.entity_id == entity_id:
                 return item
@@ -192,76 +175,26 @@ class HandlaCoordinator(DataUpdateCoordinator[HandlaData]):
 
     # --- create / delete -----------------------------------------------------
 
-    def _begin(self, status: Status) -> None:
-        """Mark busy, or refuse so nobody can start two operations at once."""
-        if self.status in (Status.CREATING, Status.DELETING):
-            raise ServiceValidationError(
-                translation_domain=DOMAIN, translation_key="busy"
-            )
-        self._set_status(status)
+    @property
+    def status(self) -> Status:
+        """What list operations are doing right now."""
+        return self._operations.status
 
-    def _set_status(self, status: Status, detail: str | None = None) -> None:
-        self.status = status
-        self.status_detail = detail
-        self.async_update_listeners()
+    @property
+    def status_detail(self) -> str | None:
+        """The error of the last failed operation, if any."""
+        return self._operations.detail
 
     def suggest_list_name(self) -> str:
         """ "Att handla <dag> <månad>", numbered if a list with that name exists."""
-        return default_list_name(
-            dt_util.now().date(), [item.title for item in self.data.lists]
-        )
+        return self._operations.suggest_list_name()
 
     async def async_create_list(
         self, title: str | None, comment: str, set_active: bool
     ) -> dict[str, str]:
         """Create an ICA list, wait for it to appear, optionally make it active."""
-        self._begin(Status.CREATING)
-        try:
-            ica_entry_id = ica_api.loaded_entry_id(self.hass)
-            name = (title or "").strip() or self.suggest_list_name()
-            async with ListsChangedWaiter(self.hass) as waiter:
-                offline_id = await ica_api.async_create_list(
-                    self.hass, ica_entry_id, name, comment
-                )
-                event = await waiter.wait_for(
-                    lambda e: event_mentions(e, "created", offline_id),
-                    LISTS_CHANGED_TIMEOUT,
-                )
-            entity_id = entity_for(event, offline_id) if event else None
-            if event is None:
-                raise failure("create_timeout", name=name)
-            if entity_id is None:
-                raise failure("create_failed", name=name, error="list did not appear")
-            self._recompute()
-            created = self._list_by_entity(entity_id)
-            if set_active:
-                await self._set_preferred(created.offline_id)
-        except HomeAssistantError as err:
-            self._set_status(Status.ERROR, str(err))
-            raise
-        self._set_status(Status.IDLE)
-        return {
-            "entity_id": created.entity_id,
-            "offline_id": created.offline_id,
-            "title": created.title,
-        }
+        return await self._operations.async_create(title, comment, set_active)
 
     async def async_delete_list(self, entity_id: str) -> dict[str, str]:
         """Delete an ICA list and wait until ha-ica-todo has reloaded."""
-        target = self._list_by_entity(entity_id)
-        self._begin(Status.DELETING)
-        try:
-            async with ListsChangedWaiter(self.hass) as waiter:
-                await ica_api.async_delete_list(self.hass, entity_id, target.title)
-                event = await waiter.wait_for(
-                    lambda e: event_mentions(e, "deleted", target.offline_id),
-                    LISTS_CHANGED_TIMEOUT,
-                )
-            if event is None:
-                raise failure("delete_timeout", name=target.title)
-            self._recompute()
-        except HomeAssistantError as err:
-            self._set_status(Status.ERROR, str(err))
-            raise
-        self._set_status(Status.IDLE)
-        return {"entity_id": entity_id, "offline_id": target.offline_id}
+        return await self._operations.async_delete(entity_id)
