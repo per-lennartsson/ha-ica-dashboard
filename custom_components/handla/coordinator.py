@@ -15,7 +15,6 @@ from . import ica_api, shopping
 from .ai_monitor import AiMonitor
 from .const import (
     DOMAIN,
-    EVENT_ITEM_ADDED,
     ICA_DOMAIN,
     ICA_LISTS_CHANGED,
     LISTS_CHANGED_TIMEOUT,
@@ -24,14 +23,13 @@ from .domain import (
     ListInfo,
     default_list_name,
     entity_for,
-    event_data,
     event_mentions,
-    parse_item_text,
     pick_active,
     same_id,
 )
 from .errors import failure
 from .events import ListsChangedWaiter
+from .item_announcer import ItemAnnouncer
 from .lists_registry import ActiveListStore, HandlaData, read_lists
 from .notify import AddNotifier
 from .usage import UsageTracker
@@ -66,6 +64,9 @@ class HandlaCoordinator(DataUpdateCoordinator[HandlaData]):
         self.usage = UsageTracker(hass)
         self.notifier = AddNotifier(hass, entry)
         self.ai_monitor = AiMonitor(hass, entry)
+        self._announcer = ItemAnnouncer(
+            hass, self.usage, self.notifier, self.async_update_listeners
+        )
         self.status = Status.IDLE
         self.status_detail: str | None = None
 
@@ -129,7 +130,7 @@ class HandlaCoordinator(DataUpdateCoordinator[HandlaData]):
     def _on_lists_changed(self, event: Event) -> None:
         self._recompute()
 
-    # --- usage statistics ----------------------------------------------------
+    # --- items ---------------------------------------------------------------
 
     async def async_add_item(
         self,
@@ -144,46 +145,8 @@ class HandlaCoordinator(DataUpdateCoordinator[HandlaData]):
             self.hass, target, text, confirm_duplicate
         )
         if result["added"]:
-            await self.async_item_added(result, context.user_id, context)
+            await self._announcer.async_added(result, context.user_id, context)
         return result
-
-    async def async_item_added(
-        self, result: dict[str, str], user_id: str | None, context: Context
-    ) -> None:
-        """An item was added through Handla: count it, announce it, notify others.
-
-        The item is already on the list, so a failure here is logged and never
-        raised: reporting it as a failed add would make people add the item twice.
-        """
-        try:
-            await self._announce_item(result, user_id, context)
-        except Exception:
-            _LOGGER.exception(
-                "The item %r was added, but counting or announcing it failed",
-                result.get("item"),
-            )
-
-    async def _announce_item(
-        self, result: dict[str, str], user_id: str | None, context: Context
-    ) -> None:
-        item = result["item"]
-        self.usage.record(parse_item_text(item).name)
-        self.async_update_listeners()
-        user = await self.hass.auth.async_get_user(user_id) if user_id else None
-        self.hass.bus.async_fire(
-            EVENT_ITEM_ADDED,
-            event_data(
-                result["entity_id"],
-                result["list_title"],
-                item,
-                user_id,
-                user.name if user else None,
-            ),
-            context=context,
-        )
-        self.notifier.item_added(
-            result["entity_id"], result["list_title"], user_id, item
-        )
 
     # --- active list ---------------------------------------------------------
 
