@@ -10,8 +10,14 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.event import async_call_later
 
 from .const import NOTIFY_DELAY
-from .domain import build_message, merge_items, recipients_to_notify
+from .domain import (
+    NOTIFY_KEYS,
+    build_message,
+    merge_items,
+    recipients_to_notify,
+)
 from .options import get_recipients
+from .texts import async_get_templates
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -79,9 +85,8 @@ class AddNotifier:
         self, list_title: str, adder_id: str | None, items: list[str]
     ) -> None:
         adder_name = await self._user_name(adder_id)
-        title, message = build_message(
-            self._hass.config.language, adder_name, list_title, items
-        )
+        templates = await async_get_templates(self._hass, NOTIFY_KEYS)
+        title, message = build_message(templates, adder_name, list_title, items)
         targets = recipients_to_notify(get_recipients(self._entry), adder_id)
         await async_notify_users(self._hass, targets, title, message)
 

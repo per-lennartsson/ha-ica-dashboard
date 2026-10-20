@@ -10,9 +10,16 @@ from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.util import dt as dt_util
 
 from .const import AI_HEALTH_INTERVAL, AI_TASK_DOMAIN
-from .domain import AiHealth, build_failure_message, record_failure, record_success
+from .domain import (
+    AI_FAILURE_KEYS,
+    AiHealth,
+    build_failure_message,
+    record_failure,
+    record_success,
+)
 from .notify import async_notify_users
 from .options import get_ai_config, get_health_check, get_recipients
+from .texts import async_get_templates
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -67,7 +74,8 @@ class AiMonitor:
         if not recipients:
             _LOGGER.warning("The AI provider failed (nobody to notify): %s", error)
             return
-        title, message = build_failure_message(self._hass.config.language, error)
+        templates = await async_get_templates(self._hass, AI_FAILURE_KEYS)
+        title, message = build_failure_message(templates, error)
         await async_notify_users(self._hass, recipients, title, message)
 
     async def async_health_check(self) -> bool:

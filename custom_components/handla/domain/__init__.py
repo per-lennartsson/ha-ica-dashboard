@@ -2,6 +2,7 @@
 
 from .ai import AiStatus, ai_choice_error, ai_status
 from .ai_health import (
+    AI_FAILURE_KEYS,
     RENOTIFY_AFTER,
     AiHealth,
     build_failure_message,
@@ -30,6 +31,7 @@ from .lists import (
 from .naming import SWEDISH_MONTHS, default_list_name
 from .notify import (
     MAX_LISTED,
+    NOTIFY_KEYS,
     build_message,
     choose_notify_services,
     event_data,
@@ -58,6 +60,8 @@ from .usage import (
 from .versions import is_version_at_least, parse_version
 
 __all__ = [
+    "AI_FAILURE_KEYS",
+    "NOTIFY_KEYS",
     "RENOTIFY_AFTER",
     "AiHealth",
     "MAX_TEXT_LENGTH",

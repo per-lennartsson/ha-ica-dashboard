@@ -293,6 +293,21 @@
     },
     "quick_item_blank": {
       "message": "The item name is empty."
+    },
+    "notify_added_by": {
+      "message": "{name} added {items} to {list}"
+    },
+    "notify_added": {
+      "message": "New on {list}: {items}"
+    },
+    "notify_more": {
+      "message": "+{count} more"
+    },
+    "ai_failure_title": {
+      "message": "Handla: AI is not working"
+    },
+    "ai_failure_message": {
+      "message": "The AI provider reports an error: {error} Add from text is not available until it is fixed."
     }
   },
   "options": {

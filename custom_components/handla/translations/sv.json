@@ -293,6 +293,21 @@
     },
     "quick_item_blank": {
       "message": "Varans namn är tomt."
+    },
+    "notify_added_by": {
+      "message": "{name} lade till {items} i {list}"
+    },
+    "notify_added": {
+      "message": "Nytt på {list}: {items}"
+    },
+    "notify_more": {
+      "message": "+{count} till"
+    },
+    "ai_failure_title": {
+      "message": "Handla: AI fungerar inte"
+    },
+    "ai_failure_message": {
+      "message": "AI-leverantören svarar med fel: {error} Lägg till från text är inte tillgängligt förrän det är löst."
     }
   },
   "options": {
