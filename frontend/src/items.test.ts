@@ -173,7 +173,7 @@ describe("subscribeItems", () => {
 
   it("rejects without a connection", async () => {
     await expect(subscribeItems(hassWith({}), "todo.a", () => undefined)).rejects.toThrow(
-      "No connection",
+      "Ingen anslutning till Home Assistant",
     );
   });
 

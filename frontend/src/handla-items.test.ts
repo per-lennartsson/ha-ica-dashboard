@@ -407,7 +407,7 @@ describe("live items", () => {
   it("shows an error without a connection to Home Assistant", async () => {
     const el = await mount(makeEnv({ noConnection: true }).build());
 
-    expect(testid(el, "load-failed")?.textContent).toContain("No connection");
+    expect(testid(el, "load-failed")?.textContent).toContain("Ingen anslutning");
   });
 
   it("renders nothing without a list", async () => {

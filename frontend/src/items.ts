@@ -1,5 +1,6 @@
 /** Items on a list, quick-add buttons and the live subscription to a todo entity. */
 
+import { localize } from "./i18n";
 import type { HomeAssistant } from "./types";
 
 export const FREQUENT_ENTITY = "sensor.handla_frequent_items";
@@ -83,7 +84,7 @@ export async function subscribeItems(
   entityId: string,
   onItems: (items: TodoItem[]) => void,
 ): Promise<() => void> {
-  if (!hass.connection) throw new Error("No connection to Home Assistant");
+  if (!hass.connection) throw new Error(localize(hass.language, "error.no_connection"));
   const unsubscribe = await hass.connection.subscribeMessage(
     (message: unknown) => onItems(parseItems(message)),
     { type: "todo/item/subscribe", entity_id: entityId },
