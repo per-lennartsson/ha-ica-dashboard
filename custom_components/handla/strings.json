@@ -8,7 +8,7 @@
     },
     "abort": {
       "single_instance_allowed": "Handla is already set up. Only one instance is allowed.",
-      "ica_missing": "The ICA integration (ha-ica-todo) is not installed. Install version {minimum} or later from https://github.com/per-lennartsson/ha-ica-todo and restart Home Assistant.",
+      "ica_missing": "The ICA integration (ha-ica-todo) is not installed. Install version {minimum} or later from {url} and restart Home Assistant.",
       "ica_too_old": "The ICA integration (ha-ica-todo) version {version} is too old. Version {minimum} or later is required. Update it in HACS and restart Home Assistant.",
       "ica_not_configured": "The ICA integration (ha-ica-todo) is installed but not set up. Add it under Settings → Devices & services, then try again.",
       "ica_not_loaded": "The ICA integration (ha-ica-todo) is set up but not loaded. Check its status under Settings → Devices & services and the logs, then try again."
@@ -17,7 +17,7 @@
   "issues": {
     "ica_missing": {
       "title": "ICA integration is missing",
-      "description": "Handla needs the ICA integration (ha-ica-todo) version {minimum} or later, but it is not installed. Install it from https://github.com/per-lennartsson/ha-ica-todo and restart Home Assistant."
+      "description": "Handla needs the ICA integration (ha-ica-todo) version {minimum} or later, but it is not installed. Install it from {url} and restart Home Assistant."
     },
     "ica_too_old": {
       "title": "ICA integration is too old",
@@ -84,7 +84,7 @@
       "fields": {
         "title": {
           "name": "Title",
-          "description": "Name of the list. Defaults to \"Att handla <day> <month>\"."
+          "description": "Name of the list. Defaults to \"Att handla\" followed by today's date."
         },
         "comment": {
           "name": "Comment",

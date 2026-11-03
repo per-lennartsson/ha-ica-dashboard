@@ -8,7 +8,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.loader import IntegrationNotFound, async_get_integration
 
-from .const import DOMAIN, ICA_DOMAIN, MIN_ICA_VERSION
+from .const import DOMAIN, ICA_DOMAIN, ICA_URL, MIN_ICA_VERSION
 from .domain import is_version_at_least
 
 ISSUE_ID = "ica_dependency"
@@ -38,7 +38,11 @@ class IcaStatus:
     @property
     def placeholders(self) -> dict[str, str]:
         """Placeholders used by the translated messages."""
-        return {"version": self.version or "?", "minimum": MIN_ICA_VERSION}
+        return {
+            "version": self.version or "?",
+            "minimum": MIN_ICA_VERSION,
+            "url": ICA_URL,
+        }
 
 
 async def async_check_ica(hass: HomeAssistant) -> IcaStatus:
