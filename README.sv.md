@@ -4,6 +4,12 @@ Gemensamma inköpslistor i Home Assistant, ovanpå dina ICA-listor. Alla i hush�
 
 [English](README.md)
 
+[![CI](https://github.com/per-lennartsson/ha-ica-dashboard/actions/workflows/ci.yaml/badge.svg)](https://github.com/per-lennartsson/ha-ica-dashboard/actions/workflows/ci.yaml)
+[![Release](https://img.shields.io/github/v/release/per-lennartsson/ha-ica-dashboard?include_prereleases)](https://github.com/per-lennartsson/ha-ica-dashboard/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+**Live:** ladda ner senaste bygget från [GitHub Releases](https://github.com/per-lennartsson/ha-ica-dashboard/releases) (installeras via HACS, se Installation).
+
 <p>
   <img src="docs/images/overview.png" alt="Handla-kortet: listval, fält för att lägga till, snabbknappar, varor och avbockade varor" width="300">
   <img src="docs/images/duplicate.png" alt="Frågar innan en vara som redan finns läggs till igen" width="300">
@@ -55,7 +61,7 @@ navigation_path: /lovelace/handla
 
 Allt om korten, bricka-alternativet, entiteter, tjänster och händelser finns i [docs/usage.md](docs/usage.md) (på engelska).
 
-## Bra att veta
+## Begränsningar
 
 - När en lista skapas eller tas bort laddar ICA-integrationen om sig, vilket tar några sekunder. Kortet visar förloppet och låser sig under tiden, så ingen trycker två gånger.
 - Snabbknapparna bygger på varor som lagts till **via Handla**. Varor som läggs till direkt i ICA-appen räknas inte (men de syns i listan).
@@ -73,3 +79,37 @@ Allt om korten, bricka-alternativet, entiteter, tjänster och händelser finns i
 ## Utveckling
 
 Se [docs/dev.md](docs/dev.md) (tester behöver ingen körande Home Assistant; Node-verktygen körs i Docker) och [plan.md](plan.md) för status.
+
+## Arkitektur
+
+Integrationen `handla` (Python) äger logiken: listor, dubblettregler, användningsstatistik, aviseringar och den valfria AI-modulen. Kortet (TypeScript/Lit) ritar bara gränssnittet och anropar integrationens tjänster. Alla anrop till ICA går via `ha-ica-todo` och dess `todo`-entiteter, och alla tjänsteanrop ligger i ett eget I/O-lager, så att domänlogiken är ren Python som kan testas utan Home Assistant.
+
+```
+custom_components/handla/   # integrationen: koordinator, tjänster, entiteter, aviseringar, AI
+  domain/                   # ren logik (tolkning, dubbletter, namn), inga Home Assistant-importer
+  *_api.py                  # de enda modulerna som anropar todo.*, ica.*, ai_task.* och notify.*
+frontend/                   # Lit-kortet och dess tester (byggs in i handla.zip av release-flödet)
+tests/                      # pytest med mockad ICA och AI
+docs/                       # guider för användning, AI, utveckling och release
+.github/workflows/          # CI (lint, typer, tester, hassfest, HACS) och release-flödet
+```
+
+## Teknisk stack
+
+| Del | Val | Anledning |
+|---|---|---|
+| Integration | Python 3.14, Home Assistant custom integration | Konfigurationsflöde, tjänster, entiteter och händelser är vad Home Assistant-användare förväntar sig |
+| Kort | TypeScript, Lit, Vite | Litet bundle, samma webbkomponentsätt som Home Assistants eget gränssnitt |
+| ICA-åtkomst | `ha-ica-todo` | Hanterar redan ICA-inloggning och listor; Handla rör aldrig ICA-uppgifter |
+| AI (valfritt) | Home Assistants `ai_task` | Fungerar med valfri leverantör, ingen antas vara installerad |
+| Tester | pytest + `pytest-homeassistant-custom-component`, Vitest + jsdom | Körs utan riktig Home Assistant eller ICA-konto |
+| Lint och typer | Ruff, mypy, ESLint, Prettier, `tsc` | Körs i CI |
+| CI/CD | GitHub Actions, HACS | En pushad tagg kör testerna och publicerar `handla.zip` ([docs/release.md](docs/release.md)) |
+
+## Licens
+
+[MIT](LICENSE)
+
+## Utvecklat med
+
+Claude Code (agentdriven utveckling) som del av kursen Next-Generation Software Development with AI.

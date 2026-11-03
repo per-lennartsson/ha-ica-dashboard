@@ -5,7 +5,7 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
 
-from custom_components.handla.const import DOMAIN, MIN_ICA_VERSION
+from custom_components.handla.const import DOMAIN, ICA_URL, MIN_ICA_VERSION
 from custom_components.handla.dependency import (
     ISSUE_ID,
     IcaProblem,
@@ -71,7 +71,11 @@ async def test_too_old_is_reported_before_not_configured(
 def test_translation_key_and_placeholders() -> None:
     status = IcaStatus(IcaProblem.TOO_OLD, "v0.9.0")
     assert status.translation_key == "ica_too_old"
-    assert status.placeholders == {"version": "v0.9.0", "minimum": MIN_ICA_VERSION}
+    assert status.placeholders == {
+        "version": "v0.9.0",
+        "minimum": MIN_ICA_VERSION,
+        "url": ICA_URL,
+    }
     assert IcaStatus(IcaProblem.MISSING).placeholders["version"] == "?"
 
 

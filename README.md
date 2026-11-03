@@ -4,6 +4,12 @@ Shared shopping lists for Home Assistant, on top of your ICA lists. Everyone in 
 
 [Svenska](README.sv.md)
 
+[![CI](https://github.com/per-lennartsson/ha-ica-dashboard/actions/workflows/ci.yaml/badge.svg)](https://github.com/per-lennartsson/ha-ica-dashboard/actions/workflows/ci.yaml)
+[![Release](https://img.shields.io/github/v/release/per-lennartsson/ha-ica-dashboard?include_prereleases)](https://github.com/per-lennartsson/ha-ica-dashboard/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+**Live:** download the latest build from [GitHub Releases](https://github.com/per-lennartsson/ha-ica-dashboard/releases) (installable through HACS, see Installation).
+
 <p>
   <img src="docs/images/overview.png" alt="The Handla card: list picker, add field, quick-add buttons, items and ticked items" width="300">
   <img src="docs/images/duplicate.png" alt="Asking before adding an item that is already on the list" width="300">
@@ -55,7 +61,7 @@ navigation_path: /lovelace/handla
 
 Everything about the cards, the badge option, entities, services and events is in [docs/usage.md](docs/usage.md).
 
-## Good to know
+## Limitations
 
 - Creating or deleting a list makes the ICA integration reload, which takes a few seconds. The card shows progress and locks itself meanwhile, so nobody taps twice.
 - The quick-add buttons are based on items added **through Handla**. Items added directly in the ICA app are not counted (they do show up in the list).
@@ -73,3 +79,37 @@ Everything about the cards, the badge option, entities, services and events is i
 ## Development
 
 See [docs/dev.md](docs/dev.md) (tests need no running Home Assistant; Node tooling runs in Docker) and [plan.md](plan.md) for status.
+
+## Architecture
+
+The `handla` integration (Python) owns the logic: lists, duplicate rules, usage statistics, notifications and the optional AI module. A thin card (TypeScript/Lit) only draws the UI and calls the integration's services. All calls to ICA go through the `ha-ica-todo` services and `todo` entities, and every service call is kept in a separate I/O layer so the domain logic is plain Python that tests without Home Assistant.
+
+```
+custom_components/handla/   # the integration: coordinator, services, entities, notifications, AI
+  domain/                   # pure logic (parsing, duplicates, naming), no Home Assistant imports
+  *_api.py                  # the only modules that call todo.*, ica.*, ai_task.* and notify.*
+frontend/                   # the Lit card and its tests (built into handla.zip by the release workflow)
+tests/                      # pytest with mocked ICA and AI
+docs/                       # usage, AI, development and release guides
+.github/workflows/          # CI (lint, types, tests, hassfest, HACS) and the release pipeline
+```
+
+## Tech stack
+
+| Component | Choice | Why |
+|---|---|---|
+| Integration | Python 3.14, Home Assistant custom integration | Config flow, services, entities and events are what Home Assistant users expect |
+| Card | TypeScript, Lit, Vite | Small bundle, the same web components approach as Home Assistant's own frontend |
+| ICA access | `ha-ica-todo` | Already handles ICA login and lists; Handla never touches ICA credentials |
+| AI (optional) | Home Assistant `ai_task` | Works with any provider, none is assumed installed |
+| Tests | pytest + `pytest-homeassistant-custom-component`, Vitest + jsdom | Runs without a real Home Assistant or ICA account |
+| Lint and types | Ruff, mypy, ESLint, Prettier, `tsc` | Enforced in CI |
+| CI/CD | GitHub Actions, HACS | A pushed tag runs the tests and publishes `handla.zip` ([docs/release.md](docs/release.md)) |
+
+## License
+
+[MIT](LICENSE)
+
+## Built with
+
+Claude Code (agentic development) as part of the course Next-Generation Software Development with AI.

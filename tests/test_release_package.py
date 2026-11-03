@@ -161,18 +161,20 @@ def test_hacs_installs_the_zip_that_the_release_workflow_attaches() -> None:
     assert "handla.zip" in script
 
 
-def test_release_workflow_runs_when_a_release_is_published() -> None:
+def test_release_workflow_runs_when_a_version_tag_is_pushed() -> None:
     workflow = _load(".github/workflows/release.yaml")
     triggers = workflow.get("on", workflow.get(True))  # YAML reads a bare `on` as True
 
-    assert triggers == {"release": {"types": ["published"]}}
+    assert triggers == {"push": {"tags": ["v[0-9]+.[0-9]+.[0-9]+*"]}}
     assert workflow["permissions"] == {"contents": "write"}
+    assert workflow["jobs"]["asset"]["needs"] == "test"
     steps = workflow["jobs"]["asset"]["steps"]
     commands = "\n".join(step.get("run", "") for step in steps)
     assert "npm pkg set version" in commands
     assert "npm run build" in commands
     assert "scripts/package-release.sh" in commands
-    assert "gh release upload" in commands
+    assert "gh release create" in commands
+    assert "origin/main" in commands
 
 
 def test_release_workflow_passes_the_tag_to_scripts_only_through_the_environment() -> (
@@ -181,7 +183,7 @@ def test_release_workflow_passes_the_tag_to_scripts_only_through_the_environment
     """The tag name comes from outside: expressions in shell code could be abused."""
     job = _load(".github/workflows/release.yaml")["jobs"]["asset"]
 
-    assert job["env"] == {"TAG": "${{ github.event.release.tag_name }}"}
+    assert job["env"] == {"TAG": "${{ github.ref_name }}"}
     for step in job["steps"]:
         assert "${{" not in step.get("run", "").replace(
             "${{ secrets", ""

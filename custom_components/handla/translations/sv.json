@@ -8,7 +8,7 @@
     },
     "abort": {
       "single_instance_allowed": "Handla är redan konfigurerat. Endast en instans tillåts.",
-      "ica_missing": "ICA-integrationen (ha-ica-todo) är inte installerad. Installera version {minimum} eller senare från https://github.com/per-lennartsson/ha-ica-todo och starta om Home Assistant.",
+      "ica_missing": "ICA-integrationen (ha-ica-todo) är inte installerad. Installera version {minimum} eller senare från {url} och starta om Home Assistant.",
       "ica_too_old": "ICA-integrationen (ha-ica-todo) version {version} är för gammal. Version {minimum} eller senare krävs. Uppdatera den i HACS och starta om Home Assistant.",
       "ica_not_configured": "ICA-integrationen (ha-ica-todo) är installerad men inte konfigurerad. Lägg till den under Inställningar → Enheter och tjänster och försök igen.",
       "ica_not_loaded": "ICA-integrationen (ha-ica-todo) är konfigurerad men inte laddad. Kontrollera dess status under Inställningar → Enheter och tjänster samt loggarna och försök igen."
@@ -17,7 +17,7 @@
   "issues": {
     "ica_missing": {
       "title": "ICA-integrationen saknas",
-      "description": "Handla kräver ICA-integrationen (ha-ica-todo) version {minimum} eller senare, men den är inte installerad. Installera den från https://github.com/per-lennartsson/ha-ica-todo och starta om Home Assistant."
+      "description": "Handla kräver ICA-integrationen (ha-ica-todo) version {minimum} eller senare, men den är inte installerad. Installera den från {url} och starta om Home Assistant."
     },
     "ica_too_old": {
       "title": "ICA-integrationen är för gammal",
@@ -84,7 +84,7 @@
       "fields": {
         "title": {
           "name": "Namn",
-          "description": "Listans namn. Standard är \"Att handla <dag> <månad>\"."
+          "description": "Listans namn. Standard är \"Att handla\" följt av dagens datum."
         },
         "comment": {
           "name": "Kommentar",
