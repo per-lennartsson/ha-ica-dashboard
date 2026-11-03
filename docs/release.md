@@ -13,8 +13,8 @@ HACS installs Handla from a GitHub **release**: the release carries `handla.zip`
 1. `main` is green in CI (Python, frontend, *Release package builds*, hassfest). The HACS validation job needs the repository license, description and topics (see "Before the public release").
 2. The manual checks in `docs/dev.md` for the changes in this release have been done and noted in `plan.md`.
 3. `ha-ica-todo` at the required version has a published GitHub release (HACS installs it from its release zip).
-4. On GitHub: *Releases → Draft a new release*, create the tag `vX.Y.Z` on `main`, write short notes (what is new, anything users must do), tick *pre-release* if it is one, **Publish**.
-5. The *Release* workflow runs: it lints and tests the card, builds it with the release version, packages `dist/handla.zip` with `scripts/package-release.sh` and attaches it to the release. Check that the asset `handla.zip` is there (about 50 KB).
+4. From an up-to-date `main`, push the tag: `git tag vX.Y.Z && git push origin vX.Y.Z`. A suffix such as `-beta1` makes it a pre-release.
+5. The *Release* workflow runs: first the Python tests, then (only if they pass, and only if the tag is on `main`) it tests and builds the card with the release version, packages `dist/handla.zip` with `scripts/package-release.sh`, and creates the GitHub release with generated notes and the zip attached. Check that the release exists and that the asset `handla.zip` is there (about 50 KB). Edit the notes on GitHub if you want to add anything users must do.
 6. Verify the install path on a Home Assistant: HACS → custom repository → *Handla* → download the new release → restart → the integration loads, the card appears, and the version in the browser console matches. Then run the core checklist (features 1 to 6).
 
 ## What the workflow does, and how to try it locally
@@ -35,7 +35,7 @@ Delete the GitHub release and its tag (people who already installed it keep it),
 
 ## Before the public release
 
-- **License:** HACS validation requires a `LICENSE` file; the maintainer has not chosen one yet. Without a license others have no right to use or change the code.
+- **License:** MIT (`LICENSE`).
 - **Repository description and topics:** set on GitHub (e.g. `home-assistant`, `hacs`, `ica`, `shopping-list`, `todo`); HACS validation checks both.
 - **Screenshots:** `docs/images/*.png` come from the preview page with sample data. Replace them with screenshots from a real Home Assistant after the manual checks.
 - **Brand assets:** an icon for Home Assistant's brand store (optional; the HACS job currently ignores this check).
