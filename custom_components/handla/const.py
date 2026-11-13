@@ -8,7 +8,7 @@ DOMAIN: Final = "handla"
 # The required ICA integration
 ICA_URL: Final = "https://github.com/per-lennartsson/ha-ica-todo"
 ICA_DOMAIN: Final = "ica"
-MIN_ICA_VERSION: Final = "0.10.0"
+MIN_ICA_VERSION: Final = "0.12.0"
 
 ICA_LISTS_CHANGED: Final = "ica_lists_changed"
 
@@ -21,6 +21,7 @@ STORAGE_VERSION: Final = 1
 MAX_ITEM_LENGTH: Final = 100
 MAX_LIST_TITLE_LENGTH: Final = 100
 MAX_COMMENT_LENGTH: Final = 500
+MAX_CATEGORY_CHANGES: Final = 100  # items changed in one set_category call
 
 # Frequent items shown as quick-add buttons
 QUICK_ADD_LIMIT: Final = 12

@@ -24,6 +24,7 @@ Shared shopping lists for Home Assistant, on top of your ICA lists. Everyone in 
 - **Quick-add buttons:** with icons, based on what you actually add most. Remove, merge ("Tomat" + "Tomater") or pin your own from the *Manage* button.
 - **Duplicate check:** "finns redan – lägga till igen?" before adding something that is already on the list.
 - **Tick off, remove, clear ticked:** changes show up live on every device, also when made in the ICA app.
+- **Categories:** the list is grouped by store department (fruit & vegetables, dairy, …) in the order you walk through the shop. Move an item to another department with the tag button; ICA remembers the choice. With AI on, one button sorts the items ICA could not place. See [docs/usage.md](docs/usage.md).
 - **Notifications:** a push to the people you choose when someone *else* adds items (several quick adds become one message).
 - **Phone shortcut:** a small card (or a badge) with the number of items left, that opens the shopping view.
 - **AI (optional, off by default):** paste a recipe or a meal plan and review the suggested items before adding them, with any AI provider Home Assistant supports. See [docs/ai.md](docs/ai.md).
@@ -32,7 +33,7 @@ Shared shopping lists for Home Assistant, on top of your ICA lists. Everyone in 
 ## Requirements
 
 - Home Assistant 2026.9 or newer, with [HACS](https://hacs.xyz/).
-- An ICA account, connected through [ha-ica-todo](https://github.com/per-lennartsson/ha-ica-todo) **v0.10.0 or newer** (a maintained fork of the ICA integration). Handla checks this and tells you if it is missing.
+- An ICA account, connected through [ha-ica-todo](https://github.com/per-lennartsson/ha-ica-todo) **v0.12.0 or newer** (needed for categories) (a maintained fork of the ICA integration). Handla checks this and tells you if it is missing.
 
 ## Installation
 
@@ -72,7 +73,7 @@ Everything about the cards, the badge option, entities, services and events is i
 
 ## Troubleshooting
 
-- **The card says "Handla körs inte":** check that ha-ica-todo (v0.10.0+) is installed and loaded, and look under *Settings → System → Repairs*.
+- **The card says "Handla körs inte":** check that ha-ica-todo (v0.12.0+) is installed and loaded, and look under *Settings → System → Repairs*.
 - **The card does not show up:** restart Home Assistant after installing, then reload the page (in the phone app: *Settings → Companion app → Troubleshooting → Reset frontend cache*).
 - **Something looks wrong after an update:** hard-refresh the browser. The card file is versioned, but browsers can be stubborn.
 

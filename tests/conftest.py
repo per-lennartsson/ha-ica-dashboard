@@ -21,6 +21,19 @@ pytest_plugins = "pytest_homeassistant_custom_component"
 ICA_DOMAIN = "ica"
 ICA_ENTRY_ID = "ica_entry_1"
 
+ARTICLE_GROUPS = [
+    {"id": 3, "name": "Bröd, kex och bageri"},
+    {"id": 4, "name": "Frukt & Grönt"},
+    {"id": 5, "name": "Djupfryst"},
+    {"id": 6, "name": "Färskvaror"},
+    {"id": 7, "name": "Hälsa & Skönhet"},
+    {"id": 8, "name": "Kassa"},
+    {"id": 9, "name": "Skafferivaror"},
+    {"id": 10, "name": "Mejeri"},
+    {"id": 11, "name": "Hem & Fritid"},
+    {"id": 12, "name": "Ospecificerad"},
+]
+
 
 @pytest.fixture(autouse=True)
 def auto_enable_custom_integrations(enable_custom_integrations: None) -> None:
@@ -37,6 +50,7 @@ class FakeIca:
     handlers: dict[str, Callable[[dict[str, Any]], Awaitable[Any]]] = field(
         default_factory=dict
     )
+    rows: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
 
     def add_list(
         self,
@@ -65,6 +79,41 @@ class FakeIca:
             },
         )
         return entry.entity_id
+
+    def set_rows(self, entity_id: str, rows: list[tuple[str, str, int, bool]]) -> None:
+        """Set the categorised rows `ica.get_shopping_list_items` returns.
+
+        Each row is (uid, product name, article group id, ticked).
+        """
+        self.rows[entity_id] = [
+            {
+                "uid": uid,
+                "product_name": name,
+                "completed": completed,
+                "article_group": {"id": group, "name": f"Group {group}"},
+            }
+            for uid, name, group, completed in rows
+        ]
+
+    async def _get_groups(self, _data: dict[str, Any]) -> dict[str, Any]:
+        return {"article_groups": ARTICLE_GROUPS}
+
+    async def _get_rows(self, data: dict[str, Any]) -> dict[str, Any]:
+        entity_id = data["entity_id"]
+        return {entity_id: {"items": self.rows.get(entity_id, [])}}
+
+    async def _set_group(self, data: dict[str, Any]) -> dict[str, Any]:
+        entity_id = data["entity_id"]
+        rows = {row["uid"]: row for row in self.rows.get(entity_id, [])}
+        updated, missing = [], []
+        for change in data["items"]:
+            row = rows.get(change["uid"])
+            if row is None:
+                missing.append(change["uid"])
+                continue
+            row["article_group"] = {"id": change["article_group_id"], "name": "x"}
+            updated.append(change["uid"])
+        return {entity_id: {"updated": updated, "not_found": missing}}
 
     def remove_list(self, entity_id: str) -> None:
         """Remove a fake list entity completely."""
@@ -164,6 +213,9 @@ def fake_ica(hass: HomeAssistant) -> FakeIca:
 
         return handler
 
+    fake.handlers["get_article_groups"] = fake._get_groups
+    fake.handlers["get_shopping_list_items"] = fake._get_rows
+    fake.handlers["set_item_article_group"] = fake._set_group
     for name in (
         "create_shopping_list",
         "delete_shopping_list",
@@ -174,6 +226,9 @@ def fake_ica(hass: HomeAssistant) -> FakeIca:
         "add_baseitem",
         "lookup_product",
         "get_recipe",
+        "get_article_groups",
+        "get_shopping_list_items",
+        "set_item_article_group",
     ):
         hass.services.async_register(
             ICA_DOMAIN,
@@ -191,9 +246,10 @@ IcaConfigure = Callable[..., MockConfigEntry | None]
 def ica_dependency(hass: HomeAssistant) -> Iterator[IcaConfigure]:
     """Fake the ha-ica-todo dependency. Nothing is faked until the result is called.
 
-    Call it exactly once per test. With no arguments ICA is ready (v0.10.0, loaded);
-    otherwise e.g. `ica_dependency(version="v0.9.0")`, `ica_dependency(installed=False)`
-    or `ica_dependency(entry_state=None)` for "installed but not set up".
+    Call it exactly once per test. With no arguments ICA is ready (v0.12.0, loaded);
+    otherwise e.g. `ica_dependency(version="v0.11.0")`,
+    `ica_dependency(installed=False)` or `ica_dependency(entry_state=None)` for
+    "installed but not set up".
     """
     with ExitStack() as stack:
         configured = False
@@ -201,7 +257,7 @@ def ica_dependency(hass: HomeAssistant) -> Iterator[IcaConfigure]:
         def configure(
             *,
             installed: bool = True,
-            version: str | None = "v0.10.0",
+            version: str | None = "v0.12.0",
             entry_state: ConfigEntryState | None = ConfigEntryState.LOADED,
         ) -> MockConfigEntry | None:
             nonlocal configured

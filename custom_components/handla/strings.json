@@ -228,6 +228,44 @@
           "description": "The name to keep."
         }
       }
+    },
+    "get_categories": {
+      "name": "Get categories",
+      "description": "Return the store groups (categories) in shopping order and the group of each item on a list.",
+      "fields": {
+        "entity_id": {
+          "name": "List",
+          "description": "The list to read. Defaults to the active list."
+        }
+      }
+    },
+    "set_category": {
+      "name": "Set category",
+      "description": "Move items to another store group. Later items with the same name get that group too.",
+      "fields": {
+        "items": {
+          "name": "Items",
+          "description": "A list of {uid, group_id}."
+        },
+        "entity_id": {
+          "name": "List",
+          "description": "The list the items are on. Defaults to the active list."
+        }
+      }
+    },
+    "ai_suggest_categories": {
+      "name": "Suggest categories (AI)",
+      "description": "Let the chosen AI Task entity suggest store groups for items. Only item names are sent. Nothing is changed. Available only while AI is turned on in the Handla settings.",
+      "fields": {
+        "scope": {
+          "name": "Items",
+          "description": "“unspecified” (default) asks only about items without a group, “all” about every open item."
+        },
+        "entity_id": {
+          "name": "List",
+          "description": "The list to read. Defaults to the active list."
+        }
+      }
     }
   },
   "exceptions": {
@@ -308,6 +346,18 @@
     },
     "ai_failure_message": {
       "message": "The AI provider reports an error: {error} Add from text is not available until it is fixed."
+    },
+    "categories_failed": {
+      "message": "Could not read the categories: {error}"
+    },
+    "set_category_failed": {
+      "message": "Could not change the category: {error}"
+    },
+    "unknown_category": {
+      "message": "Unknown category: {group}."
+    },
+    "ai_bad_scope": {
+      "message": "The scope must be “unspecified” or “all”."
     }
   },
   "options": {

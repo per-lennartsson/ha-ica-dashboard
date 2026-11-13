@@ -22,3 +22,22 @@ export function saveSelectedList(offlineId: string | null): void {
     // The choice is simply not remembered
   }
 }
+
+const GROUP_BY_CATEGORY_KEY = "handla:group-by-category";
+
+/** Whether this user wants the list grouped by category on this device (default: yes). */
+export function loadGroupByCategory(): boolean {
+  try {
+    return window.localStorage.getItem(GROUP_BY_CATEGORY_KEY) !== "off";
+  } catch {
+    return true;
+  }
+}
+
+export function saveGroupByCategory(enabled: boolean): void {
+  try {
+    window.localStorage.setItem(GROUP_BY_CATEGORY_KEY, enabled ? "on" : "off");
+  } catch {
+    // The choice is simply not remembered
+  }
+}

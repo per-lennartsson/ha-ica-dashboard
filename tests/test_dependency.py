@@ -20,7 +20,7 @@ from tests.conftest import IcaConfigure
 async def test_ok(hass: HomeAssistant, ica_dependency: IcaConfigure) -> None:
     ica_dependency()
     status = await async_check_ica(hass)
-    assert status == IcaStatus(None, "v0.10.0")
+    assert status == IcaStatus(None, "v0.12.0")
     assert status.translation_key is None
 
 
@@ -29,7 +29,7 @@ async def test_missing(hass: HomeAssistant, ica_dependency: IcaConfigure) -> Non
     assert (await async_check_ica(hass)).problem is IcaProblem.MISSING
 
 
-@pytest.mark.parametrize("version", ["v0.9.0", "0.1.0", "garbage", None])
+@pytest.mark.parametrize("version", ["v0.11.0", "0.1.0", "garbage", None])
 async def test_too_old(
     hass: HomeAssistant, ica_dependency: IcaConfigure, version: str | None
 ) -> None:
@@ -64,7 +64,7 @@ async def test_not_loaded(
 async def test_too_old_is_reported_before_not_configured(
     hass: HomeAssistant, ica_dependency: IcaConfigure
 ) -> None:
-    ica_dependency(version="v0.9.0", entry_state=None)
+    ica_dependency(version="v0.11.0", entry_state=None)
     assert (await async_check_ica(hass)).problem is IcaProblem.TOO_OLD
 
 

@@ -24,6 +24,7 @@ Gemensamma inköpslistor i Home Assistant, ovanpå dina ICA-listor. Alla i hush�
 - **Snabbknappar:** med ikoner, baserade på det ni faktiskt lägger till oftast. Ta bort, slå ihop (”Tomat” + ”Tomater”) eller fäst egna med knappen *Hantera*.
 - **Dubblettkontroll:** "finns redan – lägga till igen?" innan något som redan står på listan läggs till.
 - **Bocka av, ta bort, rensa avbockade:** ändringar syns direkt på alla enheter, även när de görs i ICA-appen.
+- **Kategorier:** listan grupperas efter butikens avdelningar (frukt & grönt, mejeri, …) i den ordning man går i butiken. Flytta en vara till en annan avdelning med etikettknappen; ICA kommer ihåg valet. Med AI på sorterar en knapp de varor ICA inte kunde placera. Se [docs/usage.md](docs/usage.md) (på engelska).
 - **Aviseringar:** en push till de du väljer när någon *annan* lägger till varor (flera snabba tillägg blir ett meddelande).
 - **Genväg på telefonen:** ett litet kort (eller en bricka) med antalet varor kvar, som öppnar inköpsvyn.
 - **AI (valfritt, av som standard):** klistra in ett recept eller en matsedel och granska de föreslagna varorna innan de läggs till, med valfri AI-leverantör som Home Assistant stöder. Se [docs/ai.md](docs/ai.md) (på engelska).
@@ -32,7 +33,7 @@ Gemensamma inköpslistor i Home Assistant, ovanpå dina ICA-listor. Alla i hush�
 ## Krav
 
 - Home Assistant 2026.9 eller nyare, med [HACS](https://hacs.xyz/).
-- Ett ICA-konto, anslutet via [ha-ica-todo](https://github.com/per-lennartsson/ha-ica-todo) **v0.10.0 eller nyare** (en underhållen fork av ICA-integrationen). Handla kontrollerar detta och säger till om det saknas.
+- Ett ICA-konto, anslutet via [ha-ica-todo](https://github.com/per-lennartsson/ha-ica-todo) **v0.12.0 eller nyare** (en underhållen fork av ICA-integrationen). Handla kontrollerar detta och säger till om det saknas.
 
 ## Installation
 
@@ -72,7 +73,7 @@ Allt om korten, bricka-alternativet, entiteter, tjänster och händelser finns i
 
 ## Felsökning
 
-- **Kortet säger "Handla körs inte":** kontrollera att ha-ica-todo (v0.10.0+) är installerad och laddad, och titta under *Inställningar → System → Reparationer*.
+- **Kortet säger "Handla körs inte":** kontrollera att ha-ica-todo (v0.12.0+) är installerad och laddad, och titta under *Inställningar → System → Reparationer*.
 - **Kortet syns inte:** starta om Home Assistant efter installationen och ladda sedan om sidan (i telefonappen: *Inställningar → Companion-appen → Felsökning → Återställ frontend-cache*).
 - **Något ser fel ut efter en uppdatering:** uppdatera webbläsaren med tvingad omladdning. Kortets fil är versionsmärkt, men webbläsare kan vara envisa.
 

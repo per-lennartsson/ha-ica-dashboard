@@ -1013,3 +1013,245 @@ describe("ticking, removing and clearing", () => {
     expect(button(el, "clear-ticked")?.disabled).toBe(true);
   });
 });
+
+describe("categories", () => {
+  const GROUPS = [
+    { id: 4, name: "Frukt & Grönt" },
+    { id: 10, name: "Mejeri" },
+    { id: 12, name: "Ospecificerad" },
+  ];
+
+  /** A service double that answers get_categories from `categories` and set_category. */
+  function categoryService(
+    categories: { items: Record<string, number> },
+    overrides: Partial<Record<string, (data?: Record<string, unknown>) => Promise<unknown>>> = {},
+  ): CallService {
+    return vi.fn(async (_domain: string, service: string, data?: Record<string, unknown>) => {
+      const custom = overrides[service];
+      if (custom) return custom(data);
+      if (service === "get_categories") {
+        return { context: {}, response: { groups: GROUPS, items: categories.items } };
+      }
+      if (service === "set_category") {
+        const items = (data?.["items"] ?? []) as Array<{ uid: string }>;
+        return { context: {}, response: { updated: items.map((i) => i.uid), not_found: [] } };
+      }
+      return { context: {}, response: {} };
+    });
+  }
+
+  const wait = (ms = 350) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  async function mountWithCategories(
+    categories: { items: Record<string, number> } = { items: { m: 10, a: 4 } },
+    overrides: Parameters<typeof categoryService>[1] = {},
+  ) {
+    window.localStorage.clear();
+    const callService = categoryService(categories, overrides);
+    const env = makeEnv({ callService });
+    const el = await mount(env.build());
+    env.push([
+      { uid: "m", summary: "mjölk" },
+      { uid: "a", summary: "äpplen" },
+      { uid: "n", summary: "nytt" },
+      { uid: "t", summary: "gammalt", status: "completed" },
+    ]);
+    await wait();
+    await settle(el);
+    return { el, env, callService };
+  }
+
+  const headings = (el: HandlaItems) =>
+    [...root(el).querySelectorAll("li.group")].map((li) => li.textContent?.trim());
+
+  afterEach(() => window.localStorage.clear());
+
+  it("groups open items by category in store order, with the ticked ones last", async () => {
+    const { el } = await mountWithCategories();
+
+    expect(headings(el)).toEqual(["Frukt & grönt", "Mejeri", "Ospecificerad"]);
+    expect(rowTexts(el)).toEqual(["- äpplen", "- mjölk", "- nytt", "x gammalt"]);
+    expect(testid(el, "ticked-divider")).not.toBeNull();
+  });
+
+  it("reads the categories once after a burst of changes", async () => {
+    const { el, env, callService } = await mountWithCategories();
+    expect(callsTo(callService, "get_categories")).toHaveLength(1);
+
+    env.push([{ uid: "m", summary: "mjölk" }]);
+    env.push([
+      { uid: "m", summary: "mjölk" },
+      { uid: "a", summary: "äpplen" },
+    ]);
+    await wait();
+    await settle(el);
+
+    expect(callsTo(callService, "get_categories")).toHaveLength(2);
+    expect(callsTo(callService, "get_categories")[0]?.[2]).toEqual({ entity_id: "todo.ica_a" });
+  });
+
+  it("shows a flat list until the categories have arrived", async () => {
+    const env = makeEnv({ callService: categoryService({ items: { m: 10 } }) });
+    const el = await mount(env.build());
+    env.push([{ uid: "m", summary: "mjölk" }]);
+    await settle(el);
+    expect(headings(el)).toEqual([]);
+    expect(rowTexts(el)).toEqual(["- mjölk"]);
+  });
+
+  it("goes back to the flat list when the switch is turned off, and remembers it", async () => {
+    const { el } = await mountWithCategories();
+    const toggle = root(el).querySelector<HTMLInputElement>("[data-action=group-by]");
+    expect(toggle?.checked).toBe(true);
+
+    toggle?.click();
+    await el.updateComplete;
+
+    expect(headings(el)).toEqual([]);
+    expect(rowTexts(el)).toEqual(["- mjölk", "- äpplen", "- nytt", "x gammalt"]);
+    expect(window.localStorage.getItem("handla:group-by-category")).toBe("off");
+  });
+
+  it("starts flat for a user who turned grouping off earlier", async () => {
+    window.localStorage.setItem("handla:group-by-category", "off");
+    const env = makeEnv({ callService: categoryService({ items: { m: 10 } }) });
+    const el = await mount(env.build());
+    env.push([{ uid: "m", summary: "mjölk" }]);
+    await wait();
+    await settle(el);
+    expect(headings(el)).toEqual([]);
+    expect(root(el).querySelector<HTMLInputElement>("[data-action=group-by]")?.checked).toBe(false);
+  });
+
+  it("shows the error when the categories cannot be read, and keeps the list flat", async () => {
+    const { el } = await mountWithCategories(undefined, {
+      get_categories: async () => {
+        throw new Error("ICA is down");
+      },
+    });
+
+    expect(testid(el, "categories-failed")?.textContent).toContain("ICA is down");
+    expect(headings(el)).toEqual([]);
+    expect(rowTexts(el)).toHaveLength(4);
+  });
+
+  it("ignores categories that arrive for a list that is no longer shown", async () => {
+    const slow = deferred<unknown>();
+    const { el, env } = await mountWithCategories(undefined, {
+      get_categories: () => slow.promise,
+    });
+    el.list = LIST_B;
+    el.hass = env.build();
+    await settle(el);
+
+    slow.resolve({ context: {}, response: { groups: GROUPS, items: { m: 10 } } });
+    await settle(el);
+
+    expect(headings(el)).toEqual([]);
+  });
+
+  it("changes the category from the picker, at once, and saves it through set_category", async () => {
+    const pending = deferred<unknown>();
+    const { el, callService } = await mountWithCategories(undefined, {
+      set_category: () => pending.promise,
+    });
+    (row(el, "nytt")?.querySelector("[data-action=category]") as HTMLButtonElement).click();
+    await el.updateComplete;
+    const select = root(el).querySelector<HTMLSelectElement>("li.picker select");
+    expect(select?.value).toBe("12");
+    (select as HTMLSelectElement).value = "10";
+    select?.dispatchEvent(new Event("change"));
+    await el.updateComplete;
+
+    expect(headings(el)).toEqual(["Frukt & grönt", "Mejeri"]); // moved before ICA answered
+    expect(callsTo(callService, "set_category")[0]?.[2]).toEqual({
+      entity_id: "todo.ica_a",
+      items: [{ uid: "n", group_id: 10 }],
+    });
+    expect(root(el).querySelector("li.picker")).toBeNull();
+
+    pending.resolve({ context: {}, response: { updated: ["n"], not_found: [] } });
+    await settle(el);
+    expect(testid(el, "action-failed")).toBeNull();
+    expect(headings(el)).toEqual(["Frukt & grönt", "Mejeri"]);
+  });
+
+  it("puts the old category back and shows the error when saving fails", async () => {
+    const { el } = await mountWithCategories(undefined, {
+      set_category: async () => {
+        throw new Error("write failed");
+      },
+    });
+    (row(el, "mjölk")?.querySelector("[data-action=category]") as HTMLButtonElement).click();
+    await el.updateComplete;
+    const select = root(el).querySelector<HTMLSelectElement>("li.picker select");
+    (select as HTMLSelectElement).value = "4";
+    select?.dispatchEvent(new Event("change"));
+    await settle(el);
+
+    expect(testid(el, "action-failed")?.textContent).toContain("write failed");
+    expect(headings(el)).toEqual(["Frukt & grönt", "Mejeri", "Ospecificerad"]);
+    expect(rowTexts(el)).toEqual(["- äpplen", "- mjölk", "- nytt", "x gammalt"]);
+  });
+
+  it("puts the item in the unspecified group again when ICA no longer has it", async () => {
+    const { el } = await mountWithCategories(undefined, {
+      set_category: async () => ({ context: {}, response: { updated: [], not_found: ["m"] } }),
+    });
+    (row(el, "mjölk")?.querySelector("[data-action=category]") as HTMLButtonElement).click();
+    await el.updateComplete;
+    const select = root(el).querySelector<HTMLSelectElement>("li.picker select");
+    (select as HTMLSelectElement).value = "4";
+    select?.dispatchEvent(new Event("change"));
+    await settle(el);
+
+    expect(testid(el, "action-failed")?.textContent).toContain("finns inte längre");
+    expect(headings(el)).toEqual(["Frukt & grönt", "Mejeri", "Ospecificerad"]);
+  });
+
+  it("opens and closes the picker with the same button, and has none for ticked items", async () => {
+    const { el } = await mountWithCategories();
+    const open = row(el, "mjölk")?.querySelector("[data-action=category]") as HTMLButtonElement;
+    open.click();
+    await el.updateComplete;
+    expect(root(el).querySelectorAll("li.picker")).toHaveLength(1);
+    open.click();
+    await el.updateComplete;
+    expect(root(el).querySelectorAll("li.picker")).toHaveLength(0);
+    expect(row(el, "gammalt")?.querySelector("[data-action=category]")).toBeNull();
+  });
+
+  it("reads the categories again when the AI review saved some", async () => {
+    const { el, callService } = await mountWithCategories();
+    const before = callsTo(callService, "get_categories").length;
+
+    root(el)
+      .querySelector("handla-categorize")
+      ?.dispatchEvent(new CustomEvent("categories-changed", { bubbles: true, composed: true }));
+    await settle(el);
+
+    expect(callsTo(callService, "get_categories").length).toBe(before + 1);
+  });
+
+  it("does not change a category while a list is created or deleted", async () => {
+    const { el, callService } = await mountWithCategories();
+    el.locked = true;
+    await settle(el);
+    const change = (
+      el as unknown as {
+        _changeCategory(item: unknown, group: number): Promise<void>;
+      }
+    )._changeCategory({ uid: "m", summary: "mjölk", completed: false }, 4);
+    await change;
+    expect(callsTo(callService, "set_category")).toHaveLength(0);
+  });
+
+  it("stops reading categories when the card is removed", async () => {
+    const { el, env, callService } = await mountWithCategories();
+    const before = callsTo(callService, "get_categories").length;
+    env.push([{ uid: "m", summary: "mjölk" }]);
+    el.remove();
+    await wait();
+    expect(callsTo(callService, "get_categories").length).toBe(before);
+  });
+});

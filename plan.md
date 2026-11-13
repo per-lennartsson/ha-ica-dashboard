@@ -159,6 +159,32 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 
 ---
 
+## Phase 3: Categories
+
+Plan and design: [docs/categories-plan.md](docs/categories-plan.md). Needs `ha-ica-todo >= v0.12.0` (article group services). One branch: `categories`.
+
+### 3.0 Prerequisites (maintainer, in ha-ica-todo)
+- [ ] Release v0.12.0 (merge `article-group-categories`). **Not verified here**: the service fields and answers were taken from `docs/categories-plan.md`; check them against the released code.
+- [ ] Check that ICA keeps a category change made through `ica.set_item_article_group` (look in the ICA app).
+- [x] Here: `MIN_ICA_VERSION = "0.12.0"`, `docs/ica-contract.md` and `docs/ica-change-requests.md` updated, READMEs and tests follow.
+
+### 3.1 Show items grouped by category (M)
+- [x] `ica_api.py` (`async_get_article_groups`, `async_get_list_items`), pure `domain/categories.py` (parsing, `STORE_ORDER`, ordering), service `handla.get_categories` (groups in store order + uid to group id).
+- [x] Card: `categories.ts` (sections), `getCategories`, debounced reads after each subscription message (stale answers ignored), group headings, per-user switch "Gruppera efter kategori" in browser storage (on by default), group names in sv/en with ICA's name as fallback.
+- Decision: the plan listed `group_items` in the domain; the ordering lives in the backend (`order_groups`, applied by `get_categories`) and the card builds the sections, so the card stays thin and nothing is unused.
+
+### 3.2 Change an item's category (S)
+- [x] `ica_api.async_set_article_groups`, service `handla.set_category` (validates group ids, returns `updated` / `not_found`), card tag button with a picker, optimistic update with rollback and error. A test shows that a category change fires no `handla_item_added` event, so nobody is notified.
+
+### 3.3 AI suggests categories (M)
+- [x] `domain/categorize.py` (prompt, structure, item choice capped at 60, answer cleaning), `ai.async_suggest_categories` (shares `_ask_provider` and the failure monitor with the recipe feature), service `handla.ai_suggest_categories` (only while AI is on; scope `unspecified` / `all`), card `<handla-categorize>` review (change group, untick, save; failed rows stay).
+- Decision: only item ids and names plus the department list are sent to the provider; ticked items never.
+
+- **Verify (automated, done):** 561 Python tests, 100% coverage, ruff/mypy clean; 360 frontend tests, 100% line coverage, lint/format/types/build clean (one 98 kB file, 23 kB gzipped). Covered: parsing of malformed answers, store order incl. unknown ids, unknown groups refused, ICA failures surfaced, optimistic change and rollback, stale answers ignored, AI off (no service, no button), provider failure and bad answers, partial saves.
+- **Verify (Manual, real HA, not yet done):** "Manual check: categories" in `docs/dev.md`, after 3.0.
+
+---
+
 ## Definition of done (every step)
 - Code, tests and docs merged via PR from a feature branch; CI green.
 - Verification listed for the step has been run and recorded (note result under the step).
@@ -175,6 +201,7 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 ## Progress log
 | Date | Step | Result |
 |------|------|--------|
+| 2026-11-13 | 3.1–3.3 | Categories implemented on branch `categories`: `handla.get_categories` / `set_category` / `ai_suggest_categories`, grouped card view with switch, tag picker, AI review; minimum ha-ica-todo raised to v0.12.0 (contract written from the plan, unverified). 561 Python + 360 frontend tests green. Manual check pending. |
 | 2026-10-16 | quick items | Manage frequent items done on branch `quick-item-management`: remove, merge (aliases keep counting toward the target; you pick the name) and pinned manual adds; services `handla.remove_quick_item` / `add_quick_item` / `merge_quick_items`; `get_top_items` limit now up to 500; card `<handla-quick-manage>` behind a "Hantera" button; 455 Python + 288 frontend tests. Manual check ("Manual check: manage frequent items" in `docs/dev.md`) pending. |
 | 2026-10-16 | 2.5 | AI docs done (`docs/ai.md`, READMEs, usage, manual checklist); CLAUDE.md updated. Phase 2 is implemented; real-provider checks and the release are the maintainer's. |
 | 2026-10-16 | 2.4 | Provider monitoring done: failure push once per outage (reminder after 24 h), optional daily health check in the AI options; 433 tests, 100% coverage. Manual check with a failing provider pending. |

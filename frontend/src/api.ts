@@ -1,6 +1,12 @@
 /** Calls to the Handla services. Errors are thrown as Error with a readable message. */
 
 import { parseSuggestions, type Suggestion } from "./ai";
+import {
+  parseCategories,
+  parseCategorySuggestions,
+  type CategoryData,
+  type CategorySuggestion,
+} from "./categories";
 import { localize } from "./i18n";
 import { parseQuickItems, type QuickItem } from "./items";
 import type { HomeAssistant } from "./types";
@@ -160,4 +166,65 @@ export async function mergeQuickItems(
   target: string,
 ): Promise<void> {
   await call(hass, "merge_quick_items", { sources, target });
+}
+
+/** The store groups in shopping order and the group of each item on a list. */
+export async function getCategories(hass: HomeAssistant, entityId: string): Promise<CategoryData> {
+  return parseCategories(await call(hass, "get_categories", { entity_id: entityId }, true));
+}
+
+export interface SetCategoryResult {
+  updated: string[];
+  notFound: string[];
+}
+
+function textList(raw: unknown): string[] {
+  return Array.isArray(raw)
+    ? raw.filter((entry): entry is string => typeof entry === "string")
+    : [];
+}
+
+/** Moves items to other groups; ICA remembers the choice for later items with the same name. */
+export async function setCategory(
+  hass: HomeAssistant,
+  entityId: string,
+  changes: Array<{ uid: string; groupId: number }>,
+): Promise<SetCategoryResult> {
+  const response = await call(
+    hass,
+    "set_category",
+    {
+      entity_id: entityId,
+      items: changes.map(({ uid, groupId }) => ({ uid, group_id: groupId })),
+    },
+    true,
+  );
+  return { updated: textList(response["updated"]), notFound: textList(response["not_found"]) };
+}
+
+export interface CategorySuggestions {
+  items: CategorySuggestion[];
+  /** The list was longer than the AI reads in one go. */
+  truncated: boolean;
+  /** How many items the AI was asked about. */
+  asked: number;
+}
+
+/** Asks the AI to suggest groups. Nothing is changed; saving goes through `setCategory`. */
+export async function suggestCategories(
+  hass: HomeAssistant,
+  entityId: string,
+  includeAll: boolean,
+): Promise<CategorySuggestions> {
+  const response = await call(
+    hass,
+    "ai_suggest_categories",
+    { entity_id: entityId, scope: includeAll ? "all" : "unspecified" },
+    true,
+  );
+  return {
+    items: parseCategorySuggestions(response["items"]),
+    truncated: response["truncated"] === true,
+    asked: typeof response["asked"] === "number" ? response["asked"] : 0,
+  };
 }

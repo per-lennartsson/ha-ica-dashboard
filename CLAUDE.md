@@ -25,6 +25,9 @@ Core (works with only HA and ha-ica-todo):
 5. Notifications: push to chosen users when someone else adds items.
 6. Mobile: a shortcut on the mobile dashboard showing the item count and opening the shopping view.
 
+Categories (needs ha-ica-todo >= v0.12.0; plan in `docs/categories-plan.md`):
+11. Items are grouped by ICA article group (store department) in store-walk order, with a per-user switch; an item's category can be changed by hand (ICA remembers it); optional AI suggests categories for items ICA could not place (review before saving).
+
 Optional AI module (opt-in, **off by default**; when off or no provider is available, no AI UI is shown and everything else works):
 7. Paste any text (recipe, meal plan, message).
 8. AI extracts items: short Swedish names, quantity first, duplicates merged, staples like salt, pepper and water skipped.
@@ -101,7 +104,8 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 │   ├── list_operations.py   # create/delete list flows and their status
 │   ├── item_announcer.py    # after an add: count it, fire handla_item_added, queue the push
 │   ├── events.py            # collects ica_lists_changed events
-│   ├── services.py, services.yaml   # set_active_list, create/delete_list, suggest_list_name, items, get_top_items
+│   ├── categories.py        # get_categories / set_category flows (article groups)
+│   ├── services.py, services.yaml   # set_active_list, create/delete_list, suggest_list_name, items, get_top_items, categories
 │   ├── shopping.py          # add / tick / remove / clear items on a list
 │   ├── usage.py             # persistent add counts (quick-add data)
 │   ├── ai.py, ai_monitor.py # optional AI: switch, extraction service, failure push + daily check
@@ -116,13 +120,14 @@ Optional AI module (opt-in, **off by default**; when off or no provider is avail
 │   ├── entity.py, select.py, sensor.py
 │   ├── const.py
 │   └── domain/              # pure logic, no Home Assistant imports
+│       ├── categories.py, categorize.py   # article groups, store order; AI category prompt and cleaning
 │       ├── items.py, duplicates.py, naming.py, lists.py, todo_items.py, usage.py, icons.py, notify.py, versions.py
 │       ├── ai.py, extraction.py, ai_health.py   # AI status, prompt and cleaning, failure de-duplication
 ├── tests/                   # pytest, mocked ICA and AI (conftest.py has FakeIca)
 ├── docs/                    # ica-contract.md, dev.md, usage.md, ai.md (cards, shortcut, badge), release.md, images/
 ├── .github/workflows/       # ci.yaml, release.yaml (builds card + handla.zip on a published release)
 ├── hacs.json, pyproject.toml, requirements_dev.txt, .env.example
-├── frontend/                # Lit card: src/ (index, handla-card, handla-items, add-queue, handla-shortcut, handla-ai, ai, lists, items, api, navigate, storage, i18n), dev/ (mock-data preview), tests next to sources
+├── frontend/                # Lit card: src/ (index, handla-card, handla-items, add-queue, handla-shortcut, handla-ai, handla-categorize, categories, ai, lists, items, api, navigate, storage, i18n), dev/ (mock-data preview), tests next to sources
 ├── scripts/node.sh          # runs Node commands in Docker
 └── scripts/package-release.sh  # builds dist/handla.zip for a release (docs/release.md)
 ```
@@ -146,7 +151,7 @@ Requires `ha-ica-todo` installed and configured in Home Assistant (HACS custom r
 ## Run
 
 Development needs no running Home Assistant: tests use an in-process HA core and mocks.
-Manual checks run on the maintainer's own HA with `ha-ica-todo >= v0.10.0`. How to install a branch or release, how to check that it loaded, and the rules for throwaway ICA lists are in `docs/dev.md`.
+Manual checks run on the maintainer's own HA with `ha-ica-todo >= v0.12.0`. How to install a branch or release, how to check that it loaded, and the rules for throwaway ICA lists are in `docs/dev.md`.
 Card preview with mock data: `DOCKER_FLAGS="-p 5173:5173" ./scripts/node.sh npm run dev`, then open http://localhost:5173.
 
 ## Test

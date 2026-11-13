@@ -7,19 +7,27 @@ from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.core import Context, HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 
-from . import ai_api, todo_api
+from . import ai_api, ica_api, todo_api
 from .ai_monitor import AiMonitor
 from .const import DOMAIN
 from .domain import (
     MAX_TEXT_LENGTH,
+    SCOPES,
     AiStatus,
     ListInfo,
     ai_status,
+    build_categorize_instructions,
     build_instructions,
+    category_suggestions_payload,
+    choose_items,
+    clean_category_suggestions,
     clean_suggestions,
+    extraction,
     suggestions_payload,
 )
-from .domain.extraction import ITEMS_KEY, STRUCTURE, TASK_NAME
+from .domain import categorize as categorize_rules
+from .domain.categories import UNSPECIFIED_GROUP
+from .domain.extraction import ITEMS_KEY
 from .options import get_ai_config
 
 
@@ -59,16 +67,18 @@ async def _ask_provider(
     hass: HomeAssistant,
     monitor: AiMonitor,
     entity_id: str,
-    text: str,
+    task_name: str,
+    instructions: str,
+    structure: dict[str, Any],
     context: Context | None,
 ) -> Any:
     try:
         result = await ai_api.async_generate_data(
             hass,
             entity_id,
-            TASK_NAME,
-            build_instructions(text),
-            structure=STRUCTURE,
+            task_name,
+            instructions,
+            structure=structure,
             context=context,
         )
     except HomeAssistantError as err:
@@ -100,7 +110,15 @@ async def async_extract_items(
     if entity_id is None or current_ai_status(hass, entry) is not AiStatus.READY:
         raise _invalid("ai_not_ready")
 
-    result = await _ask_provider(hass, monitor, entity_id, text, context)
+    result = await _ask_provider(
+        hass,
+        monitor,
+        entity_id,
+        extraction.TASK_NAME,
+        build_instructions(text),
+        extraction.STRUCTURE,
+        context,
+    )
     suggestions = clean_suggestions(_answer_items(result))
     on_list = await todo_api.async_get_items(hass, target.entity_id)
     items = suggestions_payload(suggestions, on_list)
@@ -109,4 +127,49 @@ async def async_extract_items(
         "list_title": target.title,
         "items": items,
         "count": len(items),
+    }
+
+
+async def async_suggest_categories(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    monitor: AiMonitor,
+    target: ListInfo,
+    scope: str,
+    context: Context | None = None,
+) -> dict[str, Any]:
+    """Suggest article groups for open items; nothing is changed on the list.
+
+    Scope `unspecified` asks only about items without a group, `all` about every
+    open item. Only item ids and names are sent to the provider.
+    """
+    if scope not in SCOPES:
+        raise _invalid("ai_bad_scope")
+    _enabled, entity_id = get_ai_config(entry)
+    if entity_id is None or current_ai_status(hass, entry) is not AiStatus.READY:
+        raise _invalid("ai_not_ready")
+
+    groups = await ica_api.async_get_article_groups(hass)
+    on_list = await ica_api.async_get_list_items(hass, target.entity_id)
+    asked, truncated = choose_items(on_list, scope, UNSPECIFIED_GROUP)
+    suggestions = []
+    if asked:
+        result = await _ask_provider(
+            hass,
+            monitor,
+            entity_id,
+            categorize_rules.TASK_NAME,
+            build_categorize_instructions(asked, groups, UNSPECIFIED_GROUP),
+            categorize_rules.STRUCTURE,
+            context,
+        )
+        suggestions = clean_category_suggestions(_answer_items(result), asked, groups)
+    items = category_suggestions_payload(suggestions)
+    return {
+        "entity_id": target.entity_id,
+        "list_title": target.title,
+        "items": items,
+        "count": len(items),
+        "asked": len(asked),
+        "truncated": truncated,
     }
