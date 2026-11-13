@@ -245,7 +245,7 @@
       "fields": {
         "items": {
           "name": "Varor",
-          "description": "En lista med {uid, group_id}."
+          "description": "En lista med varor, var och en med uid och group_id."
         },
         "entity_id": {
           "name": "Lista",

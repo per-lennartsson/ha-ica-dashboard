@@ -245,7 +245,7 @@
       "fields": {
         "items": {
           "name": "Items",
-          "description": "A list of {uid, group_id}."
+          "description": "A list of items, each with uid and group_id."
         },
         "entity_id": {
           "name": "List",
