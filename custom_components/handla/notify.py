@@ -15,7 +15,7 @@ from .domain import (
     recipients_to_notify,
 )
 from .notify_api import async_notify_users
-from .options import get_recipients
+from .options import get_notification_language, get_recipients
 from .texts import async_get_templates
 
 _LOGGER = logging.getLogger(__name__)
@@ -66,7 +66,9 @@ class AddNotifier:
         self, list_title: str, adder_id: str | None, items: list[str]
     ) -> None:
         adder_name = await self._user_name(adder_id)
-        templates = await async_get_templates(self._hass, NOTIFY_KEYS)
+        templates = await async_get_templates(
+            self._hass, NOTIFY_KEYS, get_notification_language(self._entry)
+        )
         title, message = build_message(templates, adder_name, list_title, items)
         targets = recipients_to_notify(get_recipients(self._entry), adder_id)
         await async_notify_users(self._hass, targets, title, message)

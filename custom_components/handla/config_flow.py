@@ -27,12 +27,19 @@ from .const import (
     CONF_AI_ENABLED,
     CONF_AI_ENTITY,
     CONF_AI_HEALTH_CHECK,
+    CONF_NOTIFY_LANGUAGE,
     CONF_RECIPIENTS,
     DOMAIN,
+    NOTIFY_LANGUAGES,
 )
 from .dependency import async_check_ica
 from .domain import ai_choice_error, choose_notify_services
-from .options import get_ai_config, get_health_check, get_recipients
+from .options import (
+    get_ai_config,
+    get_health_check,
+    get_notification_language,
+    get_recipients,
+)
 from .schema import vol
 
 
@@ -63,7 +70,7 @@ class HandlaConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class HandlaOptionsFlow(OptionsFlow):
-    """A menu: notifications (users, then a notify service each) and the AI module."""
+    """A menu: notifications (users, then a notify service each), their language, AI."""
 
     def __init__(self) -> None:
         self._queue: list[str] = []
@@ -87,7 +94,7 @@ class HandlaOptionsFlow(OptionsFlow):
     ) -> ConfigFlowResult:
         """What to configure."""
         return self.async_show_menu(
-            step_id="init", menu_options=["notifications", "ai"]
+            step_id="init", menu_options=["notifications", "language", "ai"]
         )
 
     async def async_step_notifications(
@@ -151,6 +158,31 @@ class HandlaOptionsFlow(OptionsFlow):
             data_schema=schema,
             description_placeholders={"name": self._names.get(user_id, user_id)},
         )
+
+    async def async_step_language(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Choose the language of notification texts (Home Assistant's, sv or en)."""
+        if user_input is not None:
+            options = {
+                **self.config_entry.options,
+                CONF_NOTIFY_LANGUAGE: user_input[CONF_NOTIFY_LANGUAGE],
+            }
+            return self.async_create_entry(data=options)
+        schema = vol.Schema(
+            {
+                vol.Required(
+                    CONF_NOTIFY_LANGUAGE,
+                    default=get_notification_language(self.config_entry),
+                ): SelectSelector(
+                    SelectSelectorConfig(
+                        options=list(NOTIFY_LANGUAGES),
+                        translation_key=CONF_NOTIFY_LANGUAGE,
+                    )
+                )
+            }
+        )
+        return self.async_show_form(step_id="language", data_schema=schema)
 
     async def async_step_ai(
         self, user_input: dict[str, Any] | None = None

@@ -8,7 +8,10 @@ from .const import (
     CONF_AI_ENABLED,
     CONF_AI_ENTITY,
     CONF_AI_HEALTH_CHECK,
+    CONF_NOTIFY_LANGUAGE,
     CONF_RECIPIENTS,
+    NOTIFY_LANGUAGE_AUTO,
+    NOTIFY_LANGUAGES,
 )
 
 
@@ -36,3 +39,9 @@ def get_recipients(entry: ConfigEntry) -> dict[str, str]:
         for user_id, service in raw.items()
         if isinstance(service, str) and service
     }
+
+
+def get_notification_language(entry: ConfigEntry) -> str:
+    """The language choice for notification texts; unknown values mean "auto"."""
+    value = entry.options.get(CONF_NOTIFY_LANGUAGE)
+    return value if value in NOTIFY_LANGUAGES else NOTIFY_LANGUAGE_AUTO

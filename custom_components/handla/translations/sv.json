@@ -366,6 +366,7 @@
         "title": "Handla-inställningar",
         "menu_options": {
           "notifications": "Aviseringar",
+          "language": "Språk för aviseringar",
           "ai": "AI (valfritt)"
         }
       },
@@ -399,6 +400,13 @@
           "ai_entity": "Leverantören som läser den inklistrade texten. Krävs när AI är på.",
           "ai_health_check": "Skicka en liten testförfrågan till leverantören en gång om dagen och avisera användarna som valts under Aviseringar om den misslyckas. Kostar några få tokens per dag."
         }
+      },
+      "language": {
+        "title": "Språk för aviseringar",
+        "description": "Vilket språk aviseringarna använder. Automatiskt följer språket i Home Assistant.",
+        "data": {
+          "notification_language": "Språk"
+        }
       }
     },
     "abort": {
@@ -408,6 +416,15 @@
     "error": {
       "ai_entity_required": "Välj en AI Task-entitet, eller stäng av AI.",
       "ai_entity_unknown": "AI Task-entiteten hittades inte. Kontrollera att AI-leverantören är konfigurerad i Home Assistant."
+    }
+  },
+  "selector": {
+    "notification_language": {
+      "options": {
+        "auto": "Automatiskt (Home Assistants språk)",
+        "sv": "Svenska",
+        "en": "Engelska"
+      }
     }
   }
 }

@@ -41,7 +41,7 @@ Gemensamma inköpslistor i Home Assistant, ovanpå dina ICA-listor. Alla i hush�
    HACS → ⋮ → *Anpassade databaser* (*Custom repositories*) → lägg till `https://github.com/per-lennartsson/ha-ica-todo` som typ *Integration* → ladda ner → starta om Home Assistant → *Inställningar → Enheter och tjänster → Lägg till integration → ICA*.
 2. **Installera Handla** på samma sätt: lägg till `https://github.com/per-lennartsson/ha-ica-dashboard` som anpassad databas (typ *Integration*), ladda ner den senaste utgåvan och starta om Home Assistant.
 3. *Inställningar → Enheter och tjänster → Lägg till integration → **Handla**.* Det är allt; ingen dashboard-resurs behöver läggas till för hand.
-4. *(Valfritt)* **Aviseringar:** *Enheter och tjänster → Handla → Konfigurera*. Välj vem som ska få veta, och vilken `mobile_app_...`-tjänst som når deras telefon.
+4. *(Valfritt)* **Aviseringar:** *Enheter och tjänster → Handla → Konfigurera*. Välj vem som ska få veta, och vilken `mobile_app_...`-tjänst som når deras telefon. Samma meny låter dig låsa språket för aviseringarna (svenska eller engelska) om Home Assistant själv använder något annat.
 
 5. *(Valfritt)* **AI:** *Enheter och tjänster → Handla → Konfigurera → AI (valfritt)*. Kräver en *AI Task*-entitet från en AI-leverantör i Home Assistant. Av tills du slår på det; se [docs/ai.md](docs/ai.md).
 
@@ -51,6 +51,7 @@ Lägg kortet på en dashboard (till exempel en vy med sökvägen `handla`):
 
 ```yaml
 type: custom:handla-card
+# language: sv   # valfritt: visa kortet på sv eller en oavsett Home Assistants språk
 ```
 
 För telefonens dashboard, en liten genväg som visar hur många varor som är kvar och öppnar den vyn när man trycker:

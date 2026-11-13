@@ -9,6 +9,7 @@ from custom_components.handla.const import (
     CONF_AI_ENABLED,
     CONF_AI_ENTITY,
     CONF_AI_HEALTH_CHECK,
+    CONF_NOTIFY_LANGUAGE,
     CONF_RECIPIENTS,
     DOMAIN,
 )
@@ -16,6 +17,7 @@ from custom_components.handla.domain import event_data
 from custom_components.handla.options import (
     get_ai_config,
     get_health_check,
+    get_notification_language,
     get_recipients,
 )
 
@@ -62,3 +64,20 @@ def test_event_data_payload() -> None:
         "user_id": "u1",
         "user_name": "Per",
     }
+
+
+@pytest.mark.parametrize(
+    ("options", "expected"),
+    [
+        ({}, "auto"),
+        ({CONF_NOTIFY_LANGUAGE: "sv"}, "sv"),
+        ({CONF_NOTIFY_LANGUAGE: "en"}, "en"),
+        ({CONF_NOTIFY_LANGUAGE: "auto"}, "auto"),
+        ({CONF_NOTIFY_LANGUAGE: "de"}, "auto"),
+        ({CONF_NOTIFY_LANGUAGE: 5}, "auto"),
+    ],
+)
+def test_notification_language_defaults_to_auto(
+    options: dict[str, Any], expected: str
+) -> None:
+    assert get_notification_language(_entry(options)) == expected

@@ -366,6 +366,7 @@
         "title": "Handla settings",
         "menu_options": {
           "notifications": "Notifications",
+          "language": "Language of notifications",
           "ai": "AI (optional)"
         }
       },
@@ -399,6 +400,13 @@
           "ai_entity": "The provider that reads the pasted text. Required when AI is on.",
           "ai_health_check": "Once a day, send a tiny test request to the provider and notify the users chosen under Notifications if it fails. Uses a few tokens a day."
         }
+      },
+      "language": {
+        "title": "Language of notifications",
+        "description": "Which language the notification texts use. Automatic follows the Home Assistant language.",
+        "data": {
+          "notification_language": "Language"
+        }
       }
     },
     "abort": {
@@ -408,6 +416,15 @@
     "error": {
       "ai_entity_required": "Choose an AI Task entity, or turn AI off.",
       "ai_entity_unknown": "That AI Task entity was not found. Check that the AI provider is set up in Home Assistant."
+    }
+  },
+  "selector": {
+    "notification_language": {
+      "options": {
+        "auto": "Automatic (Home Assistant's language)",
+        "sv": "Swedish",
+        "en": "English"
+      }
     }
   }
 }

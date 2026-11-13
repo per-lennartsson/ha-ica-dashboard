@@ -8,7 +8,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.data_entry_flow import FlowResult, FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.handla.const import CONF_RECIPIENTS
+from custom_components.handla.const import CONF_NOTIFY_LANGUAGE, CONF_RECIPIENTS
 from tests.conftest import FakeIca, IcaConfigure, setup_handla
 
 
@@ -216,3 +216,38 @@ async def test_aborts_without_notify_services(
 
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "no_notify_services"
+
+
+async def test_choose_the_notification_language(
+    hass: HomeAssistant,
+    ica_dependency: IcaConfigure,
+    fake_ica: FakeIca,
+) -> None:
+    entry = await _entry(hass, ica_dependency, fake_ica, {"something": 1})
+    menu = await _menu(hass, entry)
+    form = await hass.config_entries.options.async_configure(
+        menu["flow_id"], {"next_step_id": "language"}
+    )
+    assert form["step_id"] == "language"
+    assert form["data_schema"]({}) == {CONF_NOTIFY_LANGUAGE: "auto"}
+
+    result = await hass.config_entries.options.async_configure(
+        form["flow_id"], {CONF_NOTIFY_LANGUAGE: "sv"}
+    )
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert entry.options[CONF_NOTIFY_LANGUAGE] == "sv"
+    assert entry.options["something"] == 1
+
+
+async def test_the_saved_notification_language_is_the_default(
+    hass: HomeAssistant,
+    ica_dependency: IcaConfigure,
+    fake_ica: FakeIca,
+) -> None:
+    entry = await _entry(hass, ica_dependency, fake_ica, {CONF_NOTIFY_LANGUAGE: "en"})
+    menu = await _menu(hass, entry)
+    form = await hass.config_entries.options.async_configure(
+        menu["flow_id"], {"next_step_id": "language"}
+    )
+    assert form["data_schema"]({}) == {CONF_NOTIFY_LANGUAGE: "en"}

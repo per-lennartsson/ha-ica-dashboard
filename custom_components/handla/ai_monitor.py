@@ -19,7 +19,12 @@ from .domain import (
     record_success,
 )
 from .notify_api import async_notify_users
-from .options import get_ai_config, get_health_check, get_recipients
+from .options import (
+    get_ai_config,
+    get_health_check,
+    get_notification_language,
+    get_recipients,
+)
 from .texts import async_get_templates
 
 _LOGGER = logging.getLogger(__name__)
@@ -75,7 +80,9 @@ class AiMonitor:
         if not recipients:
             _LOGGER.warning("The AI provider failed (nobody to notify): %s", error)
             return
-        templates = await async_get_templates(self._hass, AI_FAILURE_KEYS)
+        templates = await async_get_templates(
+            self._hass, AI_FAILURE_KEYS, get_notification_language(self._entry)
+        )
         title, message = build_failure_message(templates, error)
         await async_notify_users(self._hass, recipients, title, message)
 

@@ -13,7 +13,12 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.event import async_call_later
 from pytest_homeassistant_custom_component.common import async_capture_events
 
-from custom_components.handla.const import CONF_RECIPIENTS, DOMAIN, EVENT_ITEM_ADDED
+from custom_components.handla.const import (
+    CONF_NOTIFY_LANGUAGE,
+    CONF_RECIPIENTS,
+    DOMAIN,
+    EVENT_ITEM_ADDED,
+)
 from tests.conftest import FakeIca, FakeTodo, IcaConfigure, setup_handla
 
 
@@ -182,6 +187,20 @@ async def test_english_when_home_assistant_is_english(
     await _settle(hass)
 
     assert phones.messages("mobile_app_embla") == ["Per added milk to Veckan"]
+
+
+async def test_notification_language_option_beats_home_assistants(
+    hass: HomeAssistant, household: str, phones: Phones, per: User
+) -> None:
+    hass.config.language = "en"
+    entry = hass.config_entries.async_entries(DOMAIN)[0]
+    hass.config_entries.async_update_entry(
+        entry, options={**entry.options, CONF_NOTIFY_LANGUAGE: "sv"}
+    )
+    await _add(hass, "mjölk", per)
+    await _settle(hass)
+
+    assert phones.messages("mobile_app_embla") == ["Per lade till mjölk i Veckan"]
 
 
 async def test_a_failing_phone_does_not_block_the_others_or_the_add(
