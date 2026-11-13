@@ -164,7 +164,7 @@ Legend: **Verify** = how we know the step is done. Effort: S (<½ day), M (~1 da
 Plan and design: [docs/categories-plan.md](docs/categories-plan.md). Needs `ha-ica-todo >= v0.12.0` (article group services). One branch: `categories`.
 
 ### 3.0 Prerequisites (maintainer, in ha-ica-todo)
-- [ ] Release v0.12.0 (merge `article-group-categories`). **Not verified here**: the service fields and answers were taken from `docs/categories-plan.md`; check them against the released code.
+- [x] Release v0.12.0 (merge `article-group-categories`) and update it in the maintainer's HA. Service fields, answers and errors checked against the code on `main` (2026-11-13): they match what Handla uses.
 - [ ] Check that ICA keeps a category change made through `ica.set_item_article_group` (look in the ICA app).
 - [x] Here: `MIN_ICA_VERSION = "0.12.0"`, `docs/ica-contract.md` and `docs/ica-change-requests.md` updated, READMEs and tests follow.
 

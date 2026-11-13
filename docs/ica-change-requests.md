@@ -17,7 +17,7 @@
 
 ## Done (v0.12.0, branch `article-group-categories`)
 
-- [x] H. Article group (category) services for Handla's categories: `ica.get_article_groups`, `ica.get_shopping_list_items`, `ica.set_item_article_group` (with `remember`), and the option *Categorize items automatically*. Handla's minimum version is now v0.12.0. Written from the plan in `categories-plan.md`; **not checked against the released code**: confirm the service fields and answers, and that ICA keeps a category change made through `set_item_article_group` (manual check in `docs/dev.md`).
+- [x] H. Article group (category) services for Handla's categories: `ica.get_article_groups`, `ica.get_shopping_list_items`, `ica.set_item_article_group` (with `remember`), and the option *Categorize items automatically*. Handla's minimum version is now v0.12.0. Service fields, answers and errors checked against the released code on 2026-11-13 (see `ica-contract.md`). Still to confirm by hand: that ICA keeps a category change made through `set_item_article_group` (manual check in `docs/dev.md`).
 
 ## Left (checked against `main` at v0.11.0)
 

@@ -2,7 +2,7 @@
 
 What `handla` may rely on from [ha-ica-todo](https://github.com/per-lennartsson/ha-ica-todo). Source of truth is the code; this file is a reviewed snapshot. Re-verify when raising the minimum version.
 
-- Snapshot: branch `list-events-and-metadata`, commit `c2fe1f1` (v0.10.0), plus the categories services from branch `article-group-categories` (v0.12.0; taken from the maintainer's description in `docs/categories-plan.md`, **not verified against the released code**). Re-check against the released code before relying on it.
+- Snapshot: branch `list-events-and-metadata`, commit `c2fe1f1` (v0.10.0), plus the categories services of v0.12.0, checked on 2026-11-13 against `services.yaml`, `services.py`, `todo.py` and `coordinator.py` on `main` (fields, answers and errors match). Re-check when raising the minimum version.
 - Domain: `ica`, `iot_class: cloud_polling`, `config_flow: true`, no HA `dependencies`
 - Version: `manifest.json` has `"version": "v0.10.0"` (note the leading `v`; strip it before comparing versions). The release workflow writes the real version into `manifest.json` and attaches `ica.zip`.
 - Install: HACS custom repository, type *Integration*, `hacs.json` has `zip_release: true`, `filename: ica.zip`. Config via UI (personal ID, PIN, number of random recipes, JSON-in-description toggle). Polling default 5 min.
@@ -41,9 +41,9 @@ Confirmed against `services.yaml` / `services.py`. Differences from the project 
 | `ica.refresh_all` | none | optional: `{updated_integrations}`. Errors if an entry is not loaded. |
 | `ica.upsert_shopping_list` | `entity_id`, `rows` (text or JSON, multiple), `conflict_mode` (`APPEND` default, `MERGE`, `IGNORE`) | entity service |
 | `ica.add_offers_to_shopping_list` | `entity_id`, `offer_ids` (multiple), `conflict_mode` | entity service |
-| `ica.get_article_groups` | none | response only: `{"article_groups": [{"id": 10, "name": "Mejeri"}, ...]}`. Falls back to a built-in list when ICA cannot be reached. (v0.12.0) |
-| `ica.get_shopping_list_items` | `entity_id` (entity service) | `{entity_id: {"items": [{uid, product_name, quantity, unit, completed, article_group: {id, name}, ...}]}}`, read from ha-ica-todo's cache. (v0.12.0) |
-| `ica.set_item_article_group` | `entity_id`, `items: [{uid, article_group_id}]`, `remember` (default true) | `{entity_id: {"updated": [uid], "not_found": [uid]}}`. Writes to ICA; `remember` gives later items with the same name that group. (v0.12.0) |
+| `ica.get_article_groups` | none | response only: `{"article_groups": [{"id": 10, "name": "Mejeri"}, ...]}`. Falls back to a built-in list when ICA cannot be reached. A group's `name` may be null. (v0.12.0) |
+| `ica.get_shopping_list_items` | `entity_id` (entity service) | `{entity_id: {"items": [{uid, product_name, quantity, unit, completed, article_group: {id, name}, ...}]}}`, read from ha-ica-todo's cache; `article_group.name` may be null. As an entity service, the answer to `return_response` is keyed by entity id. (v0.12.0) |
+| `ica.set_item_article_group` | `entity_id`, `items: [{uid, article_group_id}]`, `remember` (default true) | `{entity_id: {"updated": [uid], "not_found": [uid]}}`. Writes to ICA; `remember` gives later items with the same name that group. An unknown group id raises `ServiceValidationError` (`unknown_article_group`); a uid that is not on the list is reported in `not_found`. (v0.12.0) |
 | `ica.get_baseitems` | `integration` | response only: `{success, data: [...]}` |
 | `ica.add_baseitem` | `integration`, `identifier` (name or barcode) | optional: `{success, data}` |
 | `ica.lookup_product` | `identifier` (EAN) | response only |
