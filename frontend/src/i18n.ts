@@ -3,6 +3,7 @@
 export const sv = {
   "card.title": "Handla",
   "card.invalid_config": "Ogiltig kortkonfiguration.",
+  "card.invalid_language": "language måste vara sv eller en.",
   "card.not_running":
     "Handla körs inte. Kontrollera att ICA-integrationen (ha-ica-todo) är installerad och laddad (Inställningar → System → Reparationer) och att Handla är tillagt under Enheter och tjänster.",
   "lists.label": "Lista",
@@ -98,7 +99,7 @@ export const sv = {
   "category.11": "Hem & fritid",
   "category.12": "Ospecificerad",
   "categorize.open": "Föreslå kategorier (AI)",
-  "categorize.include_all": "Ta med varor som redan har en kategori",
+  "categorize.include_all": "Ta med sorterade varor",
   "categorize.reading": "Sorterar varorna… Det kan ta en stund.",
   "categorize.none": "Inga ändringar föreslås.",
   "categorize.failed": "Kunde inte föreslå kategorier: {message}",
@@ -111,7 +112,9 @@ export const sv = {
   "categorize.row_failed": "Kunde inte sparas: {message}",
   "categorize.row_missing": "Varan finns inte längre.",
   "categorize.retry_hint": "{count} varor kunde inte sparas. De ligger kvar nedan – försök igen.",
+  "categorize.retry_hint_one": "1 vara kunde inte sparas. Den ligger kvar nedan – försök igen.",
   "categorize.done": "Sparade {count} varor.",
+  "categorize.done_one": "Sparade 1 vara.",
   "categorize.truncated": "Bara de första {count} varorna sorterades. Kör igen för resten.",
   "categorize.close": "Stäng",
   "shortcut.to_buy": "att handla",
@@ -128,6 +131,7 @@ export type TranslationKey = keyof typeof sv;
 export const en: Record<TranslationKey, string> = {
   "card.title": "Shopping",
   "card.invalid_config": "Invalid card configuration.",
+  "card.invalid_language": "language must be sv or en.",
   "card.not_running":
     "Handla is not running. Check that the ICA integration (ha-ica-todo) is installed and loaded (Settings → System → Repairs) and that Handla is added under Devices & services.",
   "lists.label": "List",
@@ -223,7 +227,7 @@ export const en: Record<TranslationKey, string> = {
   "category.11": "Home & leisure",
   "category.12": "Unspecified",
   "categorize.open": "Suggest categories (AI)",
-  "categorize.include_all": "Include items that already have a category",
+  "categorize.include_all": "Include sorted items",
   "categorize.reading": "Sorting the items… This can take a while.",
   "categorize.none": "No changes are suggested.",
   "categorize.failed": "Could not suggest categories: {message}",
@@ -236,7 +240,9 @@ export const en: Record<TranslationKey, string> = {
   "categorize.row_failed": "Could not be saved: {message}",
   "categorize.row_missing": "The item is no longer on the list.",
   "categorize.retry_hint": "{count} items could not be saved. They are still below – try again.",
+  "categorize.retry_hint_one": "1 item could not be saved. It is still below – try again.",
   "categorize.done": "Saved {count} items.",
+  "categorize.done_one": "Saved 1 item.",
   "categorize.truncated": "Only the first {count} items were sorted. Run it again for the rest.",
   "categorize.close": "Close",
   "shortcut.to_buy": "to buy",
@@ -270,4 +276,34 @@ export function localize(
 export function localizeOptional(language: string | undefined, key: string): string | undefined {
   const table: Record<string, string> = pickLanguage(language) === "sv" ? sv : en;
   return table[key];
+}
+
+/** Whether `value` is a language the cards can be forced into. */
+export function isCardLanguage(value: unknown): value is "sv" | "en" {
+  return value === "sv" || value === "en";
+}
+
+const forcedHass = new WeakMap<object, Map<string, object>>();
+
+/**
+ * `hass` with its language replaced by `language` (the card's `language` option).
+ * Without an override `hass` itself is returned. The copy is cached per `hass`, so
+ * children see a new object only when Home Assistant sends a new state.
+ */
+export function withLanguage<T extends { language: string }>(
+  hass: T | undefined,
+  language: string | undefined,
+): T | undefined {
+  if (!hass || !language || hass.language === language) return hass;
+  let byLanguage = forcedHass.get(hass);
+  if (!byLanguage) {
+    byLanguage = new Map();
+    forcedHass.set(hass, byLanguage);
+  }
+  let copy = byLanguage.get(language) as T | undefined;
+  if (!copy) {
+    copy = { ...hass, language };
+    byLanguage.set(language, copy);
+  }
+  return copy;
 }

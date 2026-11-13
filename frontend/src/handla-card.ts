@@ -2,7 +2,7 @@ import { LitElement, css, html, nothing, type PropertyValues } from "lit";
 import "./handla-ai";
 import "./handla-items";
 import { createList, deleteList, errorMessage, suggestListName } from "./api";
-import { localize, type TranslationKey } from "./i18n";
+import { isCardLanguage, localize, withLanguage, type TranslationKey } from "./i18n";
 import {
   listLabel,
   readLists,
@@ -166,7 +166,15 @@ export class HandlaCard extends LitElement {
     if (typeof config !== "object" || config === null) {
       throw new Error(localize(this.hass?.language, "card.invalid_config"));
     }
+    if (config.language !== undefined && !isCardLanguage(config.language)) {
+      throw new Error(localize(this.hass?.language, "card.invalid_language"));
+    }
     this._config = config;
+  }
+
+  /** The card's `language` option, else the language of the logged in user. */
+  private get _language(): string | undefined {
+    return this._config?.language ?? this.hass?.language;
   }
 
   getCardSize(): number {
@@ -174,7 +182,7 @@ export class HandlaCard extends LitElement {
   }
 
   private _t(key: TranslationKey, params: Record<string, string | number> = {}): string {
-    return localize(this.hass?.language, key, params);
+    return localize(this._language, key, params);
   }
 
   override willUpdate(): void {
@@ -266,7 +274,7 @@ export class HandlaCard extends LitElement {
     try {
       await action();
     } catch (err) {
-      this._error = this._t("error.generic", { message: errorMessage(err, this.hass?.language) });
+      this._error = this._t("error.generic", { message: errorMessage(err, this._language) });
     } finally {
       this._pending = false;
     }
@@ -295,6 +303,7 @@ export class HandlaCard extends LitElement {
     const busy = this._pending || status === "creating" || status === "deleting";
     const selected = resolveSelected(lists, this._selected, activeOfflineId);
     const target = lists.find((item) => item.offlineId === this._deleteTarget);
+    const childHass = withLanguage(this.hass, this._config?.language);
     return html`
       ${this._renderProgress(status)} ${this._renderError(status, detail, busy)}
       ${
@@ -306,8 +315,8 @@ export class HandlaCard extends LitElement {
       }
       ${
         this._mode === "list" && selected
-          ? html`<handla-ai .hass=${this.hass} .list=${selected} .locked=${busy}></handla-ai>
-              <handla-items .hass=${this.hass} .list=${selected} .locked=${busy}></handla-items>`
+          ? html`<handla-ai .hass=${childHass} .list=${selected} .locked=${busy}></handla-ai>
+              <handla-items .hass=${childHass} .list=${selected} .locked=${busy}></handla-items>`
           : nothing
       }
     `;

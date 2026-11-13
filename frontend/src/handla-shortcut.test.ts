@@ -223,6 +223,24 @@ describe("configuration", () => {
     },
   );
 
+  it("rejects a language that is not sv or en", () => {
+    const card = document.createElement("handla-shortcut") as HandlaShortcut;
+    expect(() =>
+      card.setConfig({ type: "custom:handla-shortcut", language: "de" } as never),
+    ).toThrow("language måste vara sv eller en.");
+  });
+
+  it("uses the language option instead of Home Assistant's language", async () => {
+    const card = await mount(
+      makeHass({ lists: [{ id: "B-1", title: "Mat", count: 3 }], language: "en" }),
+      {
+        type: "custom:handla-shortcut",
+        language: "sv",
+      },
+    );
+    expect(root(card).querySelector(".label")?.textContent).toBe("att handla");
+  });
+
   it("reports a card size and a stub configuration", () => {
     const card = document.createElement("handla-shortcut") as HandlaShortcut;
     expect(card.getCardSize()).toBe(1);

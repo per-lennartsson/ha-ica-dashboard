@@ -153,6 +153,31 @@ describe("basics", () => {
     expect(root(card).querySelector("h2")?.textContent).toBe("Shopping");
     expect(button(card, "new-list")?.textContent?.trim()).toBe("New list");
   });
+
+  it("uses the language option instead of Home Assistant's language", async () => {
+    const card = await mount(makeHass({ lists: [BREAD], language: "en" }).hass, {
+      type: "custom:handla-card",
+      language: "sv",
+    });
+    expect(root(card).querySelector("h2")?.textContent).toBe("Handla");
+    expect(button(card, "new-list")?.textContent?.trim()).toBe("Ny lista");
+  });
+
+  it("gives the items view the language option too", async () => {
+    const card = await mount(makeHass({ lists: [BREAD], language: "en" }).hass, {
+      type: "custom:handla-card",
+      language: "sv",
+    });
+    const items = root(card).querySelector("handla-items") as HandlaItems;
+    expect(items.hass?.language).toBe("sv");
+  });
+
+  it("rejects a language that is not sv or en", () => {
+    const card = document.createElement("handla-card") as HandlaCard;
+    expect(() => card.setConfig({ type: "custom:handla-card", language: "de" } as never)).toThrow(
+      "language måste vara sv eller en.",
+    );
+  });
 });
 
 describe("when Handla is not running", () => {

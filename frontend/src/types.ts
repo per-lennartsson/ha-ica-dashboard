@@ -33,11 +33,15 @@ export interface HandlaShortcutConfig {
   title?: string;
   /** Dashboard path to open when tapped, e.g. /lovelace/handla. Without it the card is a plain count. */
   navigation_path?: string;
+  /** Show the card in this language whatever language Home Assistant uses. */
+  language?: "sv" | "en";
 }
 
 export interface HandlaCardConfig {
   type: string;
   title?: string;
+  /** Show the card in this language whatever language Home Assistant uses. */
+  language?: "sv" | "en";
 }
 
 declare global {
