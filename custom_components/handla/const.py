@@ -29,6 +29,11 @@ USAGE_SAVE_DELAY: Final = 10.0
 
 # Notifications when someone adds items
 CONF_RECIPIENTS: Final = "recipients"  # {user_id: notify service name}
+CONF_NOTIFY_LANGUAGE: Final = (
+    "notification_language"  # "auto" (follow HA), "sv" or "en"
+)
+NOTIFY_LANGUAGE_AUTO: Final = "auto"
+NOTIFY_LANGUAGES: Final = (NOTIFY_LANGUAGE_AUTO, "sv", "en")
 EVENT_ITEM_ADDED: Final = "handla_item_added"
 NOTIFY_DELAY: Final = 20.0  # seconds: adds within this window become one message
 

@@ -37,7 +37,7 @@ def _ai_state(hass: HomeAssistant, entry: MockConfigEntry) -> State:
 async def _open_ai(hass: HomeAssistant, entry: MockConfigEntry) -> FlowResult:
     menu = await hass.config_entries.options.async_init(entry.entry_id)
     assert menu["type"] is FlowResultType.MENU
-    assert menu["menu_options"] == ["notifications", "ai"]
+    assert menu["menu_options"] == ["notifications", "language", "ai"]
     return await hass.config_entries.options.async_configure(
         menu["flow_id"], {"next_step_id": "ai"}
     )

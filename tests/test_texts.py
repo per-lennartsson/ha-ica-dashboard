@@ -51,6 +51,26 @@ async def test_english_templates_and_fallback(
     assert title == "Handla: AI is not working"
 
 
+@pytest.mark.parametrize(
+    ("ha_language", "chosen", "expected"),
+    [
+        ("en", "sv", "Per lade till mjölk i Veckan"),
+        ("sv", "en", "Per added milk to Veckan"),
+        ("sv", "auto", "Per lade till mjölk i Veckan"),
+        ("en", "auto", "Per added milk to Veckan"),
+    ],
+)
+async def test_chosen_language_beats_home_assistants(
+    hass: HomeAssistant, ha_language: str, chosen: str, expected: str
+) -> None:
+    hass.config.language = ha_language
+    templates = await async_get_templates(hass, NOTIFY_KEYS, chosen)
+    _, text = build_message(
+        templates, "Per", "Veckan", ["mjölk" if "lade" in expected else "milk"]
+    )
+    assert text == expected
+
+
 async def test_unknown_key_raises(hass: HomeAssistant) -> None:
     with pytest.raises(KeyError):
         await async_get_templates(hass, ["no_such_template"])

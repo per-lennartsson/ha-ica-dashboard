@@ -9,6 +9,7 @@ The full view: list picker, add field, quick-add buttons, items.
 ```yaml
 type: custom:handla-card
 # title: Handla      # optional, defaults to "Handla"
+# language: sv       # optional: sv or en, whatever language Home Assistant uses
 ```
 
 Put it on its own dashboard view, for example `/lovelace/handla` (view path `handla`).
@@ -21,11 +22,13 @@ A small card with the number of items left to buy and the list name. If you set 
 type: custom:handla-shortcut
 navigation_path: /lovelace/handla   # optional; without it the card is a plain count
 # title: Handla                    # optional, defaults to the list name
+# language: sv                     # optional: sv or en, whatever language Home Assistant uses
 ```
 
 - It shows the list **you** picked on this device (the picker in the full card), otherwise the household's active list.
 - The count follows live.
 - `navigation_path` must start with `/` (a path inside Home Assistant, not a web address).
+- `language` (both cards) forces Swedish (`sv`) or English (`en`). Without it the cards follow the language in your Home Assistant user profile (Swedish for Swedish, English for everything else).
 
 ## 3. A dashboard badge (alternative)
 
@@ -71,4 +74,4 @@ The list is grouped by the store's departments (ICA's article groups), in the or
 - Services (`handla.*`): `add_item`, `tick_item`, `remove_item`, `clear_ticked`, `create_list`, `delete_list`, `set_active_list`, `suggest_list_name`, `get_top_items`, `remove_quick_item`, `add_quick_item`, `merge_quick_items` (`sources`, `target`), `get_categories` (groups in store order and each item's group, response only), `set_category` (`items`: a list of `uid` and `group_id`; ICA remembers the choice).
 - `sensor.handla_ai`: `off` / `ready` / `unavailable`; `handla.ai_extract_items` and `handla.ai_suggest_categories` exist only while AI is on. See [ai.md](ai.md).
 - Event `handla_item_added`: fired for every added item (item, list, who added it).
-- Notifications: *Settings → Devices & services → Handla → Configure*.
+- Notifications: *Settings → Devices & services → Handla → Configure*. Under *Language of notifications* you can pick Swedish or English whatever language Home Assistant uses (the default, *Automatic*, follows Home Assistant).

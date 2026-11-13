@@ -41,7 +41,7 @@ Shared shopping lists for Home Assistant, on top of your ICA lists. Everyone in 
    HACS → ⋮ → *Custom repositories* → add `https://github.com/per-lennartsson/ha-ica-todo` as type *Integration* → download → restart Home Assistant → *Settings → Devices & services → Add integration → ICA*.
 2. **Install Handla** the same way: add `https://github.com/per-lennartsson/ha-ica-dashboard` as a custom repository (type *Integration*), download the latest release and restart Home Assistant.
 3. *Settings → Devices & services → Add integration → **Handla**.* That is all; no dashboard resource has to be added by hand.
-4. *(Optional)* **Notifications:** *Devices & services → Handla → Configure*. Choose who is told, and which `mobile_app_...` service reaches their phone.
+4. *(Optional)* **Notifications:** *Devices & services → Handla → Configure*. Choose who is told, and which `mobile_app_...` service reaches their phone. The same menu lets you fix the language of the notifications (Swedish or English) if Home Assistant itself uses another one.
 
 5. *(Optional)* **AI:** *Devices & services → Handla → Configure → AI (optional)*. Needs an *AI Task* entity from an AI provider in Home Assistant. Off until you turn it on; see [docs/ai.md](docs/ai.md).
 
@@ -51,6 +51,7 @@ Add the card to a dashboard (for example a view with the path `handla`):
 
 ```yaml
 type: custom:handla-card
+# language: sv   # optional: show the card in sv or en whatever language Home Assistant uses
 ```
 
 For the phone dashboard, a small shortcut that shows how many items are left and opens that view when tapped:
