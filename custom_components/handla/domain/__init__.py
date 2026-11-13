@@ -9,6 +9,29 @@ from .ai_health import (
     record_failure,
     record_success,
 )
+from .categories import (
+    STORE_ORDER,
+    UNSPECIFIED_GROUP,
+    ArticleGroup,
+    CategorizedItem,
+    groups_payload,
+    items_payload,
+    order_groups,
+    parse_categorized_items,
+    parse_group_id,
+    parse_groups,
+)
+from .categorize import (
+    MAX_CATEGORIZE_ITEMS,
+    SCOPE_ALL,
+    SCOPE_UNSPECIFIED,
+    SCOPES,
+    CategorySuggestion,
+    build_categorize_instructions,
+    choose_items,
+    clean_category_suggestions,
+)
+from .categorize import suggestions_payload as category_suggestions_payload
 from .duplicates import find_duplicates, normalize_name
 from .extraction import (
     MAX_TEXT_LENGTH,
@@ -60,6 +83,25 @@ from .usage import (
 from .versions import is_version_at_least, parse_version
 
 __all__ = [
+    "MAX_CATEGORIZE_ITEMS",
+    "SCOPES",
+    "SCOPE_ALL",
+    "SCOPE_UNSPECIFIED",
+    "STORE_ORDER",
+    "UNSPECIFIED_GROUP",
+    "ArticleGroup",
+    "CategorizedItem",
+    "CategorySuggestion",
+    "build_categorize_instructions",
+    "category_suggestions_payload",
+    "choose_items",
+    "clean_category_suggestions",
+    "groups_payload",
+    "items_payload",
+    "order_groups",
+    "parse_categorized_items",
+    "parse_group_id",
+    "parse_groups",
     "AI_FAILURE_KEYS",
     "NOTIFY_KEYS",
     "RENOTIFY_AFTER",

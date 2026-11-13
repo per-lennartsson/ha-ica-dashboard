@@ -234,6 +234,77 @@ function listOf(entityId: unknown): MockList {
   return list;
 }
 
+const MOCK_GROUPS = [
+  { id: 4, name: "Frukt & Grönt" },
+  { id: 3, name: "Bröd, kex och bageri" },
+  { id: 6, name: "Färskvaror" },
+  { id: 10, name: "Mejeri" },
+  { id: 5, name: "Djupfryst" },
+  { id: 9, name: "Skafferivaror" },
+  { id: 7, name: "Hälsa & Skönhet" },
+  { id: 11, name: "Hem & Fritid" },
+  { id: 8, name: "Kassa" },
+  { id: 12, name: "Ospecificerad" },
+];
+
+/** Groups chosen by hand in the preview; everything else is guessed from the name. */
+const chosenGroups: Record<string, number> = {};
+
+function guessGroup(summary: string): number {
+  const text = summary.toLowerCase();
+  if (/mjölk|smör|ost|yoghurt/.test(text)) return 10;
+  if (/gurka|äpple|tomat|banan/.test(text)) return 4;
+  if (/bröd|bulle/.test(text)) return 3;
+  return 12;
+}
+
+async function handleCategories(service: string, data: Record<string, unknown>): Promise<unknown> {
+  const list = listOf(data["entity_id"]);
+  const items = state.items[list.id] ?? [];
+  const groupOf = (item: MockItem): number => chosenGroups[item.uid] ?? guessGroup(item.summary);
+  if (service === "get_categories") {
+    await sleep(200);
+    const map = Object.fromEntries(items.map((item) => [item.uid, groupOf(item)]));
+    return { context: {}, response: { groups: MOCK_GROUPS, items: map } };
+  }
+  if (service === "set_category") {
+    await sleep(400);
+    if (state.failNext) {
+      state.failNext = false;
+      throw { message: "ICA said no." };
+    }
+    const changes = (data["items"] ?? []) as Array<{ uid: string; group_id: number }>;
+    const known = new Set(items.map((item) => item.uid));
+    for (const change of changes.filter((entry) => known.has(entry.uid))) {
+      chosenGroups[change.uid] = change.group_id;
+    }
+    return {
+      context: {},
+      response: {
+        updated: changes.filter((c) => known.has(c.uid)).map((c) => c.uid),
+        not_found: changes.filter((c) => !known.has(c.uid)).map((c) => c.uid),
+      },
+    };
+  }
+  await sleep(1200);
+  const asked = items.filter(
+    (item) => !item.completed && (data["scope"] === "all" || groupOf(item) === 12),
+  );
+  return {
+    context: {},
+    response: {
+      items: asked.map((item) => ({
+        uid: item.uid,
+        name: item.summary,
+        current: groupOf(item),
+        suggested: groupOf(item) === 12 ? 9 : 12,
+      })),
+      asked: asked.length,
+      truncated: false,
+    },
+  };
+}
+
 async function handle(service: string, data: Record<string, unknown>): Promise<unknown> {
   if (service === "suggest_list_name") return { context: {}, response: { name: suggestion() } };
   const failing = state.failNext;
@@ -246,6 +317,9 @@ async function handle(service: string, data: Record<string, unknown>): Promise<u
     return handleItem(service, data);
   }
   if (service === "ai_extract_items") return extractMock(data);
+  if (["get_categories", "set_category", "ai_suggest_categories"].includes(service)) {
+    return handleCategories(service, data);
+  }
   if (
     service.endsWith("_quick_item") ||
     service.endsWith("_quick_items") ||

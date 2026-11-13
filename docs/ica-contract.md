@@ -2,7 +2,7 @@
 
 What `handla` may rely on from [ha-ica-todo](https://github.com/per-lennartsson/ha-ica-todo). Source of truth is the code; this file is a reviewed snapshot. Re-verify when raising the minimum version.
 
-- Snapshot: branch `list-events-and-metadata`, commit `c2fe1f1` (v0.10.0). Re-check against the merged/released code before relying on it.
+- Snapshot: branch `list-events-and-metadata`, commit `c2fe1f1` (v0.10.0), plus the categories services from branch `article-group-categories` (v0.12.0; taken from the maintainer's description in `docs/categories-plan.md`, **not verified against the released code**). Re-check against the released code before relying on it.
 - Domain: `ica`, `iot_class: cloud_polling`, `config_flow: true`, no HA `dependencies`
 - Version: `manifest.json` has `"version": "v0.10.0"` (note the leading `v`; strip it before comparing versions). The release workflow writes the real version into `manifest.json` and attaches `ica.zip`.
 - Install: HACS custom repository, type *Integration*, `hacs.json` has `zip_release: true`, `filename: ica.zip`. Config via UI (personal ID, PIN, number of random recipes, JSON-in-description toggle). Polling default 5 min.
@@ -41,6 +41,9 @@ Confirmed against `services.yaml` / `services.py`. Differences from the project 
 | `ica.refresh_all` | none | optional: `{updated_integrations}`. Errors if an entry is not loaded. |
 | `ica.upsert_shopping_list` | `entity_id`, `rows` (text or JSON, multiple), `conflict_mode` (`APPEND` default, `MERGE`, `IGNORE`) | entity service |
 | `ica.add_offers_to_shopping_list` | `entity_id`, `offer_ids` (multiple), `conflict_mode` | entity service |
+| `ica.get_article_groups` | none | response only: `{"article_groups": [{"id": 10, "name": "Mejeri"}, ...]}`. Falls back to a built-in list when ICA cannot be reached. (v0.12.0) |
+| `ica.get_shopping_list_items` | `entity_id` (entity service) | `{entity_id: {"items": [{uid, product_name, quantity, unit, completed, article_group: {id, name}, ...}]}}`, read from ha-ica-todo's cache. (v0.12.0) |
+| `ica.set_item_article_group` | `entity_id`, `items: [{uid, article_group_id}]`, `remember` (default true) | `{entity_id: {"updated": [uid], "not_found": [uid]}}`. Writes to ICA; `remember` gives later items with the same name that group. (v0.12.0) |
 | `ica.get_baseitems` | `integration` | response only: `{success, data: [...]}` |
 | `ica.add_baseitem` | `integration`, `identifier` (name or barcode) | optional: `{success, data}` |
 | `ica.lookup_product` | `identifier` (EAN) | response only |
@@ -59,6 +62,8 @@ Confirmed against `services.yaml` / `services.py`. Differences from the project 
 
 - `ica_lists_changed` is **also fired if the reload fails**, then with an empty or partial `entities`. Treat a missing entity as failure, not as "keep waiting". `created` holds the ID we sent; ICA may store it upper case, so match case-insensitively.
 - `ica_list_items_changed` is fired for changes made through HA as well as in the ICA app, and carries **no user or context**. It cannot tell who changed an item. "Who added" must come from the HA service-call context of `todo.add_item` / `ica.upsert_shopping_list`. Use the event for changes made outside HA, and avoid notifying twice for changes `handla` made itself.
+- A category change appears in `ica_list_items_changed` as a `changed` row with `changed_props` containing `articleGroupId`. `todo/item/subscribe` does **not** carry the group, so Handla reads it with `ica.get_shopping_list_items` (through `handla.get_categories`).
+- ICA group ids: 3 Bröd, kex och bageri · 4 Frukt & Grönt · 5 Djupfryst · 6 Färskvaror · 7 Hälsa & Skönhet · 8 Kassa · 9 Skafferivaror · 10 Mejeri · 11 Hem & Fritid · 12 Ospecificerad. Option *Categorize items automatically* (default on) places open items in group 12 by article name or an earlier choice.
 - `changed` only reports fields present in the new row. An item that loses its quantity or unit is not reported as changed.
 
 ## Behaviour `handla` must handle
@@ -71,4 +76,4 @@ Confirmed against `services.yaml` / `services.py`. Differences from the project 
 
 ## Minimum version
 
-`>= v0.10.0` (first version with `ica_lists_changed`, `ica_list_items_changed` and the list attributes). v0.9.0 had create/delete and the parsing fixes but none of these, so it is not supported. The constant `MIN_ICA_VERSION` in `custom_components/handla/const.py` matches this. Raise this again only if a later ha-ica-todo change is released and needed.
+`>= v0.12.0` (first version with `ica.get_article_groups`, `ica.get_shopping_list_items` and `ica.set_item_article_group`; v0.10.0 added `ica_lists_changed`, `ica_list_items_changed` and the list attributes). Older versions are not supported. The constant `MIN_ICA_VERSION` in `custom_components/handla/const.py` matches this. Raise this again only if a later ha-ica-todo change is released and needed.

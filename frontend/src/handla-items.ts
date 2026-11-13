@@ -1,11 +1,17 @@
 import { LitElement, css, html, nothing } from "lit";
 import { AddQueue, type QueuedAdd } from "./add-queue";
-import { clearTicked, errorMessage, removeItem, tickItem } from "./api";
+import { clearTicked, errorMessage, getCategories, removeItem, setCategory, tickItem } from "./api";
+import { UNSPECIFIED_GROUP, buildSections, groupLabel, type CategoryData } from "./categories";
+import "./handla-categorize";
 import { localize, type TranslationKey } from "./i18n";
 import "./handla-quick-manage";
 import { availabilityOf, orderItems, readQuickItems, subscribeItems, type TodoItem } from "./items";
 import type { ListInfo } from "./lists";
+import { loadGroupByCategory, saveGroupByCategory } from "./storage";
 import type { HomeAssistant } from "./types";
+
+/** Wait this long after a change before reading the categories again (changes come in bursts). */
+const CATEGORY_FETCH_DELAY_MS = 300;
 
 /**
  * The items of one list: add (Enter adds and the field keeps focus), quick-add buttons,
@@ -23,6 +29,10 @@ export class HandlaItems extends LitElement {
     _clearing: { state: true },
     _actionError: { state: true },
     _managing: { state: true },
+    _categories: { state: true },
+    _categoryError: { state: true },
+    _groupBy: { state: true },
+    _pickerFor: { state: true },
   };
 
   static override styles = css`
@@ -177,6 +187,40 @@ export class HandlaItems extends LitElement {
     .clear {
       margin-top: 12px;
     }
+    label.group-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 44px;
+    }
+    label.group-toggle input {
+      width: 24px;
+      height: 24px;
+    }
+    li.group {
+      margin-top: 16px;
+      padding-bottom: 4px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--secondary-text-color, #727272);
+      border-bottom: 2px solid var(--divider-color, #cfcfcf);
+    }
+    li.picker {
+      padding: 4px 0 8px 48px;
+      border-bottom: 1px solid var(--divider-color, #e0e0e0);
+    }
+    li.picker select {
+      min-height: 44px;
+      max-width: 100%;
+      /* 16px stops iOS from zooming in when the field gets focus */
+      font-size: 16px;
+      color: inherit;
+      background: var(--secondary-background-color, #f4f4f5);
+      border: 1px solid var(--divider-color, #cfcfcf);
+      border-radius: 8px;
+    }
   `;
 
   declare hass?: HomeAssistant;
@@ -190,10 +234,18 @@ export class HandlaItems extends LitElement {
   declare _clearing: boolean;
   declare _actionError: string | null;
   declare _managing: boolean;
+  /** Store groups and each item's group; null until read (the list then shows flat). */
+  declare _categories: CategoryData | null;
+  declare _categoryError: string | null;
+  declare _groupBy: boolean;
+  /** The item whose category picker is open. */
+  declare _pickerFor: string | null;
 
   private _subscribedFor: string | null = null;
   private _stop: (() => void) | undefined;
   private _generation = 0;
+  private _categoryGeneration = 0;
+  private _categoryTimer: ReturnType<typeof setTimeout> | undefined;
   private readonly _adds = new AddQueue(
     () => this.hass,
     () => this.requestUpdate(),
@@ -203,6 +255,10 @@ export class HandlaItems extends LitElement {
     super();
     this.locked = false;
     this._managing = false;
+    this._categories = null;
+    this._categoryError = null;
+    this._groupBy = loadGroupByCategory();
+    this._pickerFor = null;
     this._items = null;
     this._loadError = null;
     this._text = "";
@@ -220,6 +276,7 @@ export class HandlaItems extends LitElement {
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this._stopSubscription();
+    this._stopCategories();
     this._subscribedFor = null;
   }
 
@@ -235,9 +292,13 @@ export class HandlaItems extends LitElement {
       entityId && availabilityOf(this.hass, entityId) === "ok" && this.hass ? entityId : null;
     if (wanted === this._subscribedFor) return;
     this._stopSubscription();
+    this._stopCategories();
     this._subscribedFor = wanted;
     this._items = null;
     this._loadError = null;
+    this._categories = null;
+    this._categoryError = null;
+    this._pickerFor = null;
     if (wanted && this.hass) this._startSubscription(this.hass, wanted);
   }
 
@@ -247,6 +308,7 @@ export class HandlaItems extends LitElement {
       if (generation !== this._generation) return;
       this._items = items;
       this._loadError = null;
+      this._scheduleCategories();
     })
       .then((stop) => {
         if (generation === this._generation) this._stop = stop;
@@ -262,6 +324,69 @@ export class HandlaItems extends LitElement {
     this._generation += 1;
     this._stop?.();
     this._stop = undefined;
+  }
+
+  // --- categories ----------------------------------------------------------
+
+  /** Read the categories soon: the subscription does not carry them. */
+  private _scheduleCategories(delay = CATEGORY_FETCH_DELAY_MS): void {
+    clearTimeout(this._categoryTimer);
+    this._categoryTimer = setTimeout(() => void this._fetchCategories(), delay);
+  }
+
+  private async _fetchCategories(): Promise<void> {
+    const { hass } = this;
+    const entityId = this._subscribedFor;
+    if (!hass || !entityId) return;
+    const generation = ++this._categoryGeneration;
+    try {
+      const data = await getCategories(hass, entityId);
+      if (generation !== this._categoryGeneration) return;
+      this._categories = data;
+      this._categoryError = null;
+    } catch (err) {
+      if (generation === this._categoryGeneration) {
+        this._categoryError = errorMessage(err, hass.language);
+      }
+    }
+  }
+
+  private _stopCategories(): void {
+    this._categoryGeneration += 1;
+    clearTimeout(this._categoryTimer);
+  }
+
+  private _toggleGroupBy(enabled: boolean): void {
+    this._groupBy = enabled;
+    saveGroupByCategory(enabled);
+  }
+
+  /** Optimistic: show the new group at once, put the old one back if ICA refuses. */
+  private async _changeCategory(item: TodoItem, groupId: number): Promise<void> {
+    const { hass, list } = this;
+    const before = this._categories;
+    this._pickerFor = null;
+    if (!hass || !list || !before || this.locked) return;
+    this._categories = { ...before, groupOf: { ...before.groupOf, [item.uid]: groupId } };
+    this._actionError = null;
+    let failure: string | null = null;
+    try {
+      const result = await setCategory(hass, list.entityId, [{ uid: item.uid, groupId }]);
+      if (!result.updated.includes(item.uid)) failure = this._t("categorize.row_missing");
+    } catch (err) {
+      failure = errorMessage(err, hass.language);
+    }
+    if (failure === null) return;
+    this._categories = this._categories
+      ? {
+          ...this._categories,
+          groupOf: {
+            ...this._categories.groupOf,
+            [item.uid]: before.groupOf[item.uid] ?? UNSPECIFIED_GROUP,
+          },
+        }
+      : this._categories;
+    this._actionError = this._t("categories.failed", { message: failure });
   }
 
   // --- adding --------------------------------------------------------------
@@ -352,6 +477,7 @@ export class HandlaItems extends LitElement {
           : html`<p class="muted" data-testid="unavailable">${this._t("items.unavailable")}</p>`
       }
       ${this._renderAddForm()} ${this._renderQuickItems()} ${this._renderNotices()}
+      ${available ? this._renderCategoryTools(list) : nothing}
       ${available ? this._renderItems(list) : nothing}
     `;
   }
@@ -473,6 +599,35 @@ export class HandlaItems extends LitElement {
     `;
   }
 
+  private _renderCategoryTools(list: ListInfo) {
+    return html`
+      <label class="group-toggle">
+        <input
+          type="checkbox"
+          data-action="group-by"
+          .checked=${this._groupBy}
+          @change=${(event: Event) =>
+            this._toggleGroupBy((event.target as HTMLInputElement).checked)}
+        />
+        ${this._t("categories.group_by")}
+      </label>
+      ${
+        this._categoryError
+          ? html`<div class="notice error" role="alert" data-testid="categories-failed">
+              ${this._t("categories.load_error", { message: this._categoryError })}
+            </div>`
+          : nothing
+      }
+      <handla-categorize
+        .hass=${this.hass}
+        .list=${list}
+        .data=${this._categories}
+        .locked=${this.locked}
+        @categories-changed=${() => void this._fetchCategories()}
+      ></handla-categorize>
+    `;
+  }
+
   private _renderItems(list: ListInfo) {
     if (this._loadError) {
       return html`<div class="notice error" role="alert" data-testid="load-failed">
@@ -503,7 +658,7 @@ export class HandlaItems extends LitElement {
             </li>
           `,
         )}
-        ${items.filter((item) => !item.completed).map((item) => this._renderRow(item))}
+        ${this._renderOpenRows(items.filter((item) => !item.completed))}
         ${
           ticked > 0
             ? html`<li class="divider" role="separator" data-testid="ticked-divider">
@@ -530,6 +685,42 @@ export class HandlaItems extends LitElement {
     `;
   }
 
+  private _renderOpenRows(open: TodoItem[]) {
+    const data = this._categories;
+    if (!this._groupBy || !data) return open.map((item) => this._renderRow(item));
+    return buildSections(open, data).map(
+      (section) => html`
+        <li class="group" role="presentation" data-group=${section.group.id}>
+          ${groupLabel(this.hass?.language, section.group)}
+        </li>
+        ${section.items.map((item) => this._renderRow(item))}
+      `,
+    );
+  }
+
+  private _renderPicker(item: TodoItem) {
+    const data = this._categories;
+    if (!data || this._pickerFor !== item.uid) return nothing;
+    const current = data.groupOf[item.uid] ?? UNSPECIFIED_GROUP;
+    return html`
+      <li class="picker" data-picker=${item.uid}>
+        <select
+          aria-label=${this._t("categories.pick", { item: item.summary })}
+          @change=${(event: Event) =>
+            void this._changeCategory(item, Number((event.target as HTMLSelectElement).value))}
+        >
+          ${data.groups.map(
+            (group) => html`
+              <option value=${group.id} ?selected=${group.id === current}>
+                ${groupLabel(this.hass?.language, group)}
+              </option>
+            `,
+          )}
+        </select>
+      </li>
+    `;
+  }
+
   private _renderRow(item: TodoItem) {
     const busy = this._busyUids.has(item.uid) || this._clearing || this.locked;
     return html`
@@ -547,6 +738,20 @@ export class HandlaItems extends LitElement {
           <span class="box">${item.completed ? "✓" : ""}</span>
         </button>
         <span class="text">${item.summary}</span>
+        ${
+          this._categories && !item.completed
+            ? html`<button
+                class="icon-button"
+                data-action="category"
+                aria-label=${this._t("categories.change", { item: item.summary })}
+                aria-expanded=${this._pickerFor === item.uid ? "true" : "false"}
+                ?disabled=${busy}
+                @click=${() => (this._pickerFor = this._pickerFor === item.uid ? null : item.uid)}
+              >
+                <ha-icon icon="mdi:tag-outline"></ha-icon>
+              </button>`
+            : nothing
+        }
         <button
           class="icon-button"
           data-action="remove"
@@ -557,6 +762,7 @@ export class HandlaItems extends LitElement {
           ×
         </button>
       </li>
+      ${this._renderPicker(item)}
     `;
   }
 }

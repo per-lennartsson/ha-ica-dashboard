@@ -228,6 +228,44 @@
           "description": "Namnet som ska behållas."
         }
       }
+    },
+    "get_categories": {
+      "name": "Hämta kategorier",
+      "description": "Returnerar butikens avdelningar (kategorier) i den ordning man går i butiken, och vilken avdelning varje vara på en lista har.",
+      "fields": {
+        "entity_id": {
+          "name": "Lista",
+          "description": "Listan som läses. Standard är den aktiva listan."
+        }
+      }
+    },
+    "set_category": {
+      "name": "Byt kategori",
+      "description": "Flyttar varor till en annan avdelning. Senare varor med samma namn hamnar också där.",
+      "fields": {
+        "items": {
+          "name": "Varor",
+          "description": "En lista med varor, var och en med uid och group_id."
+        },
+        "entity_id": {
+          "name": "Lista",
+          "description": "Listan som varorna finns på. Standard är den aktiva listan."
+        }
+      }
+    },
+    "ai_suggest_categories": {
+      "name": "Föreslå kategorier (AI)",
+      "description": "Låter vald AI Task-entitet föreslå avdelningar för varor. Bara varornas namn skickas. Inget ändras. Finns bara när AI är påslaget i Handlas inställningar.",
+      "fields": {
+        "scope": {
+          "name": "Varor",
+          "description": "“unspecified” (standard) gäller bara varor utan avdelning, “all” alla öppna varor."
+        },
+        "entity_id": {
+          "name": "Lista",
+          "description": "Listan som läses. Standard är den aktiva listan."
+        }
+      }
     }
   },
   "exceptions": {
@@ -308,6 +346,18 @@
     },
     "ai_failure_message": {
       "message": "AI-leverantören svarar med fel: {error} Lägg till från text är inte tillgängligt förrän det är löst."
+    },
+    "categories_failed": {
+      "message": "Kunde inte läsa kategorierna: {error}"
+    },
+    "set_category_failed": {
+      "message": "Kunde inte byta kategori: {error}"
+    },
+    "unknown_category": {
+      "message": "Okänd kategori: {group}."
+    },
+    "ai_bad_scope": {
+      "message": "Urvalet måste vara “unspecified” eller “all”."
     }
   },
   "options": {

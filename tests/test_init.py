@@ -37,7 +37,7 @@ async def test_entry_sets_up_and_unloads(
     ("configure", "key"),
     [
         ({"installed": False}, "ica_missing"),
-        ({"version": "v0.9.0"}, "ica_too_old"),
+        ({"version": "v0.11.0"}, "ica_too_old"),
         ({"entry_state": None}, "ica_not_configured"),
         ({"entry_state": ConfigEntryState.NOT_LOADED}, "ica_not_loaded"),
     ],
@@ -69,7 +69,7 @@ async def test_issue_is_cleared_when_ica_recovers(hass: HomeAssistant) -> None:
     # ICA becomes usable, then the retry succeeds and clears the issue
     ica_entry = MockConfigEntry(domain=ICA_DOMAIN, state=ConfigEntryState.LOADED)
     ica_entry.add_to_hass(hass)
-    found = AsyncMock(return_value=SimpleNamespace(manifest={"version": "v0.10.0"}))
+    found = AsyncMock(return_value=SimpleNamespace(manifest={"version": "v0.12.0"}))
     with patch("custom_components.handla.dependency.async_get_integration", found):
         await hass.config_entries.async_reload(entry.entry_id)
 

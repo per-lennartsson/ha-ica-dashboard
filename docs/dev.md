@@ -143,6 +143,20 @@ Build the card, install as before, and add the shortcut to the **phone dashboard
 6. **Badge:** the entity badge shows the count with a cart icon and tapping it navigates to the same view.
 7. **Not running:** with the integration disabled the shortcut says "Handla körs inte".
 
+## Manual check: categories (plan: categories)
+
+Needs `ha-ica-todo` v0.12.0 or newer. Use a throwaway ICA list with a few items (for example mjölk, gurka, bröd, diskmedel and something odd like "xyzzy").
+
+1. **Version:** with ha-ica-todo older than v0.12.0 the integration refuses to load and says why.
+2. **Grouped view:** the open items appear under department headings in store order (frukt & grönt first, "Ospecificerad" last); ticked items stay at the bottom. Add an item: it shows under "Ospecificerad" for a moment and moves when ICA has placed it.
+3. **Switch:** untick *Gruppera efter kategori*: the flat list is back. Reload the page: the choice is kept. Check on a second phone: it has its own choice.
+4. **Change category:** tap the tag button on "xyzzy", pick *Skafferivaror*. It moves at once. Check in the **ICA app** that the item's department really changed (this is the open question from the plan: does ICA keep the change?). Add "xyzzy" again later: it lands in *Skafferivaror*.
+5. **Failure:** turn off the network of the phone (or ICA) and change a category: the item moves back and an error is shown.
+6. **Live:** change a category in the ICA app: the card follows within a few seconds (or after the next list update).
+7. **AI:** with AI on, tap *Föreslå kategorier (AI)*: only items without a department are suggested. Change one department, untick one, save: the saved rows disappear and the items move; the ICA app agrees. With *Ta med varor som redan har en kategori* ticked, every open item is considered.
+8. **AI off:** the button and the service `handla.ai_suggest_categories` are gone; grouping and the tag button still work.
+9. **Phone:** nothing scrolls sideways, the tag button is easy to hit, and the pickers do not zoom the page.
+
 ## Manual check: AI module (plan steps 2.1–2.4)
 
 Needs a real AI Task entity (any provider; Anthropic needs credits). Install the branch or release as before. Use a throwaway ICA list.

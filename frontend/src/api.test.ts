@@ -6,8 +6,11 @@ import {
   deleteList,
   errorMessage,
   extractItems,
+  getCategories,
   removeItem,
   responseOf,
+  setCategory,
+  suggestCategories,
   suggestListName,
   tickItem,
 } from "./api";
@@ -275,5 +278,98 @@ describe("extractItems", () => {
     const callService = vi.fn().mockRejectedValue({ message: "The AI provider failed: credits" });
     const hass: HomeAssistant = { language: "sv", states: {}, callService };
     await expect(extractItems(hass, "todo.ica_a", "x")).rejects.toThrow("credits");
+  });
+});
+
+describe("categories", () => {
+  it("reads the groups and item groups of a list", async () => {
+    const { hass, callService } = hassReturning({
+      context: {},
+      response: { groups: [{ id: 10, name: "Mejeri" }], items: { a: 10 } },
+    });
+
+    const data = await getCategories(hass, "todo.ica_a");
+
+    expect(callService).toHaveBeenCalledWith(
+      "handla",
+      "get_categories",
+      { entity_id: "todo.ica_a" },
+      undefined,
+      false,
+      true,
+    );
+    expect(data).toEqual({ groups: [{ id: 10, name: "Mejeri" }], groupOf: { a: 10 } });
+  });
+
+  it("changes categories and reports which items were saved", async () => {
+    const { hass, callService } = hassReturning({
+      context: {},
+      response: { updated: ["a"], not_found: ["b", 3] },
+    });
+
+    const result = await setCategory(hass, "todo.ica_a", [
+      { uid: "a", groupId: 4 },
+      { uid: "b", groupId: 5 },
+    ]);
+
+    expect(callService).toHaveBeenCalledWith(
+      "handla",
+      "set_category",
+      {
+        entity_id: "todo.ica_a",
+        items: [
+          { uid: "a", group_id: 4 },
+          { uid: "b", group_id: 5 },
+        ],
+      },
+      undefined,
+      false,
+      true,
+    );
+    expect(result).toEqual({ updated: ["a"], notFound: ["b"] });
+  });
+
+  it("treats a missing answer as nothing saved", async () => {
+    const { hass } = hassReturning({ context: {}, response: {} });
+    expect(await setCategory(hass, "todo.ica_a", [])).toEqual({ updated: [], notFound: [] });
+  });
+
+  it.each([
+    [false, "unspecified"],
+    [true, "all"],
+  ])("asks the AI for suggestions (include all: %s)", async (includeAll, scope) => {
+    const { hass, callService } = hassReturning({
+      context: {},
+      response: {
+        items: [{ uid: "a", name: "mjölk", current: 12, suggested: 10 }],
+        truncated: true,
+        asked: 60,
+      },
+    });
+
+    const result = await suggestCategories(hass, "todo.ica_a", includeAll);
+
+    expect(callService).toHaveBeenCalledWith(
+      "handla",
+      "ai_suggest_categories",
+      { entity_id: "todo.ica_a", scope },
+      undefined,
+      false,
+      true,
+    );
+    expect(result).toEqual({
+      items: [{ uid: "a", name: "mjölk", current: 12, suggested: 10 }],
+      truncated: true,
+      asked: 60,
+    });
+  });
+
+  it("copes with an empty suggestion answer", async () => {
+    const { hass } = hassReturning({ context: {}, response: {} });
+    expect(await suggestCategories(hass, "todo.ica_a", false)).toEqual({
+      items: [],
+      truncated: false,
+      asked: 0,
+    });
   });
 });

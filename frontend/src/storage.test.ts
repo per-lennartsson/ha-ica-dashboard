@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { loadSelectedList, saveSelectedList } from "./storage";
+import {
+  loadGroupByCategory,
+  loadSelectedList,
+  saveGroupByCategory,
+  saveSelectedList,
+} from "./storage";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -39,5 +44,30 @@ describe("selected list storage", () => {
     });
     expect(() => saveSelectedList("ABC-1")).not.toThrow();
     expect(() => saveSelectedList(null)).not.toThrow();
+  });
+});
+
+describe("group by category storage", () => {
+  it("is on by default", () => {
+    expect(loadGroupByCategory()).toBe(true);
+  });
+
+  it("remembers off and on", () => {
+    saveGroupByCategory(false);
+    expect(loadGroupByCategory()).toBe(false);
+    expect(window.localStorage.getItem("handla:group-by-category")).toBe("off");
+    saveGroupByCategory(true);
+    expect(loadGroupByCategory()).toBe(true);
+  });
+
+  it("survives blocked storage", () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    expect(loadGroupByCategory()).toBe(true);
+    expect(() => saveGroupByCategory(false)).not.toThrow();
   });
 });

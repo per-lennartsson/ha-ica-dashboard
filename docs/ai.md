@@ -23,9 +23,19 @@ What the AI is asked to do: short Swedish names, quantity first, the same item m
 
 Limits: at most 20 000 characters of text, and at most 100 suggested items.
 
+## Suggest categories
+
+With AI on, **Föreslå kategorier (AI)** / *Suggest categories (AI)* appears under the list. ICA places most items in a store department by itself; this is for the ones left in *Ospecificerad*.
+
+1. Tap the button. By default only items without a department are asked about; tick **Ta med varor som redan har en kategori** to include every open item. Ticked items are never sent.
+2. Review: each row shows the item, its department now and the suggested one. Change the department with the dropdown, untick what you do not want.
+3. **Spara valda** saves the ticked rows. Rows that fail stay in the review with the error. ICA remembers saved choices, so the same items are placed without AI next time.
+
+The AI is told to place each item in exactly one of ICA's departments, and the answer is checked: unknown items or departments, repeats and suggestions equal to the current department are dropped. The prompt and format are in [`domain/categorize.py`](../custom_components/handla/domain/categorize.py). At most 60 items are asked about at once (the card says when the list was longer; run it again for the rest).
+
 ## What is sent where
 
-The pasted text is sent to **the AI provider you chose** (and nothing else: no list contents, no names). Check the provider's own terms if the texts are private. The text is not stored by Handla. Text from untrusted sources (mail, web pages) could contain instructions aimed at the model; Handla tells the model to treat the text as material only and cleans the answer, and you review every suggestion before anything is added.
+The pasted text is sent to **the AI provider you chose** (and nothing else: no list contents, no names). For *Suggest categories* the provider gets **item names and ICA's internal item ids**, plus the list of departments: no quantities, no list name, no user names. Check the provider's own terms if the texts are private. The text is not stored by Handla. Text from untrusted sources (mail, web pages) could contain instructions aimed at the model; Handla tells the model to treat the text as material only and cleans the answer, and you review every suggestion before anything is added.
 
 ## Monitoring
 
@@ -45,6 +55,7 @@ There is no way to ask a provider how much credit is left, so Handla only detect
 
 - `sensor.handla_ai`: `off` / `ready` / `unavailable`, with the chosen entity in the attribute `provider`.
 - `handla.ai_extract_items` (only while AI is on): `text` (required) and optional `entity_id` (the list to compare with; default the active list). Returns `items` (each with `item`, `on_list`, `existing`, `selected`, `quantity`, `unit`) and `count`. It adds nothing; add the chosen ones with `handla.add_item`.
+- `handla.ai_suggest_categories` (only while AI is on): optional `entity_id` and `scope` (`unspecified` by default, or `all`). Returns `items` (each with `uid`, `name`, `current`, `suggested`: department ids), `count`, `asked` and `truncated`. It changes nothing; save with `handla.set_category`.
 
 ## Troubleshooting
 

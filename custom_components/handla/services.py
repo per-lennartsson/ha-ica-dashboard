@@ -9,16 +9,23 @@ from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from . import ai, shopping
+from . import ai, categories, shopping
 from .const import (
     DOMAIN,
+    MAX_CATEGORY_CHANGES,
     MAX_COMMENT_LENGTH,
     MAX_ITEM_LENGTH,
     MAX_LIST_TITLE_LENGTH,
     QUICK_ADD_LIMIT,
 )
 from .coordinator import HandlaCoordinator
-from .domain import MAX_TRACKED, ListInfo, UsageError
+from .domain import (
+    MAX_TRACKED,
+    SCOPE_UNSPECIFIED,
+    SCOPES,
+    ListInfo,
+    UsageError,
+)
 from .schema import vol
 from .usage import UsageTracker
 
@@ -57,6 +64,32 @@ REMOVE_ITEM_SCHEMA = vol.Schema(
 CLEAR_TICKED_SCHEMA = vol.Schema({vol.Optional("entity_id"): cv.entity_id})
 AI_EXTRACT_ITEMS_SCHEMA = vol.Schema(
     {vol.Optional("entity_id"): cv.entity_id, vol.Required("text"): cv.string}
+)
+GET_CATEGORIES_SCHEMA = vol.Schema({vol.Optional("entity_id"): cv.entity_id})
+SET_CATEGORY_SCHEMA = vol.Schema(
+    {
+        vol.Optional("entity_id"): cv.entity_id,
+        vol.Required("items"): vol.All(
+            cv.ensure_list,
+            [
+                vol.Schema(
+                    {
+                        vol.Required("uid"): vol.All(cv.string, vol.Length(min=1)),
+                        vol.Required("group_id"): vol.All(
+                            vol.Coerce(int), vol.Range(min=0)
+                        ),
+                    }
+                )
+            ],
+            vol.Length(min=1, max=MAX_CATEGORY_CHANGES),
+        ),
+    }
+)
+AI_SUGGEST_CATEGORIES_SCHEMA = vol.Schema(
+    {
+        vol.Optional("entity_id"): cv.entity_id,
+        vol.Optional("scope", default=SCOPE_UNSPECIFIED): vol.In(SCOPES),
+    }
 )
 GET_TOP_ITEMS_SCHEMA = vol.Schema(
     {
@@ -167,6 +200,20 @@ async def _clear_ticked(call: ServiceCall) -> dict[str, Any]:
     return await shopping.async_clear_ticked(call.hass, _target_list(call))
 
 
+# --- categories ----------------------------------------------------------------
+
+
+async def _get_categories(call: ServiceCall) -> dict[str, Any]:
+    return await categories.async_get_categories(call.hass, _target_list(call))
+
+
+async def _set_category(call: ServiceCall) -> dict[str, Any]:
+    assignments = {item["uid"]: item["group_id"] for item in call.data["items"]}
+    return await categories.async_set_categories(
+        call.hass, _target_list(call), assignments
+    )
+
+
 # --- quick-add items -----------------------------------------------------------
 
 
@@ -204,6 +251,18 @@ async def _ai_extract_items(call: ServiceCall) -> dict[str, Any]:
     )
 
 
+async def _ai_suggest_categories(call: ServiceCall) -> dict[str, Any]:
+    coordinator = _coordinator(call.hass)
+    return await ai.async_suggest_categories(
+        call.hass,
+        coordinator.config_entry,
+        coordinator.ai_monitor,
+        _target_list(call),
+        call.data["scope"],
+        call.context,
+    )
+
+
 _OPTIONAL = SupportsResponse.OPTIONAL
 _ONLY = SupportsResponse.ONLY
 
@@ -216,6 +275,8 @@ SERVICES = (
     ServiceSpec("tick_item", _tick_item, TICK_ITEM_SCHEMA, _OPTIONAL),
     ServiceSpec("remove_item", _remove_item, REMOVE_ITEM_SCHEMA, _OPTIONAL),
     ServiceSpec("clear_ticked", _clear_ticked, CLEAR_TICKED_SCHEMA, _OPTIONAL),
+    ServiceSpec("get_categories", _get_categories, GET_CATEGORIES_SCHEMA, _ONLY),
+    ServiceSpec("set_category", _set_category, SET_CATEGORY_SCHEMA, _OPTIONAL),
     ServiceSpec("get_top_items", _get_top_items, GET_TOP_ITEMS_SCHEMA, _ONLY),
     ServiceSpec("remove_quick_item", _remove_quick_item, REMOVE_QUICK_ITEM_SCHEMA),
     ServiceSpec("add_quick_item", _add_quick_item, ADD_QUICK_ITEM_SCHEMA),
@@ -223,6 +284,12 @@ SERVICES = (
 )
 AI_SERVICES = (
     ServiceSpec("ai_extract_items", _ai_extract_items, AI_EXTRACT_ITEMS_SCHEMA, _ONLY),
+    ServiceSpec(
+        "ai_suggest_categories",
+        _ai_suggest_categories,
+        AI_SUGGEST_CATEGORIES_SCHEMA,
+        _ONLY,
+    ),
 )
 
 

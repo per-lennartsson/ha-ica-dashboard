@@ -32,7 +32,7 @@ async def test_user_flow_creates_entry(
     ("configure", "reason"),
     [
         ({"installed": False}, "ica_missing"),
-        ({"version": "v0.9.0"}, "ica_too_old"),
+        ({"version": "v0.11.0"}, "ica_too_old"),
         ({"entry_state": None}, "ica_not_configured"),
         ({"entry_state": ConfigEntryState.NOT_LOADED}, "ica_not_loaded"),
     ],
@@ -48,16 +48,16 @@ async def test_flow_aborts_when_ica_is_unusable(
     result = await _start_flow(hass)
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == reason
-    assert result["description_placeholders"]["minimum"] == "0.10.0"
+    assert result["description_placeholders"]["minimum"] == "0.12.0"
     assert not hass.config_entries.async_entries(DOMAIN)
 
 
 async def test_too_old_abort_shows_the_installed_version(
     hass: HomeAssistant, ica_dependency: IcaConfigure
 ) -> None:
-    ica_dependency(version="v0.9.0")
+    ica_dependency(version="v0.11.0")
     result = await _start_flow(hass)
-    assert result["description_placeholders"]["version"] == "v0.9.0"
+    assert result["description_placeholders"]["version"] == "v0.11.0"
 
 
 async def test_only_one_instance_allowed(

@@ -164,3 +164,51 @@ ai_extract_items:
             domain: todo
           exclude_entities:
             - todo.ica_favorite_articles
+
+get_categories:
+  fields:
+    entity_id:
+      required: false
+      selector:
+        entity:
+          filter:
+            integration: ica
+            domain: todo
+          exclude_entities:
+            - todo.ica_favorite_articles
+
+set_category:
+  fields:
+    items:
+      required: true
+      selector:
+        object:
+    entity_id:
+      required: false
+      selector:
+        entity:
+          filter:
+            integration: ica
+            domain: todo
+          exclude_entities:
+            - todo.ica_favorite_articles
+
+ai_suggest_categories:
+  fields:
+    scope:
+      required: false
+      default: unspecified
+      selector:
+        select:
+          options:
+            - unspecified
+            - all
+    entity_id:
+      required: false
+      selector:
+        entity:
+          filter:
+            integration: ica
+            domain: todo
+          exclude_entities:
+            - todo.ica_favorite_articles
