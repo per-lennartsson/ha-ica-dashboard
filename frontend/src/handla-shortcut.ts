@@ -1,5 +1,5 @@
 import { LitElement, css, html, nothing } from "lit";
-import { localize, type TranslationKey } from "./i18n";
+import { isCardLanguage, localize, type TranslationKey } from "./i18n";
 import { readLists, resolveSelected } from "./lists";
 import { isDashboardPath, navigate } from "./navigate";
 import { loadSelectedList } from "./storage";
@@ -81,6 +81,9 @@ export class HandlaShortcut extends LitElement {
     if (config.navigation_path !== undefined && !isDashboardPath(config.navigation_path)) {
       throw new Error(localize(this.hass?.language, "shortcut.invalid_path"));
     }
+    if (config.language !== undefined && !isCardLanguage(config.language)) {
+      throw new Error(localize(this.hass?.language, "card.invalid_language"));
+    }
     this._config = config;
   }
 
@@ -89,7 +92,7 @@ export class HandlaShortcut extends LitElement {
   }
 
   private _t(key: TranslationKey, params: Record<string, string | number> = {}): string {
-    return localize(this.hass?.language, key, params);
+    return localize(this._config?.language ?? this.hass?.language, key, params);
   }
 
   private _open(): void {

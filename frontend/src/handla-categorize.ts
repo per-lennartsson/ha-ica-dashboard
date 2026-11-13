@@ -6,6 +6,9 @@ import { localize, type TranslationKey } from "./i18n";
 import type { ListInfo } from "./lists";
 import type { HomeAssistant } from "./types";
 
+/** How long the "saved" confirmation stays. */
+const NOTE_VISIBLE_MS = 5000;
+
 type Phase = "closed" | "reading" | "review" | "saving";
 
 /** One suggestion in the review: can be ticked off, the group can be changed, may fail to save. */
@@ -38,7 +41,7 @@ export class HandlaCategorize extends LitElement {
   static override styles = css`
     :host {
       display: block;
-      margin-top: 12px;
+      margin-top: 4px;
     }
     .panel {
       padding: 12px;
@@ -149,6 +152,7 @@ export class HandlaCategorize extends LitElement {
 
   /** Bumped on every start and close, so an answer that arrives late is ignored. */
   private _request = 0;
+  private _noteTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor() {
     super();
@@ -157,11 +161,33 @@ export class HandlaCategorize extends LitElement {
     this._includeAll = false;
     this._rows = [];
     this._error = null;
+    this._clearNote();
+  }
+
+  private _clearNote(): void {
+    clearTimeout(this._noteTimer);
     this._note = null;
+  }
+
+  /** A confirmation that goes away by itself, so it does not sit above the list for ever. */
+  private _showFading(note: string): void {
+    this._note = note;
+    clearTimeout(this._noteTimer);
+    this._noteTimer = setTimeout(() => (this._note = null), NOTE_VISIBLE_MS);
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    clearTimeout(this._noteTimer);
   }
 
   private _t(key: TranslationKey, params: Record<string, string | number> = {}): string {
     return localize(this.hass?.language, key, params);
+  }
+
+  /** The text for `count` items; "1 vara" is not "1 varor". */
+  private _counted(key: "categorize.done" | "categorize.retry_hint", count: number): string {
+    return count === 1 ? this._t(`${key}_one`) : this._t(key, { count });
   }
 
   private _groupName(id: number): string {
@@ -181,13 +207,13 @@ export class HandlaCategorize extends LitElement {
     const request = ++this._request;
     this._phase = "reading";
     this._error = null;
-    this._note = null;
+    this._clearNote();
     try {
       const result = await suggestCategories(hass, list.entityId, this._includeAll);
       if (request !== this._request) return;
       this._rows = result.items.map((entry) => this._rowFor(entry));
       if (this._rows.length === 0) {
-        this._note = this._t("categorize.none");
+        this._showFading(this._t("categorize.none"));
         this._phase = "closed";
         return;
       }
@@ -277,11 +303,11 @@ export class HandlaCategorize extends LitElement {
     }
     if (rest.length === 0) {
       this._phase = "closed";
-      this._note = this._t("categorize.done", { count: saved.size });
+      this._showFading(this._counted("categorize.done", saved.size));
       return;
     }
     this._phase = "review";
-    this._note = this._t("categorize.retry_hint", { count: rest.length });
+    this._note = this._counted("categorize.retry_hint", rest.length);
   }
 
   // --- rendering ---------------------------------------------------------------

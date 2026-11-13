@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { en, localize, pickLanguage, sv } from "./i18n";
+import { en, isCardLanguage, localize, pickLanguage, sv, withLanguage } from "./i18n";
 
 describe("pickLanguage", () => {
   it.each([
@@ -51,5 +51,38 @@ describe("localize", () => {
     for (const key of Object.keys(sv) as Array<keyof typeof sv>) {
       expect(placeholders(en[key])).toEqual(placeholders(sv[key]));
     }
+  });
+});
+
+describe("isCardLanguage", () => {
+  it.each([
+    ["sv", true],
+    ["en", true],
+    ["de", false],
+    ["", false],
+    [undefined, false],
+  ] as const)("%s -> %s", (input, expected) => {
+    expect(isCardLanguage(input)).toBe(expected);
+  });
+});
+
+describe("withLanguage", () => {
+  const hass = { language: "en", states: {} };
+
+  it("returns hass itself without an override or when it already matches", () => {
+    expect(withLanguage(hass, undefined)).toBe(hass);
+    expect(withLanguage(hass, "en")).toBe(hass);
+    expect(withLanguage(undefined, "sv")).toBeUndefined();
+  });
+
+  it("returns a copy in the chosen language and leaves hass alone", () => {
+    const copy = withLanguage(hass, "sv");
+    expect(copy?.language).toBe("sv");
+    expect(copy?.states).toBe(hass.states);
+    expect(hass.language).toBe("en");
+  });
+
+  it("returns the same copy for the same hass", () => {
+    expect(withLanguage(hass, "sv")).toBe(withLanguage(hass, "sv"));
   });
 });

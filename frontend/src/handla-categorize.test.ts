@@ -251,6 +251,36 @@ describe("reviewing and saving", () => {
     expect(testid(el, "note")?.textContent).toContain("Sparade 2");
   });
 
+  it("says 'Sparade 1 vara', not '1 varor'", async () => {
+    const callService = service({
+      ai_suggest_categories: async () => answer({ items: SUGGESTIONS.slice(0, 1) }),
+    });
+    const el = await mount(makeHass(callService));
+    await suggest(el);
+
+    await click(el, "save");
+
+    expect(testid(el, "note")?.textContent?.trim()).toBe("Sparade 1 vara.");
+  });
+
+  it("lets the confirmation fade away by itself", async () => {
+    const { el } = await review();
+    vi.useFakeTimers();
+    try {
+      button(el, "save")?.click();
+      await vi.advanceTimersByTimeAsync(0);
+      await el.updateComplete;
+      expect(testid(el, "note")).not.toBeNull();
+
+      await vi.advanceTimersByTimeAsync(5100);
+      await el.updateComplete;
+
+      expect(testid(el, "note")).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("saves the group the user picked instead", async () => {
     const { el, callService } = await review();
     const select = rows(el)[0]?.querySelector<HTMLSelectElement>("select") as HTMLSelectElement;
@@ -308,7 +338,7 @@ describe("reviewing and saving", () => {
 
     expect(rows(el).map((row) => row.dataset["uid"])).toEqual(["b"]);
     expect(rows(el)[0]?.querySelector(".note.error")?.textContent).toContain("finns inte längre");
-    expect(testid(el, "note")?.textContent).toContain("1 varor kunde inte sparas");
+    expect(testid(el, "note")?.textContent).toContain("1 vara kunde inte sparas");
     expect(changed).toHaveBeenCalledTimes(1);
   });
 
