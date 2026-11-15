@@ -20,7 +20,7 @@ from tests.conftest import IcaConfigure
 async def test_ok(hass: HomeAssistant, ica_dependency: IcaConfigure) -> None:
     ica_dependency()
     status = await async_check_ica(hass)
-    assert status == IcaStatus(None, "v0.12.0")
+    assert status == IcaStatus(None, "v0.13.0")
     assert status.translation_key is None
 
 

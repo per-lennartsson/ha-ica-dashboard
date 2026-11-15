@@ -9,6 +9,7 @@ import {
 } from "./categories";
 import { localize } from "./i18n";
 import { parseQuickItems, type QuickItem } from "./items";
+import { parseItemSuggestions, type ItemSuggestion } from "./suggestions";
 import type { HomeAssistant } from "./types";
 
 const DOMAIN = "handla";
@@ -171,6 +172,16 @@ export async function mergeQuickItems(
 /** The store groups in shopping order and the group of each item on a list. */
 export async function getCategories(hass: HomeAssistant, entityId: string): Promise<CategoryData> {
   return parseCategories(await call(hass, "get_categories", { entity_id: entityId }, true));
+}
+
+/** Every item name to suggest while typing, each with the category the item will get. */
+export async function getItemSuggestions(
+  hass: HomeAssistant,
+  entityId: string,
+): Promise<ItemSuggestion[]> {
+  return parseItemSuggestions(
+    await call(hass, "get_item_suggestions", { entity_id: entityId }, true),
+  );
 }
 
 export interface SetCategoryResult {

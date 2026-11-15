@@ -1323,3 +1323,292 @@ describe("wide layout", () => {
     expect(callsTo(env.callService, "add_item")).toHaveLength(1);
   });
 });
+
+describe("suggestions while typing", () => {
+  type Observer = (entries: Array<{ contentRect: { width: number } }>) => void;
+  let resize: Observer | null = null;
+
+  const SUGGESTIONS = [
+    { name: "Toalettpapper", group_id: 11, source: "history", count: 9 },
+    { name: "Mjölk", group_id: 10, source: "history", count: 7 },
+    { name: "Mjölkchoklad", group_id: 12, source: "article" },
+    { name: "Hushållspapper", group_id: 11, source: "article" },
+  ];
+
+  /** callService that answers suggestions, adds and duplicates; `fail` breaks the suggestions. */
+  const serviceWith = (options: { fail?: boolean; duplicate?: boolean; items?: unknown[] } = {}) =>
+    vi.fn(async (_domain: string, service: string, data?: Record<string, unknown>) => {
+      if (service === "get_item_suggestions") {
+        if (options.fail) throw new Error("old ha-ica-todo");
+        return { context: {}, response: { items: options.items ?? SUGGESTIONS } };
+      }
+      if (service === "add_item") {
+        return options.duplicate && data?.["confirm_duplicate"] !== true
+          ? duplicateResponse(String(data?.["item"]))
+          : addedResponse(String(data?.["item"]));
+      }
+      return { context: {}, response: {} };
+    });
+
+  const useResizeObserver = () => {
+    resize = null;
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        constructor(callback: Observer) {
+          resize = callback;
+        }
+        observe(): void {}
+        disconnect(): void {}
+      },
+    );
+  };
+  const setWidth = async (el: HandlaItems, width: number) => {
+    resize?.([{ contentRect: { width } }]);
+    await settle(el);
+  };
+
+  const options = (el: HandlaItems) =>
+    [...root(el).querySelectorAll<HTMLElement>('li[role="option"]')].map(
+      (li) => li.dataset["suggestion"],
+    );
+  const key = async (el: HandlaItems, name: string) => {
+    input(el)?.dispatchEvent(
+      new KeyboardEvent("keydown", { key: name, cancelable: true, bubbles: true }),
+    );
+    await el.updateComplete;
+  };
+
+  afterEach(() => {
+    window.localStorage.clear();
+    vi.unstubAllGlobals();
+  });
+
+  it("reads the full list once and shows matching names with their category", async () => {
+    const env = makeEnv({ callService: serviceWith() });
+    const el = await mount(env.build());
+
+    expect(callsTo(env.callService, "get_item_suggestions")).toHaveLength(1);
+    await type(el, "mjö");
+
+    expect(options(el)).toEqual(["Mjölk", "Mjölkchoklad"]);
+    const chips = [...root(el).querySelectorAll(".category")].map((c) => c.textContent?.trim());
+    expect(chips).toEqual(["Mejeri", "Ospecificerad"]);
+    expect(root(el).querySelector(".category.none")?.textContent).toContain("Ospecificerad");
+    expect(callsTo(env.callService, "get_item_suggestions")).toHaveLength(1);
+  });
+
+  it("shows nothing for a single character", async () => {
+    const el = await mount(makeEnv({ callService: serviceWith() }).build());
+    await type(el, "m");
+    expect(testid(el, "suggestions")).toBeNull();
+  });
+
+  it("has combobox, listbox and aria-activedescendant", async () => {
+    const el = await mount(makeEnv({ callService: serviceWith() }).build());
+    await type(el, "mjö");
+    expect(input(el)?.getAttribute("role")).toBe("combobox");
+    expect(input(el)?.getAttribute("aria-expanded")).toBe("true");
+    expect(testid(el, "suggestions")?.getAttribute("role")).toBe("listbox");
+
+    await key(el, "ArrowDown");
+    expect(input(el)?.getAttribute("aria-activedescendant")).toBe("suggestion-0");
+    expect(root(el).querySelector("#suggestion-0")?.getAttribute("aria-selected")).toBe("true");
+  });
+
+  it("moves with the arrow keys, wrapping around", async () => {
+    const el = await mount(makeEnv({ callService: serviceWith() }).build());
+    await type(el, "mjö");
+
+    await key(el, "ArrowDown");
+    await key(el, "ArrowDown");
+    expect(input(el)?.getAttribute("aria-activedescendant")).toBe("suggestion-1");
+    await key(el, "ArrowDown");
+    expect(input(el)?.getAttribute("aria-activedescendant")).toBe("suggestion-0");
+    await key(el, "ArrowUp");
+    expect(input(el)?.getAttribute("aria-activedescendant")).toBe("suggestion-1");
+  });
+
+  it("adds the highlighted name with Enter and keeps the typed quantity", async () => {
+    const env = makeEnv({ callService: serviceWith() });
+    const el = await mount(env.build());
+    await type(el, "2 st toal");
+    await key(el, "ArrowDown");
+    await key(el, "Enter");
+    await settle(el);
+
+    expect(callsTo(env.callService, "add_item")[0]?.[2]).toMatchObject({
+      item: "2 st Toalettpapper",
+    });
+    expect(input(el)?.value).toBe("");
+    expect(testid(el, "suggestions")).toBeNull();
+  });
+
+  it("adds the text as typed with Enter when nothing is highlighted", async () => {
+    const env = makeEnv({ callService: serviceWith() });
+    const el = await mount(env.build());
+    await type(el, "mjö");
+    const enter = new KeyboardEvent("keydown", { key: "Enter", cancelable: true, bubbles: true });
+    input(el)?.dispatchEvent(enter);
+
+    expect(enter.defaultPrevented).toBe(false); // the form submits as usual
+    await submit(el);
+    expect(callsTo(env.callService, "add_item")[0]?.[2]).toMatchObject({ item: "mjö" });
+  });
+
+  it("closes with Escape and again opens when typing", async () => {
+    const el = await mount(makeEnv({ callService: serviceWith() }).build());
+    await type(el, "mjö");
+    await key(el, "Escape");
+    expect(testid(el, "suggestions")).toBeNull();
+    await type(el, "mjöl");
+    expect(testid(el, "suggestions")).not.toBeNull();
+  });
+
+  it("closes when the field loses focus", async () => {
+    const el = await mount(makeEnv({ callService: serviceWith() }).build());
+    await type(el, "mjö");
+    input(el)?.dispatchEvent(new FocusEvent("blur"));
+    await el.updateComplete;
+    expect(testid(el, "suggestions")).toBeNull();
+  });
+
+  it("adds a tapped name, keeping the quantity", async () => {
+    const env = makeEnv({ callService: serviceWith() });
+    const el = await mount(env.build());
+    await type(el, "3 mjö");
+    root(el).querySelector<HTMLElement>('li[data-suggestion="Mjölk"]')?.click();
+    await settle(el);
+
+    expect(callsTo(env.callService, "add_item")[0]?.[2]).toMatchObject({ item: "3 Mjölk" });
+  });
+
+  it("still asks before adding a picked name that is already on the list", async () => {
+    const env = makeEnv({ callService: serviceWith({ duplicate: true }) });
+    const el = await mount(env.build());
+    await type(el, "mjö");
+    root(el).querySelector<HTMLElement>('li[data-suggestion="Mjölk"]')?.click();
+    await settle(el);
+
+    expect(testid(el, "duplicate")?.textContent).toContain("Mjölk");
+  });
+
+  it("shows no dropdown when the switch is off, and the choice is remembered", async () => {
+    const env = makeEnv({ callService: serviceWith() });
+    const el = await mount(env.build());
+    await type(el, "mjö");
+    expect(testid(el, "suggestions")).not.toBeNull();
+
+    const toggle = button(el, "show-suggestions") as unknown as HTMLInputElement;
+    toggle.checked = false;
+    toggle.dispatchEvent(new Event("change"));
+    await el.updateComplete;
+    expect(testid(el, "suggestions")).toBeNull();
+    await type(el, "mjöl");
+    expect(testid(el, "suggestions")).toBeNull();
+    expect(window.localStorage.getItem("handla:show-suggestions")).toBe("off");
+  });
+
+  it("does not read the suggestions at all while the switch is off", async () => {
+    window.localStorage.setItem("handla:show-suggestions", "off");
+    const env = makeEnv({ callService: serviceWith() });
+    await mount(env.build());
+    expect(callsTo(env.callService, "get_item_suggestions")).toHaveLength(0);
+  });
+
+  it("lets people add as usual when the suggestions cannot be read", async () => {
+    const env = makeEnv({ callService: serviceWith({ fail: true }) });
+    const el = await mount(env.build());
+    await type(el, "mjö");
+    expect(testid(el, "suggestions")).toBeNull();
+
+    await submit(el);
+    expect(callsTo(env.callService, "add_item")[0]?.[2]).toMatchObject({ item: "mjö" });
+    expect(testid(el, "action-failed")).toBeNull();
+  });
+
+  it("does not read the suggestions again when the list is switched", async () => {
+    const env = makeEnv({ callService: serviceWith() });
+    const el = await mount(env.build());
+    el.list = LIST_B;
+    await settle(el);
+    el.list = LIST_A;
+    await settle(el);
+
+    expect(callsTo(env.callService, "get_item_suggestions")).toHaveLength(1);
+  });
+
+  it("reads them again after ten minutes and when the card reconnects", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      const env = makeEnv({ callService: serviceWith() });
+      const el = await mount(env.build());
+      expect(callsTo(env.callService, "get_item_suggestions")).toHaveLength(1);
+
+      vi.setSystemTime(Date.now() + 9 * 60 * 1000);
+      await type(el, "mj");
+      expect(callsTo(env.callService, "get_item_suggestions")).toHaveLength(1);
+
+      vi.setSystemTime(Date.now() + 2 * 60 * 1000);
+      await type(el, "mjö");
+      await settle(el);
+      expect(callsTo(env.callService, "get_item_suggestions")).toHaveLength(2);
+
+      el.remove();
+      document.body.appendChild(el);
+      await settle(el);
+      expect(callsTo(env.callService, "get_item_suggestions")).toHaveLength(3);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("shows at most 8 names when narrow and 12 when wide", async () => {
+    useResizeObserver();
+    const many = Array.from({ length: 20 }, (_, i) => ({
+      name: `Gurka ${i}`,
+      group_id: 4,
+      source: "history",
+    }));
+    const el = await mount(makeEnv({ callService: serviceWith({ items: many }) }).build());
+    await setWidth(el, 500);
+    await type(el, "gu");
+    expect(options(el)).toHaveLength(8);
+
+    await setWidth(el, 900);
+    expect(options(el)).toHaveLength(12);
+  });
+
+  it("puts the dropdown in the main column when wide", async () => {
+    useResizeObserver();
+    const el = await mount(makeEnv({ callService: serviceWith() }).build());
+    await setWidth(el, 900);
+    await type(el, "mjö");
+
+    expect(root(el).querySelector('[data-testid="wide"] .main [role="listbox"]')).not.toBeNull();
+    expect(root(el).querySelector(".side [role=listbox]")).toBeNull();
+  });
+
+  it("keeps the text, the open dropdown, the highlighted row and the focus over a layout switch", async () => {
+    useResizeObserver();
+    const el = await mount(makeEnv({ callService: serviceWith() }).build());
+    await setWidth(el, 500);
+    input(el)?.focus();
+    await type(el, "2 st mjö");
+    await key(el, "ArrowDown");
+    await key(el, "ArrowDown");
+    const before = input(el);
+
+    await setWidth(el, 900);
+
+    expect(input(el)).not.toBe(before); // the field was recreated
+    expect(input(el)?.value).toBe("2 st mjö");
+    expect(options(el)).toEqual(["Mjölk", "Mjölkchoklad"]);
+    expect(input(el)?.getAttribute("aria-activedescendant")).toBe("suggestion-1");
+    expect(root(el).activeElement).toBe(input(el));
+
+    await setWidth(el, 500);
+    expect(options(el)).toEqual(["Mjölk", "Mjölkchoklad"]);
+    expect(root(el).activeElement).toBe(input(el));
+  });
+});

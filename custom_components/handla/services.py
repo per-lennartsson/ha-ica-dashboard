@@ -9,13 +9,14 @@ from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from . import ai, categories, shopping
+from . import ai, categories, ica_api, shopping
 from .const import (
     DOMAIN,
     MAX_CATEGORY_CHANGES,
     MAX_COMMENT_LENGTH,
     MAX_ITEM_LENGTH,
     MAX_LIST_TITLE_LENGTH,
+    MAX_SUGGESTIONS,
     QUICK_ADD_LIMIT,
 )
 from .coordinator import HandlaCoordinator
@@ -25,6 +26,7 @@ from .domain import (
     SCOPES,
     ListInfo,
     UsageError,
+    item_suggestions_payload,
 )
 from .schema import vol
 from .usage import UsageTracker
@@ -82,6 +84,15 @@ SET_CATEGORY_SCHEMA = vol.Schema(
                 )
             ],
             vol.Length(min=1, max=MAX_CATEGORY_CHANGES),
+        ),
+    }
+)
+GET_ITEM_SUGGESTIONS_SCHEMA = vol.Schema(
+    {
+        vol.Optional("entity_id"): cv.entity_id,
+        vol.Optional("query"): vol.All(cv.string, vol.Length(max=MAX_ITEM_LENGTH)),
+        vol.Optional("limit"): vol.All(
+            vol.Coerce(int), vol.Range(min=1, max=MAX_SUGGESTIONS)
         ),
     }
 )
@@ -214,6 +225,19 @@ async def _set_category(call: ServiceCall) -> dict[str, Any]:
     )
 
 
+# --- suggestions ---------------------------------------------------------------
+
+
+async def _get_item_suggestions(call: ServiceCall) -> dict[str, Any]:
+    suggestions = await ica_api.async_get_item_suggestions(
+        call.hass,
+        _target_list(call).entity_id,
+        call.data.get("query"),
+        call.data.get("limit"),
+    )
+    return {"items": item_suggestions_payload(suggestions)}
+
+
 # --- quick-add items -----------------------------------------------------------
 
 
@@ -277,6 +301,12 @@ SERVICES = (
     ServiceSpec("clear_ticked", _clear_ticked, CLEAR_TICKED_SCHEMA, _OPTIONAL),
     ServiceSpec("get_categories", _get_categories, GET_CATEGORIES_SCHEMA, _ONLY),
     ServiceSpec("set_category", _set_category, SET_CATEGORY_SCHEMA, _OPTIONAL),
+    ServiceSpec(
+        "get_item_suggestions",
+        _get_item_suggestions,
+        GET_ITEM_SUGGESTIONS_SCHEMA,
+        _ONLY,
+    ),
     ServiceSpec("get_top_items", _get_top_items, GET_TOP_ITEMS_SCHEMA, _ONLY),
     ServiceSpec("remove_quick_item", _remove_quick_item, REMOVE_QUICK_ITEM_SCHEMA),
     ServiceSpec("add_quick_item", _add_quick_item, ADD_QUICK_ITEM_SCHEMA),

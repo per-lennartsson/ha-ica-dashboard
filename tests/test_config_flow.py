@@ -48,7 +48,7 @@ async def test_flow_aborts_when_ica_is_unusable(
     result = await _start_flow(hass)
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == reason
-    assert result["description_placeholders"]["minimum"] == "0.12.0"
+    assert result["description_placeholders"]["minimum"] == "0.13.0"
     assert not hass.config_entries.async_entries(DOMAIN)
 
 

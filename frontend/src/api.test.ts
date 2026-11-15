@@ -7,6 +7,7 @@ import {
   errorMessage,
   extractItems,
   getCategories,
+  getItemSuggestions,
   removeItem,
   responseOf,
   setCategory,
@@ -299,6 +300,25 @@ describe("categories", () => {
       true,
     );
     expect(data).toEqual({ groups: [{ id: 10, name: "Mejeri" }], groupOf: { a: 10 } });
+  });
+
+  it("reads the item suggestions of a list", async () => {
+    const { hass, callService } = hassReturning({
+      context: {},
+      response: { items: [{ name: "Mjölk", group_id: 10, source: "history", count: 3 }] },
+    });
+
+    const result = await getItemSuggestions(hass, "todo.ica_a");
+
+    expect(callService).toHaveBeenCalledWith(
+      "handla",
+      "get_item_suggestions",
+      { entity_id: "todo.ica_a" },
+      undefined,
+      false,
+      true,
+    );
+    expect(result).toEqual([{ name: "Mjölk", groupId: 10, source: "history", count: 3 }]);
   });
 
   it("changes categories and reports which items were saved", async () => {

@@ -1,6 +1,14 @@
 import { LitElement, css, html, nothing } from "lit";
 import { AddQueue, type QueuedAdd } from "./add-queue";
-import { clearTicked, errorMessage, getCategories, removeItem, setCategory, tickItem } from "./api";
+import {
+  clearTicked,
+  errorMessage,
+  getCategories,
+  getItemSuggestions,
+  removeItem,
+  setCategory,
+  tickItem,
+} from "./api";
 import { UNSPECIFIED_GROUP, buildSections, groupLabel, type CategoryData } from "./categories";
 import "./handla-categorize";
 import { localize, type TranslationKey } from "./i18n";
@@ -8,11 +16,30 @@ import "./handla-quick-manage";
 import { availabilityOf, orderItems, readQuickItems, subscribeItems, type TodoItem } from "./items";
 import { WideLayout } from "./layout";
 import type { ListInfo } from "./lists";
-import { loadGroupByCategory, saveGroupByCategory } from "./storage";
+import {
+  loadGroupByCategory,
+  loadShowSuggestions,
+  saveGroupByCategory,
+  saveShowSuggestions,
+} from "./storage";
+import {
+  MAX_SUGGESTIONS_NARROW,
+  MAX_SUGGESTIONS_WIDE,
+  filterSuggestions,
+  pickedText,
+  splitTyped,
+  type ItemSuggestion,
+} from "./suggestions";
 import type { HomeAssistant } from "./types";
 
 /** Wait this long after a change before reading the categories again (changes come in bursts). */
 const CATEGORY_FETCH_DELAY_MS = 300;
+
+/** The suggestion list is read again after this long (it grows as items are added). */
+const SUGGESTIONS_REFRESH_MS = 10 * 60 * 1000;
+
+/** After a failed read the next try comes after this long. */
+const SUGGESTIONS_RETRY_MS = 30 * 1000;
 
 /** From this width on, the quick-add, AI and category tools sit beside the items. */
 const WIDE_ITEMS_PX = 760;
@@ -37,6 +64,9 @@ export class HandlaItems extends LitElement {
     _categoryError: { state: true },
     _groupBy: { state: true },
     _pickerFor: { state: true },
+    _suggest: { state: true },
+    _suggestOpen: { state: true },
+    _highlight: { state: true },
   };
 
   static override styles = css`
@@ -66,6 +96,52 @@ export class HandlaItems extends LitElement {
       background: var(--secondary-background-color, #f4f4f5);
       border: 1px solid var(--divider-color, #cfcfcf);
       border-radius: 8px;
+    }
+    form {
+      position: relative;
+    }
+    ul.suggestions {
+      position: absolute;
+      z-index: 10;
+      top: 100%;
+      left: 0;
+      right: 0;
+      margin: 4px 0 0;
+      padding: 4px 0;
+      max-height: 60vh;
+      overflow-y: auto;
+      background: var(--card-background-color, #fff);
+      border: 1px solid var(--divider-color, #cfcfcf);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgb(0 0 0 / 20%);
+    }
+    li.suggestion {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 44px;
+      padding: 0 12px;
+      cursor: pointer;
+    }
+    li.suggestion[aria-selected="true"] {
+      background: var(--secondary-background-color, #f4f4f5);
+    }
+    li.suggestion .name {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    li.suggestion .category {
+      flex: 0 0 auto;
+      padding: 2px 10px;
+      font-size: 0.75rem;
+      border-radius: 12px;
+      color: var(--text-primary-color, white);
+      background: var(--primary-color, #03a9f4);
+    }
+    li.suggestion .category.none {
+      color: var(--secondary-text-color, #727272);
+      background: var(--divider-color, #e0e0e0);
     }
     button {
       min-height: 44px;
@@ -261,12 +337,26 @@ export class HandlaItems extends LitElement {
   declare _groupBy: boolean;
   /** The item whose category picker is open. */
   declare _pickerFor: string | null;
+  /** Whether this user wants name suggestions while typing. */
+  declare _suggest: boolean;
+  /** The dropdown is open (kept here, not in the DOM, so a layout switch does not close it). */
+  declare _suggestOpen: boolean;
+  /** The highlighted row of the dropdown, or -1. */
+  declare _highlight: number;
 
   private _subscribedFor: string | null = null;
   private _stop: (() => void) | undefined;
   private _generation = 0;
   private _categoryGeneration = 0;
   private _categoryTimer: ReturnType<typeof setTimeout> | undefined;
+  /** Every suggestion name; the same for all lists, so a list switch keeps it. Memory only. */
+  private _suggestions: ItemSuggestion[] | null = null;
+  /** When the suggestions were last asked for (null: not since the card was connected). */
+  private _suggestionsAskedAt: number | null = null;
+  private _suggestionsLoading = false;
+  /** The add field had focus, so it can get it back when the layout switches. */
+  private _fieldFocused = false;
+  private _renderedWide = false;
   /** Wide enough for two columns. */
   private readonly _layout = new WideLayout(this, WIDE_ITEMS_PX);
   private readonly _adds = new AddQueue(
@@ -282,6 +372,9 @@ export class HandlaItems extends LitElement {
     this._categoryError = null;
     this._groupBy = loadGroupByCategory();
     this._pickerFor = null;
+    this._suggest = loadShowSuggestions();
+    this._suggestOpen = false;
+    this._highlight = -1;
     this._items = null;
     this._loadError = null;
     this._text = "";
@@ -301,6 +394,8 @@ export class HandlaItems extends LitElement {
     this._stopSubscription();
     this._stopCategories();
     this._subscribedFor = null;
+    // Read the suggestions again when the card comes back
+    this._suggestionsAskedAt = null;
   }
 
   private _t(key: TranslationKey, params: Record<string, string | number> = {}): string {
@@ -310,6 +405,7 @@ export class HandlaItems extends LitElement {
   // --- live items ----------------------------------------------------------
 
   override willUpdate(): void {
+    void this._loadSuggestions();
     const entityId = this.list?.entityId;
     const wanted =
       entityId && availabilityOf(this.hass, entityId) === "ok" && this.hass ? entityId : null;
@@ -412,6 +508,115 @@ export class HandlaItems extends LitElement {
     this._actionError = this._t("categories.failed", { message: failure });
   }
 
+  // --- suggestions ---------------------------------------------------------
+
+  /** Reads the suggestion names when there are none yet or they are old; never throws. */
+  private async _loadSuggestions(): Promise<void> {
+    const { hass } = this;
+    const entityId = this.list?.entityId;
+    if (!hass || !entityId || !this._suggest || this._suggestionsLoading) return;
+    if (availabilityOf(hass, entityId) !== "ok") return;
+    const age = this._suggestionsAskedAt === null ? null : Date.now() - this._suggestionsAskedAt;
+    const limit = this._suggestions ? SUGGESTIONS_REFRESH_MS : SUGGESTIONS_RETRY_MS;
+    if (age !== null && age < limit) return;
+    this._suggestionsAskedAt = Date.now();
+    this._suggestionsLoading = true;
+    try {
+      this._suggestions = await getItemSuggestions(hass, entityId);
+      this.requestUpdate();
+    } catch {
+      // No suggestions then: adding as typed always works. The next try comes soon.
+    } finally {
+      this._suggestionsLoading = false;
+    }
+  }
+
+  private _toggleSuggest(enabled: boolean): void {
+    this._suggest = enabled;
+    this._suggestOpen = false;
+    saveShowSuggestions(enabled);
+    if (enabled) void this._loadSuggestions();
+  }
+
+  /** The suggestions for what is typed now; none while off, while adding is not possible, or closed. */
+  private _matches(): ItemSuggestion[] {
+    if (!this._suggest || !this._suggestOpen || !this._suggestions || !this._canAdd) return [];
+    const max = this._layout.wide ? MAX_SUGGESTIONS_WIDE : MAX_SUGGESTIONS_NARROW;
+    return filterSuggestions(this._suggestions, splitTyped(this._text).query, max);
+  }
+
+  private _closeSuggestions(): void {
+    this._suggestOpen = false;
+    this._highlight = -1;
+  }
+
+  private _onInput(event: Event): void {
+    this._text = (event.target as HTMLInputElement).value;
+    this._suggestOpen = true;
+    this._highlight = -1;
+    void this._loadSuggestions();
+  }
+
+  private _onKeydown(event: KeyboardEvent): void {
+    const matches = this._matches();
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      if (!this._suggest || !this._suggestions) return;
+      event.preventDefault();
+      if (!this._suggestOpen) this._suggestOpen = true;
+      const count = this._matches().length;
+      if (count === 0) return;
+      const down = event.key === "ArrowDown";
+      const last = count - 1;
+      if (down) this._highlight = this._highlight >= last ? 0 : this._highlight + 1;
+      else this._highlight = this._highlight <= 0 ? last : this._highlight - 1;
+    } else if (event.key === "Enter") {
+      const picked = matches[this._highlight];
+      if (picked) {
+        event.preventDefault();
+        this._pick(picked);
+      }
+    } else if (event.key === "Escape" && matches.length > 0) {
+      event.preventDefault();
+      event.stopPropagation();
+      this._closeSuggestions();
+    }
+  }
+
+  private _onFocus(): void {
+    this._fieldFocused = true;
+    void this._loadSuggestions();
+  }
+
+  private _onBlur(event: Event): void {
+    // A layout switch removes the field; that is not the user leaving it
+    if (!(event.target as Node).isConnected) return;
+    this._fieldFocused = false;
+    this._closeSuggestions();
+  }
+
+  /** Adds the picked name through the normal path, so the "finns redan" check still applies. */
+  private _pick(suggestion: ItemSuggestion): void {
+    const entityId = this.list?.entityId;
+    if (!entityId || !this._canAdd) return;
+    this._adds.enqueue(pickedText(splitTyped(this._text).prefix, suggestion.name), entityId);
+    this._text = "";
+    this._closeSuggestions();
+    this._focusInput();
+  }
+
+  private _categoryName(groupId: number): string {
+    const known = this._categories?.groups.find((group) => group.id === groupId);
+    return groupLabel(this.hass?.language, known ?? { id: groupId, name: "" });
+  }
+
+  override updated(): void {
+    if (this._layout.wide !== this._renderedWide) {
+      // The add field was recreated: give the focus back
+      this._renderedWide = this._layout.wide;
+      if (this._fieldFocused) this._focusInput();
+    }
+  }
+
   // --- adding --------------------------------------------------------------
 
   private get _canAdd(): boolean {
@@ -431,6 +636,7 @@ export class HandlaItems extends LitElement {
     const entityId = this.list?.entityId;
     if (!text || !entityId || !this._canAdd) return;
     this._text = "";
+    this._closeSuggestions();
     const field = this.renderRoot.querySelector<HTMLInputElement>("input[type=text]");
     if (field) field.value = "";
     this._adds.enqueue(text, entityId);
@@ -523,24 +729,68 @@ export class HandlaItems extends LitElement {
 
   private _renderAddForm() {
     const canAdd = this._canAdd;
+    const matches = this._matches();
+    const open = matches.length > 0;
     return html`
       <form @submit=${(event: Event) => this._submit(event)}>
         <div class="row">
           <input
             type="text"
+            role="combobox"
             aria-label=${this._t("items.add_label")}
+            aria-autocomplete="list"
+            aria-expanded=${open ? "true" : "false"}
+            aria-controls="suggestions"
+            aria-activedescendant=${
+              open && this._highlight >= 0 ? `suggestion-${this._highlight}` : nothing
+            }
             placeholder=${this._t("items.add_placeholder")}
             enterkeyhint="send"
             autocomplete="off"
             .value=${this._text}
             ?disabled=${!canAdd}
-            @input=${(event: Event) => (this._text = (event.target as HTMLInputElement).value)}
+            @input=${(event: Event) => this._onInput(event)}
+            @keydown=${(event: KeyboardEvent) => this._onKeydown(event)}
+            @focus=${() => this._onFocus()}
+            @blur=${(event: Event) => this._onBlur(event)}
           />
           <button type="submit" class="primary" data-action="add" ?disabled=${!canAdd}>
             ${this._t("items.add_button")}
           </button>
         </div>
+        ${open ? this._renderSuggestions(matches) : nothing}
       </form>
+    `;
+  }
+
+  private _renderSuggestions(matches: ItemSuggestion[]) {
+    return html`
+      <ul
+        class="suggestions"
+        id="suggestions"
+        role="listbox"
+        aria-label=${this._t("suggest.label")}
+        data-testid="suggestions"
+      >
+        ${matches.map(
+          (suggestion, index) => html`
+            <li
+              class="suggestion"
+              id="suggestion-${index}"
+              role="option"
+              aria-selected=${index === this._highlight ? "true" : "false"}
+              data-suggestion=${suggestion.name}
+              @mousedown=${(event: Event) => event.preventDefault()}
+              @click=${() => this._pick(suggestion)}
+            >
+              <span class="name">${suggestion.name}</span>
+              <span class="category ${suggestion.groupId === 12 ? "none" : ""}">
+                ${this._categoryName(suggestion.groupId)}
+              </span>
+            </li>
+          `,
+        )}
+      </ul>
     `;
   }
 
@@ -649,6 +899,15 @@ export class HandlaItems extends LitElement {
             this._toggleGroupBy((event.target as HTMLInputElement).checked)}
         />
         ${this._t("categories.group_by")}
+      </label>
+      <label class="group-toggle">
+        <input
+          type="checkbox"
+          data-action="show-suggestions"
+          .checked=${this._suggest}
+          @change=${(event: Event) => this._toggleSuggest((event.target as HTMLInputElement).checked)}
+        />
+        ${this._t("suggest.toggle")}
       </label>
       ${
         this._categoryError

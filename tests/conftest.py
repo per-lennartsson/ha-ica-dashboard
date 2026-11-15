@@ -51,6 +51,7 @@ class FakeIca:
         default_factory=dict
     )
     rows: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
+    suggestions: list[dict[str, Any]] = field(default_factory=list)
 
     def add_list(
         self,
@@ -94,6 +95,19 @@ class FakeIca:
             }
             for uid, name, group, completed in rows
         ]
+
+    def set_suggestions(self, entries: list[dict[str, Any]]) -> None:
+        """Set the names `ica.get_item_suggestions` returns (any list's entity id)."""
+        self.suggestions = entries
+
+    async def _get_suggestions(self, data: dict[str, Any]) -> dict[str, Any]:
+        entries = self.suggestions
+        query = str(data.get("query") or "").lower()
+        if query:
+            entries = [e for e in entries if query in str(e.get("name", "")).lower()]
+        if "limit" in data:
+            entries = entries[: data["limit"]]
+        return {data["entity_id"]: {"items": entries}}
 
     async def _get_groups(self, _data: dict[str, Any]) -> dict[str, Any]:
         return {"article_groups": ARTICLE_GROUPS}
@@ -216,6 +230,7 @@ def fake_ica(hass: HomeAssistant) -> FakeIca:
     fake.handlers["get_article_groups"] = fake._get_groups
     fake.handlers["get_shopping_list_items"] = fake._get_rows
     fake.handlers["set_item_article_group"] = fake._set_group
+    fake.handlers["get_item_suggestions"] = fake._get_suggestions
     for name in (
         "create_shopping_list",
         "delete_shopping_list",
@@ -229,6 +244,7 @@ def fake_ica(hass: HomeAssistant) -> FakeIca:
         "get_article_groups",
         "get_shopping_list_items",
         "set_item_article_group",
+        "get_item_suggestions",
     ):
         hass.services.async_register(
             ICA_DOMAIN,
@@ -246,7 +262,7 @@ IcaConfigure = Callable[..., MockConfigEntry | None]
 def ica_dependency(hass: HomeAssistant) -> Iterator[IcaConfigure]:
     """Fake the ha-ica-todo dependency. Nothing is faked until the result is called.
 
-    Call it exactly once per test. With no arguments ICA is ready (v0.12.0, loaded);
+    Call it exactly once per test. With no arguments ICA is ready (v0.13.0, loaded);
     otherwise e.g. `ica_dependency(version="v0.11.0")`,
     `ica_dependency(installed=False)` or `ica_dependency(entry_state=None)` for
     "installed but not set up".
@@ -257,7 +273,7 @@ def ica_dependency(hass: HomeAssistant) -> Iterator[IcaConfigure]:
         def configure(
             *,
             installed: bool = True,
-            version: str | None = "v0.12.0",
+            version: str | None = "v0.13.0",
             entry_state: ConfigEntryState | None = ConfigEntryState.LOADED,
         ) -> MockConfigEntry | None:
             nonlocal configured

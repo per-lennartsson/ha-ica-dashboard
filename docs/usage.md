@@ -78,6 +78,12 @@ Tap **Hantera** (Manage) after the quick-add buttons. The view lists everything 
 
 Changes are shared by everyone using the same Handla, like the counts themselves.
 
+## Suggestions while typing
+
+Type two or more letters in the add field and names to pick from appear under it, each with the category the item will get (grey when it has none yet). Use ↑/↓ and Enter, or tap a name; Esc closes the list. A quantity you typed is kept: "2 st toal" and picking *Toalettpapper* adds "2 st Toalettpapper". A picked name is added like any other, so you are still asked if it is already on the list. Up to 8 names show on a narrow screen and 12 on a wide one.
+
+The names come from ha-ica-todo (v0.13.0 or newer): your item history, favourites and ICA's articles. The card reads the whole list once and filters it locally, and reads it again after about 10 minutes or when the card is opened again. If it cannot be read, no list is shown and adding works as before. Each user can turn it off with the *Show suggestions* switch (kept in the browser). The service `handla.get_item_suggestions` returns the same data for automations.
+
 ## Categories
 
 The list is grouped by the store's departments (ICA's article groups), in the order of a typical walk through the shop: fruit & vegetables, bread, fresh food, dairy, frozen, pantry, health & beauty, home & leisure, checkout, and last the items ICA could not place ("Ospecificerad"). Ticked items stay at the bottom as before.
@@ -92,7 +98,7 @@ The list is grouped by the store's departments (ICA's article groups), in the or
 - `sensor.handla_lists`: all lists with item counts. `sensor.handla_status`: idle / creating / deleting / error.
 - `sensor.handla_frequent_items`: the quick-add buttons (most added first, topped up with staples).
 - `select.handla_active_list`: the household's active list.
-- Services (`handla.*`): `add_item`, `tick_item`, `remove_item`, `clear_ticked`, `create_list`, `delete_list`, `set_active_list`, `suggest_list_name`, `get_top_items`, `remove_quick_item`, `add_quick_item`, `merge_quick_items` (`sources`, `target`), `get_categories` (groups in store order and each item's group, response only), `set_category` (`items`: a list of `uid` and `group_id`; ICA remembers the choice).
+- Services (`handla.*`): `add_item`, `tick_item`, `remove_item`, `clear_ticked`, `create_list`, `delete_list`, `set_active_list`, `suggest_list_name`, `get_top_items`, `remove_quick_item`, `add_quick_item`, `merge_quick_items` (`sources`, `target`), `get_item_suggestions` (names to suggest while typing, each with `group_id`, `source` and `count`; optional `entity_id`, `query` and `limit`; response only; needs ha-ica-todo 0.13.0), `get_categories` (groups in store order and each item's group, response only), `set_category` (`items`: a list of `uid` and `group_id`; ICA remembers the choice).
 - `sensor.handla_ai`: `off` / `ready` / `unavailable`; `handla.ai_extract_items` and `handla.ai_suggest_categories` exist only while AI is on. See [ai.md](ai.md).
 - Event `handla_item_added`: fired for every added item (item, list, who added it).
 - Notifications: *Settings → Devices & services → Handla → Configure*. Under *Language of notifications* you can pick Swedish or English whatever language Home Assistant uses (the default, *Automatic*, follows Home Assistant).
