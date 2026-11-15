@@ -1255,3 +1255,71 @@ describe("categories", () => {
     expect(callsTo(callService, "get_categories").length).toBe(before);
   });
 });
+
+describe("wide layout", () => {
+  type Observer = (entries: Array<{ contentRect: { width: number } }>) => void;
+  let resize: Observer | null = null;
+
+  const useResizeObserver = () => {
+    resize = null;
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        constructor(callback: Observer) {
+          resize = callback;
+        }
+        observe(): void {}
+        disconnect(): void {}
+      },
+    );
+  };
+  const setWidth = async (el: HandlaItems, width: number) => {
+    resize?.([{ contentRect: { width } }]);
+    await settle(el);
+  };
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("is one column with the AI slot first when narrow", async () => {
+    useResizeObserver();
+    const env = makeEnv({ quick: [{ name: "mjölk" }] });
+    const el = await mount(env.build());
+    await setWidth(el, 500);
+
+    expect(testid(el, "wide")).toBeNull();
+    expect(root(el).firstElementChild?.matches('slot[name="side"]')).toBe(true);
+  });
+
+  it("puts add and items in the main column and quick-add and the slot in the side", async () => {
+    useResizeObserver();
+    const env = makeEnv({ quick: [{ name: "mjölk" }] });
+    const el = await mount(env.build());
+    env.push([{ uid: "m", summary: "mjölk" }]);
+    await setWidth(el, 900);
+    await settle(el);
+
+    const main = root(el).querySelector(".main");
+    const side = root(el).querySelector(".side");
+    expect(testid(el, "wide")).not.toBeNull();
+    expect(main?.querySelector("input[type=text]")).not.toBeNull();
+    expect(main?.querySelector('[data-testid="items"]')).not.toBeNull();
+    expect(side?.querySelector("[data-quick]")).not.toBeNull();
+    expect(side?.querySelector('slot[name="side"]')).not.toBeNull();
+    expect(side?.querySelector('[data-action="group-by"]')).not.toBeNull();
+  });
+
+  it("still adds with Enter and keeps the same behaviour when wide", async () => {
+    useResizeObserver();
+    const env = makeEnv();
+    const el = await mount(env.build());
+    await setWidth(el, 900);
+
+    await type(el, "gurka");
+    root(el)
+      .querySelector("form")
+      ?.dispatchEvent(new Event("submit", { cancelable: true }));
+    await settle(el);
+
+    expect(callsTo(env.callService, "add_item")).toHaveLength(1);
+  });
+});
