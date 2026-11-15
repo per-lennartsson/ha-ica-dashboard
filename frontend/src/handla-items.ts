@@ -6,12 +6,16 @@ import "./handla-categorize";
 import { localize, type TranslationKey } from "./i18n";
 import "./handla-quick-manage";
 import { availabilityOf, orderItems, readQuickItems, subscribeItems, type TodoItem } from "./items";
+import { WideLayout } from "./layout";
 import type { ListInfo } from "./lists";
 import { loadGroupByCategory, saveGroupByCategory } from "./storage";
 import type { HomeAssistant } from "./types";
 
 /** Wait this long after a change before reading the categories again (changes come in bursts). */
 const CATEGORY_FETCH_DELAY_MS = 300;
+
+/** From this width on, the quick-add, AI and category tools sit beside the items. */
+const WIDE_ITEMS_PX = 760;
 
 /**
  * The items of one list: add (Enter adds and the field keeps focus), quick-add buttons,
@@ -211,6 +215,23 @@ export class HandlaItems extends LitElement {
       padding: 4px 0 8px 48px;
       border-bottom: 1px solid var(--divider-color, #e0e0e0);
     }
+    .columns {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+      gap: 32px;
+      align-items: start;
+    }
+    .side {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .side .chips {
+      margin-top: 0;
+    }
+    ::slotted(handla-ai) {
+      margin-top: 0;
+    }
     li.picker select {
       min-height: 44px;
       max-width: 100%;
@@ -246,6 +267,8 @@ export class HandlaItems extends LitElement {
   private _generation = 0;
   private _categoryGeneration = 0;
   private _categoryTimer: ReturnType<typeof setTimeout> | undefined;
+  /** Wide enough for two columns. */
+  private readonly _layout = new WideLayout(this, WIDE_ITEMS_PX);
   private readonly _adds = new AddQueue(
     () => this.hass,
     () => this.requestUpdate(),
@@ -470,13 +493,29 @@ export class HandlaItems extends LitElement {
     const list = this.list;
     if (!list) return nothing;
     const available = availabilityOf(this.hass, list.entityId) === "ok";
+    const unavailable = available
+      ? nothing
+      : html`<p class="muted" data-testid="unavailable">${this._t("items.unavailable")}</p>`;
+    if (this._layout.wide) {
+      // Two columns: add and items in the middle, quick-add, the AI helper and categories beside
+      return html`
+        ${unavailable}
+        <div class="columns" data-testid="wide">
+          <div class="main">
+            ${this._renderAddForm()} ${this._renderNotices()}
+            ${available ? this._renderItems(list) : nothing}
+          </div>
+          <div class="side">
+            ${this._renderQuickItems()}
+            <slot name="side"></slot>
+            ${available ? this._renderCategoryTools(list) : nothing}
+          </div>
+        </div>
+      `;
+    }
     return html`
-      ${
-        available
-          ? nothing
-          : html`<p class="muted" data-testid="unavailable">${this._t("items.unavailable")}</p>`
-      }
-      ${this._renderAddForm()} ${this._renderQuickItems()} ${this._renderNotices()}
+      <slot name="side"></slot>
+      ${unavailable} ${this._renderAddForm()} ${this._renderQuickItems()} ${this._renderNotices()}
       ${available ? this._renderCategoryTools(list) : nothing}
       ${available ? this._renderItems(list) : nothing}
     `;

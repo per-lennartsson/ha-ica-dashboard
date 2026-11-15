@@ -467,6 +467,7 @@ function addControl(label: string, onClick: () => void): void {
   document.getElementById("controls")?.appendChild(button);
 }
 
+addControl("Bred vy (helsida)", () => document.getElementById("host")?.classList.toggle("wide"));
 addControl("Svenska", () => (state.language = "sv"));
 addControl("English", () => (state.language = "en"));
 addControl("Handla körs inte", () => (state.running = !state.running));

@@ -14,6 +14,27 @@ type: custom:handla-card
 
 Put it on its own dashboard view, for example `/lovelace/handla` (view path `handla`).
 
+### Using the whole page (panel view)
+
+Make that view a **panel view** and the card gets the full width of the screen instead of a narrow column in the middle. Edit the dashboard in YAML (or the raw configuration editor):
+
+```yaml
+views:
+  - title: Handla
+    path: handla
+    panel: true
+    cards:
+      - type: custom:handla-card
+```
+
+The card adapts to the width it is given, so this also applies to a very wide section, not only to panel views:
+
+- **Under 900 px** (phones, narrow columns): one column, as before. The lists are a drop-down.
+- **From 900 px**: the lists move to a sidebar of buttons with their item counts, and the add field, the items and the create and delete controls fill the rest.
+- **From about 1100 px** the items view also splits in two: add field, notices and items in the middle, and quick-add buttons, the AI helper and the category tools in a column on the right.
+
+Nothing else changes: the same data, the same per-user settings (list choice, grouping) and the same locking while a list is created or deleted.
+
 ## 2. The shortcut card (for the phone dashboard)
 
 A small card with the number of items left to buy and the list name. If you set `navigation_path`, tapping it opens that dashboard path, so it can send you to the shopping view above.

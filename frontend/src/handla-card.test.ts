@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { HandlaCard } from "./handla-card";
 import { AI_ENTITY } from "./ai";
 import type { HandlaAi } from "./handla-ai";
@@ -649,5 +649,94 @@ describe("AI helper inside the card", () => {
   it("is locked together with the items while a list is created", async () => {
     const card = await mount(makeHass({ lists: [BREAD], status: "creating", ai: "ready" }).hass);
     expect(aiView(card)?.locked).toBe(true);
+  });
+});
+
+describe("wide layout", () => {
+  type Observer = (entries: Array<{ contentRect: { width: number } }>) => void;
+  // The card and its items view each observe their own element; only the card's width matters
+  let observers: Observer[] = [];
+
+  const widen = async (card: HandlaCard, width: number) => {
+    observers[0]?.([{ contentRect: { width } }]);
+    await settle(card);
+  };
+  const navButtons = (card: HandlaCard) => [
+    ...root(card).querySelectorAll<HTMLButtonElement>(".list-nav button"),
+  ];
+
+  beforeEach(() => {
+    observers = [];
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        constructor(callback: Observer) {
+          observers.push(callback);
+        }
+        observe(): void {}
+        disconnect(): void {}
+      },
+    );
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("keeps the picker and one column when narrow", async () => {
+    const card = await mount(makeHass({ lists: [BREAD, MILK] }).hass);
+    await widen(card, 400);
+
+    expect(select(card)).not.toBeNull();
+    expect(root(card).querySelector(".shell")).toBeNull();
+    expect(navButtons(card)).toHaveLength(0);
+  });
+
+  it("shows the lists as sidebar buttons with counts when wide", async () => {
+    const card = await mount(makeHass({ lists: [BREAD, MILK], active: "B-2" }).hass);
+    await widen(card, 1200);
+
+    expect(select(card)).toBeNull();
+    expect(root(card).querySelector(".shell .nav")).not.toBeNull();
+    expect(root(card).querySelector(".shell .content handla-items")).not.toBeNull();
+    expect(navButtons(card).map((b) => b.textContent?.replace(/\s+/g, " ").trim())).toEqual([
+      "Bröd 2",
+      "Mjölk 0",
+    ]);
+    expect(navButtons(card).map((b) => b.getAttribute("aria-current"))).toEqual(["false", "true"]);
+  });
+
+  it("selects a list from the sidebar", async () => {
+    const card = await mount(makeHass({ lists: [BREAD, MILK], active: "B-2" }).hass);
+    await widen(card, 1200);
+
+    navButtons(card)[0]?.click();
+    await card.updateComplete;
+
+    const items = root(card).querySelector("handla-items") as HandlaItems;
+    expect(items.list?.offlineId).toBe("A-1");
+    expect(navButtons(card)[0]?.getAttribute("aria-current")).toBe("true");
+  });
+
+  it("slots the AI helper into the items view", async () => {
+    const card = await mount(makeHass({ lists: [BREAD], ai: "ready" }).hass);
+    await widen(card, 1200);
+
+    const ai = root(card).querySelector("handla-items > handla-ai");
+    expect(ai?.getAttribute("slot")).toBe("side");
+  });
+
+  it("locks the sidebar buttons while a list operation runs", async () => {
+    const card = await mount(makeHass({ lists: [BREAD, MILK], status: "creating" }).hass);
+    await widen(card, 1200);
+
+    expect(navButtons(card).every((b) => b.disabled)).toBe(true);
+  });
+
+  it("shows the create form in the sidebar and goes back to the list buttons", async () => {
+    const card = await mount(makeHass({ lists: [BREAD] }).hass);
+    await widen(card, 1200);
+
+    await click(card, "new-list");
+    expect(root(card).querySelector(".nav form")).not.toBeNull();
+    await click(card, "cancel");
+    expect(navButtons(card)).toHaveLength(1);
   });
 });

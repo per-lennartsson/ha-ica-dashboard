@@ -3,6 +3,7 @@ import "./handla-ai";
 import "./handla-items";
 import { createList, deleteList, errorMessage, suggestListName } from "./api";
 import { isCardLanguage, localize, withLanguage, type TranslationKey } from "./i18n";
+import { WideLayout } from "./layout";
 import {
   listLabel,
   readLists,
@@ -16,6 +17,9 @@ import { loadSelectedList, saveSelectedList } from "./storage";
 import type { HomeAssistant, HandlaCardConfig } from "./types";
 
 type Mode = "list" | "create" | "delete";
+
+/** From this card width on, the lists move to a sidebar (a panel view is always wider). */
+const WIDE_CARD_PX = 900;
 
 export class HandlaCard extends LitElement {
   static override properties = {
@@ -130,6 +134,52 @@ export class HandlaCard extends LitElement {
     .actions {
       margin-top: 12px;
     }
+    :host {
+      display: block;
+    }
+    /* Wide layout (a panel view or a wide section): lists on the left, items on the right */
+    .card.wide {
+      padding: 24px 32px 32px;
+    }
+    .card.wide h2 {
+      margin-bottom: 20px;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+    .shell {
+      display: grid;
+      grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+      gap: 32px;
+      align-items: start;
+    }
+    .nav .actions {
+      flex-direction: column;
+    }
+    .list-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .list-nav button {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      width: 100%;
+      min-height: 48px;
+      text-align: left;
+      background: none;
+      border-color: transparent;
+    }
+    .list-nav button[aria-current="true"] {
+      font-weight: 600;
+      background: var(--secondary-background-color, #f4f4f5);
+      border-color: var(--divider-color, #cfcfcf);
+    }
+    .list-nav .count {
+      color: var(--secondary-text-color, #727272);
+      font-size: 0.875rem;
+    }
   `;
 
   declare hass?: HomeAssistant;
@@ -142,6 +192,9 @@ export class HandlaCard extends LitElement {
   declare _selected: string | null;
   /** The list the delete confirmation is about (ICA offline id). */
   declare _deleteTarget: string | null;
+
+  /** Wide enough for the sidebar layout. */
+  private readonly _layout = new WideLayout(this, WIDE_CARD_PX);
 
   constructor() {
     super();
@@ -287,7 +340,7 @@ export class HandlaCard extends LitElement {
     const title = this._config.title ?? this._t("card.title");
     const state = readLists(this.hass);
     return html`
-      <div class="card">
+      <div class="card ${this._layout.wide ? "wide" : ""}">
         <h2>${title}</h2>
         ${
           state === null
@@ -304,20 +357,28 @@ export class HandlaCard extends LitElement {
     const selected = resolveSelected(lists, this._selected, activeOfflineId);
     const target = lists.find((item) => item.offlineId === this._deleteTarget);
     const childHass = withLanguage(this.hass, this._config?.language);
+    const controls =
+      this._mode === "create"
+        ? this._renderCreate(busy)
+        : this._mode === "delete" && target
+          ? this._renderDelete(target, busy)
+          : this._renderPicker(lists, selected, busy);
+    // The AI helper is slotted into the items view, which places it beside or above the items
+    const items =
+      this._mode === "list" && selected
+        ? html`<handla-items .hass=${childHass} .list=${selected} .locked=${busy}>
+            <handla-ai slot="side" .hass=${childHass} .list=${selected} .locked=${busy}></handla-ai>
+          </handla-items>`
+        : nothing;
     return html`
       ${this._renderProgress(status)} ${this._renderError(status, detail, busy)}
       ${
-        this._mode === "create"
-          ? this._renderCreate(busy)
-          : this._mode === "delete" && target
-            ? this._renderDelete(target, busy)
-            : this._renderPicker(lists, selected, busy)
-      }
-      ${
-        this._mode === "list" && selected
-          ? html`<handla-ai .hass=${childHass} .list=${selected} .locked=${busy}></handla-ai>
-              <handla-items .hass=${childHass} .list=${selected} .locked=${busy}></handla-items>`
-          : nothing
+        this._layout.wide
+          ? html`<div class="shell">
+              <div class="nav">${controls}</div>
+              <div class="content">${items}</div>
+            </div>`
+          : html`${controls}${items}`
       }
     `;
   }
@@ -348,28 +409,30 @@ export class HandlaCard extends LitElement {
       ${
         lists.length === 0
           ? html`<p class="muted" data-testid="no-lists">${this._t("lists.none")}</p>`
-          : html`
-              <label for="list">${this._t("lists.label")}</label>
-              <div class="row">
-                <select
-                  id="list"
-                  ?disabled=${busy}
-                  @change=${(event: Event) =>
-                    this._select((event.target as HTMLSelectElement).value)}
-                >
-                  ${lists.map(
-                    (item) => html`
-                      <option
-                        value=${item.offlineId}
-                        ?selected=${item.offlineId === selected?.offlineId}
-                      >
-                        ${listLabel(item)}
-                      </option>
-                    `,
-                  )}
-                </select>
-              </div>
-            `
+          : this._layout.wide
+            ? this._renderListNav(lists, selected, busy)
+            : html`
+                <label for="list">${this._t("lists.label")}</label>
+                <div class="row">
+                  <select
+                    id="list"
+                    ?disabled=${busy}
+                    @change=${(event: Event) =>
+                      this._select((event.target as HTMLSelectElement).value)}
+                  >
+                    ${lists.map(
+                      (item) => html`
+                        <option
+                          value=${item.offlineId}
+                          ?selected=${item.offlineId === selected?.offlineId}
+                        >
+                          ${listLabel(item)}
+                        </option>
+                      `,
+                    )}
+                  </select>
+                </div>
+              `
       }
       <div class="row actions">
         <button
@@ -394,6 +457,31 @@ export class HandlaCard extends LitElement {
             : nothing
         }
       </div>
+    `;
+  }
+
+  /** The sidebar version of the list picker: one button per list, with its item count. */
+  private _renderListNav(lists: ListInfo[], selected: ListInfo | null, busy: boolean) {
+    return html`
+      <nav class="list-nav" aria-label=${this._t("lists.label")}>
+        ${lists.map(
+          (item) => html`
+            <button
+              data-list=${item.offlineId}
+              aria-current=${item.offlineId === selected?.offlineId ? "true" : "false"}
+              ?disabled=${busy}
+              @click=${() => this._select(item.offlineId)}
+            >
+              <span>${item.title}</span>
+              ${
+                item.itemCount === null
+                  ? nothing
+                  : html`<span class="count">${item.itemCount}</span>`
+              }
+            </button>
+          `,
+        )}
+      </nav>
     `;
   }
 
