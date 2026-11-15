@@ -19,6 +19,10 @@
 
 - [x] H. Article group (category) services for Handla's categories: `ica.get_article_groups`, `ica.get_shopping_list_items`, `ica.set_item_article_group` (with `remember`), and the option *Categorize items automatically*. Handla's minimum version is now v0.12.0. Service fields, answers and errors checked against the released code on 2026-11-13 (see `ica-contract.md`). Still to confirm by hand: that ICA keeps a category change made through `set_item_article_group` (manual check in `docs/dev.md`).
 
+## Done (v0.13.0, branch `item-history-suggestions`)
+
+- [x] I. `ica.get_item_suggestions`: item names from the history, favourites and ICA's articles, each with the category an item of that name gets. Used by Handla's suggestions while typing (`docs/suggestions-plan.md`). Handla's minimum version is now v0.13.0. Not yet checked against the released code: service fields and answer shape follow the plan; check them when v0.13.0 is installed (`docs/dev.md`).
+
 ## Left (checked against `main` at v0.11.0)
 
 ### C. Make failure explicit in `ica_lists_changed` (recommended)

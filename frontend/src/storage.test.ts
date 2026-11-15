@@ -2,8 +2,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   loadGroupByCategory,
   loadSelectedList,
+  loadShowSuggestions,
   saveGroupByCategory,
   saveSelectedList,
+  saveShowSuggestions,
 } from "./storage";
 
 afterEach(() => {
@@ -69,5 +71,26 @@ describe("group by category storage", () => {
     });
     expect(loadGroupByCategory()).toBe(true);
     expect(() => saveGroupByCategory(false)).not.toThrow();
+  });
+});
+
+describe("show suggestions storage", () => {
+  it("is on by default and remembers the choice", () => {
+    expect(loadShowSuggestions()).toBe(true);
+    saveShowSuggestions(false);
+    expect(loadShowSuggestions()).toBe(false);
+    saveShowSuggestions(true);
+    expect(loadShowSuggestions()).toBe(true);
+  });
+
+  it("falls back to on when storage is blocked", () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    expect(loadShowSuggestions()).toBe(true);
+    expect(() => saveShowSuggestions(false)).not.toThrow();
   });
 });

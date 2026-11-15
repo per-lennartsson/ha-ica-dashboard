@@ -6,7 +6,7 @@ HACS installs Handla from a GitHub **release**: the release carries `handla.zip`
 
 - Releases are tagged `vMAJOR.MINOR.PATCH` (a suffix such as `-beta1` is accepted). The first public release is `v0.1.0`; mark it as a *pre-release* in GitHub until the manual checks in `docs/dev.md` have all passed on a real Home Assistant (HACS only offers pre-releases to users who enable beta versions).
 - The workflow stamps the tag's version into the packaged `manifest.json` and into the card (it shows in the browser console). The versions in the repository (`custom_components/handla/manifest.json`, `frontend/package.json`) are placeholders and need no bump; a test only checks that they agree with each other.
-- `ha-ica-todo` is a separate release in its own repository. The minimum version Handla needs (`MIN_ICA_VERSION` in `custom_components/handla/const.py`, currently 0.10.0) must have been released first.
+- `ha-ica-todo` is a separate release in its own repository. The minimum version Handla needs (`MIN_ICA_VERSION` in `custom_components/handla/const.py`, currently 0.13.0) must have been released first.
 
 ## Checklist for a release
 

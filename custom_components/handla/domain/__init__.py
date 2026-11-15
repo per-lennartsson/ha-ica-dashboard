@@ -61,6 +61,11 @@ from .notify import (
     merge_items,
     recipients_to_notify,
 )
+from .suggestions import (
+    ItemSuggestion,
+    parse_suggestions,
+)
+from .suggestions import suggestions_payload as item_suggestions_payload
 from .todo_items import TodoItem, duplicate_items, resolve_items
 from .usage import (
     DEFAULT_QUICK_ITEMS,
@@ -90,6 +95,9 @@ __all__ = [
     "STORE_ORDER",
     "UNSPECIFIED_GROUP",
     "ArticleGroup",
+    "ItemSuggestion",
+    "item_suggestions_payload",
+    "parse_suggestions",
     "CategorizedItem",
     "CategorySuggestion",
     "build_categorize_instructions",

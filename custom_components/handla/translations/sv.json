@@ -166,6 +166,24 @@
         }
       }
     },
+    "get_item_suggestions": {
+      "name": "Hämta namnförslag",
+      "description": "Returnera varunamn att välja bland medan man skriver, var och en med den kategori en vara med det namnet får. Kräver ha-ica-todo 0.13.0 eller senare.",
+      "fields": {
+        "entity_id": {
+          "name": "Lista",
+          "description": "Listan att fråga efter. Standard är den aktiva listan."
+        },
+        "query": {
+          "name": "Text",
+          "description": "Bara namn som matchar texten. Lämna tomt för hela listan."
+        },
+        "limit": {
+          "name": "Antal",
+          "description": "Det största antalet namn att returnera."
+        }
+      }
+    },
     "get_top_items": {
       "name": "Hämta vanliga varor",
       "description": "Returnera de varor som oftast lagts till, med ikoner, för snabbknappar.",
@@ -349,6 +367,9 @@
     },
     "categories_failed": {
       "message": "Kunde inte läsa kategorierna: {error}"
+    },
+    "suggestions_failed": {
+      "message": "Kunde inte läsa namnförslagen: {error}"
     },
     "set_category_failed": {
       "message": "Kunde inte byta kategori: {error}"

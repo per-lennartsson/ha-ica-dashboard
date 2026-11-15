@@ -7,7 +7,14 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 
 from .const import ICA_DOMAIN
-from .domain import ArticleGroup, CategorizedItem, parse_categorized_items, parse_groups
+from .domain import (
+    ArticleGroup,
+    CategorizedItem,
+    ItemSuggestion,
+    parse_categorized_items,
+    parse_groups,
+    parse_suggestions,
+)
 from .errors import failure
 
 
@@ -127,3 +134,31 @@ async def async_set_article_groups(
     answer = (response or {}).get(entity_id)
     result = answer if isinstance(answer, dict) else {}
     return {key: _uids(result.get(key)) for key in ("updated", "not_found")}
+
+
+async def async_get_item_suggestions(
+    hass: HomeAssistant,
+    entity_id: str,
+    query: str | None = None,
+    limit: int | None = None,
+) -> list[ItemSuggestion]:
+    """Item names to suggest while typing, from ha-ica-todo's history (v0.13.0).
+
+    Without `query` this is the full list (a few thousand names).
+    """
+    data: dict[str, object] = {"entity_id": entity_id}
+    if query:
+        data["query"] = query
+    if limit is not None:
+        data["limit"] = limit
+    try:
+        response = await hass.services.async_call(
+            ICA_DOMAIN,
+            "get_item_suggestions",
+            data,
+            blocking=True,
+            return_response=True,
+        )
+    except HomeAssistantError as err:
+        raise failure("suggestions_failed", error=str(err)) from err
+    return parse_suggestions((response or {}).get(entity_id))

@@ -41,3 +41,22 @@ export function saveGroupByCategory(enabled: boolean): void {
     // The choice is simply not remembered
   }
 }
+
+const SHOW_SUGGESTIONS_KEY = "handla:show-suggestions";
+
+/** Whether this user wants name suggestions while typing on this device (default: yes). */
+export function loadShowSuggestions(): boolean {
+  try {
+    return window.localStorage.getItem(SHOW_SUGGESTIONS_KEY) !== "off";
+  } catch {
+    return true;
+  }
+}
+
+export function saveShowSuggestions(enabled: boolean): void {
+  try {
+    window.localStorage.setItem(SHOW_SUGGESTIONS_KEY, enabled ? "on" : "off");
+  } catch {
+    // The choice is simply not remembered
+  }
+}
